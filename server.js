@@ -3,6 +3,7 @@ const path = require("path");
 const fs = require("fs");
 
 const app = express();
+
 // Serve frontend files from /public
 app.use(express.static(path.join(__dirname, "public")));
 const PORT = process.env.PORT || 3000;
