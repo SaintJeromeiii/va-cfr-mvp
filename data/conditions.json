@@ -181,8 +181,78 @@
     "Treatment history (medication, neurology visits, ER visits if applicable)"
   ],
   "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+},
+{
+  "id": "sleep_apnea",
+  "name": "Sleep Apnea (including obstructive sleep apnea)",
+  "body_system": "Respiratory",
+  "aliases": ["sleep apnea","osa","obstructive sleep apnea","cpap"],
+  "cfr": [
+    {
+      "section": "38 CFR § 4.97",
+      "diagnostic_code": "6847",
+      "title": "Sleep Apnea Syndromes",
+      "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B"
+    }
+  ],
+  "rating_logic": {
+    "type": "severity_ladder",
+    "summary": "Sleep apnea ratings depend largely on CPAP use and respiratory complications."
+  },
+  "evidence_checklist": [
+    "Sleep study confirming diagnosis",
+    "CPAP prescription or treatment documentation",
+    "Functional impact such as daytime fatigue"
+  ],
+  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+},
+{
+  "id": "asthma",
+  "name": "Asthma (Bronchial)",
+  "body_system": "Respiratory",
+  "aliases": ["asthma","bronchial asthma","inhaler","wheezing"],
+  "cfr": [
+    {
+      "section": "38 CFR § 4.97",
+      "diagnostic_code": "6602",
+      "title": "Asthma, bronchial",
+      "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B"
+    }
+  ],
+  "rating_logic": {
+    "type": "general_formula",
+    "summary": "Asthma ratings consider pulmonary testing results and medication use."
+  },
+  "evidence_checklist": [
+    "Pulmonary function testing results",
+    "Medication usage history",
+    "Frequency of exacerbations"
+  ],
+  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+},
+{
+  "id": "depression",
+  "name": "Major Depressive Disorder",
+  "body_system": "Mental Health",
+  "aliases": ["depression","major depressive disorder","mdd","low mood"],
+  "cfr": [
+    {
+      "section": "38 CFR § 4.130",
+      "diagnostic_code": "9434",
+      "title": "General Rating Formula for Mental Disorders (Depression)",
+      "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFRfa64377db09ae97/section-4.130"
+    }
+  ],
+  "rating_logic": {
+    "type": "general_formula",
+    "summary": "Depression is evaluated under the General Rating Formula (0–100%) based on occupational and social impairment and symptoms."
+  },
+  "evidence_checklist": [
+    "Mental health diagnosis and treatment notes (therapy/medication) if present",
+    "Symptom frequency/severity and functional impact (work, relationships, sleep)",
+    "Stressors/events documented where possible (records or statements)",
+    "Any relevant exam results (e.g., C&P mental health exam) if performed"
+  ],
+  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
 }
-
-
-  
 ]
