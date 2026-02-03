@@ -1,0 +1,149 @@
+body { font-family: system-ui, Arial, sans-serif; margin: 0; background: #0b0f14; color: #e8eef6; }
+.container { max-width: 880px; margin: 0 auto; padding: 24px; }
+h1 { margin: 0 0 8px; }
+.sub { margin: 0 0 18px; color: #b8c4d6; }
+.search input {
+  width: 100%; padding: 12px 14px; border-radius: 10px;
+  border: 1px solid #253043; background: #111826; color: #e8eef6;
+  outline: none;
+}
+.controls { display: flex; gap: 10px; margin-top: 0; }
+.controls input { flex: 1; }
+.controls select {
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #253043;
+  background: #111826;
+  color: #e8eef6;
+  outline: none;
+}
+
+.results { margin-top: 10px; display: grid; gap: 10px; }
+.result {
+  padding: 12px 14px; border: 1px solid #253043; background: #0f1622;
+  border-radius: 12px; cursor: pointer;
+}
+.result:hover { border-color: #3b82f6; }
+.detail { margin-top: 18px; border: 1px solid #253043; background: #0f1622; border-radius: 14px; padding: 16px; }
+.hidden { display: none; }
+.badge { display: inline-block; padding: 4px 8px; border-radius: 999px; background: #111826; border: 1px solid #253043; margin-right: 8px; }
+ul { margin: 8px 0 0 18px; }
+a { color: #7ab7ff; text-decoration: none; }
+a:hover { text-decoration: underline; }
+hr { border: none; border-top: 1px solid #253043; margin: 14px 0; }
+.small { color: #b8c4d6; font-size: 0.95rem; }
+
+.dcBadge {
+  margin-left: 10px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #111826;
+  border: 1px solid #253043;
+  font-size: 0.85rem;
+  color: #7ab7ff;
+}
+
+.metaRow {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.systemBadge {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #0f1a2b;
+  border: 1px solid #253043;
+  font-size: 0.8rem;
+  color: #9cc9ff;
+}
+/* ===== Body system color tokens ===== */
+:root{
+  --sys-default-bg: #111826;
+  --sys-default-bd: #253043;
+  --sys-default-fg: #e8eef6;
+
+  --sys-mental-bg: #22143a;
+  --sys-mental-bd: #4b2a7a;
+  --sys-mental-fg: #d9c7ff;
+
+  --sys-neuro-bg: #0f1a2b;
+  --sys-neuro-bd: #2a4a7a;
+  --sys-neuro-fg: #9cc9ff;
+
+  --sys-msk-bg: #10251b;
+  --sys-msk-bd: #2f6b4b;
+  --sys-msk-fg: #b7f5d1;
+
+  --sys-ear-bg: #0b2430;
+  --sys-ear-bd: #246a83;
+  --sys-ear-fg: #aeeaff;
+
+  --sys-resp-bg: #2a1c12;
+  --sys-resp-bd: #7b4a2a;
+  --sys-resp-fg: #ffd7b8;
+
+  --sys-cardio-bg: #2a1216;
+  --sys-cardio-bd: #7a2a38;
+  --sys-cardio-fg: #ffb9c5;
+}
+
+/* Container for system chips/badges */
+.metaRow {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+/* Base badge styles */
+.systemBadge,
+.dcBadge {
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--sys-default-bd);
+  background: var(--sys-default-bg);
+  color: var(--sys-default-fg);
+  font-size: 0.8rem;
+  line-height: 1.2;
+}
+
+/* System color variants */
+.systemBadge.sys-mental-health { background: var(--sys-mental-bg); border-color: var(--sys-mental-bd); color: var(--sys-mental-fg); }
+.systemBadge.sys-neurological  { background: var(--sys-neuro-bg);  border-color: var(--sys-neuro-bd);  color: var(--sys-neuro-fg);  }
+.systemBadge.sys-musculoskeletal { background: var(--sys-msk-bg); border-color: var(--sys-msk-bd); color: var(--sys-msk-fg); }
+.systemBadge.sys-ear           { background: var(--sys-ear-bg);    border-color: var(--sys-ear-bd);    color: var(--sys-ear-fg);   }
+.systemBadge.sys-respiratory   { background: var(--sys-resp-bg);   border-color: var(--sys-resp-bd);   color: var(--sys-resp-fg);  }
+.systemBadge.sys-cardiovascular{ background: var(--sys-cardio-bg); border-color: var(--sys-cardio-bd); color: var(--sys-cardio-fg); }
+
+/* Optional: make result cards react to system color (subtle left bar) */
+.result {
+  position: relative;
+}
+.result::before{
+  content:"";
+  position:absolute;
+  left:0; top:0; bottom:0;
+  width: 6px;
+  border-radius: 10px 0 0 10px;
+  background: var(--sys-default-bd);
+  opacity: 0.9;
+}
+.result.sys-mental-health::before { background: var(--sys-mental-bd); }
+.result.sys-neurological::before { background: var(--sys-neuro-bd); }
+.result.sys-musculoskeletal::before { background: var(--sys-msk-bd); }
+.result.sys-ear::before { background: var(--sys-ear-bd); }
+.result.sys-respiratory::before { background: var(--sys-resp-bd); }
+.result.sys-cardiovascular::before { background: var(--sys-cardio-bd); }
+
+.clearBtn{
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #253043;
+  background: #111826;
+  color: #e8eef6;
+  cursor: pointer;
+}
+.clearBtn:hover { border-color:#3b82f6; }
+
+

@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>VA CFR Finder (MVP)</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <main class="container">
+    <h1>VA CFR Finder (MVP)</h1>
+    <p class="sub">
+      Educational tool to map common conditions to 38 CFR rating references (not legal advice / not representation).
+    </p>
+
+    <div class="search">
+      <div class="controls">
+        <input id="q" placeholder="Search: tinnitus, 8520, 4.124a, PTSD..." />
+        <select id="systemFilter">
+          <button id="clearBtn" class="clearBtn" type="button">Clear</button>
+          <option value="">All body systems</option>
+        </select>
+      </div>
+
+      <!-- Legend goes UNDER controls so users understand the colors -->
+      <div id="legend" class="legendRow"></div>
+
+      <!-- Results list -->
+      <div id="results" class="results"></div>
+    </div>
+
+    <!-- Detail view (ONLY ONE) -->
+    <section id="detail" class="detail hidden"></section>
+
+    <footer class="footer">
+      <small>
+        Sources are linked directly to eCFR / Cornell Law CFR pages. Always verify current language.
+      </small>
+    </footer>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
+

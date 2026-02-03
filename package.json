@@ -1,0 +1,17 @@
+{
+  "name": "va-cfr-mvp",
+  "version": "1.0.0",
+  "description": "VA CFR Finder MVP",
+  "main": "server.js",
+  "scripts": {
+    "dev": "nodemon server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
+}
