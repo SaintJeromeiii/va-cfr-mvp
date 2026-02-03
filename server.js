@@ -3,7 +3,10 @@ const path = require("path");
 const fs = require("fs");
 
 const app = express();
+// Serve frontend files from /public
+app.use(express.static(path.join(__dirname, "public")));
 const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on ${PORT}`));
 
 const DATA_PATH = path.join(__dirname, "data", "conditions.json");
 
