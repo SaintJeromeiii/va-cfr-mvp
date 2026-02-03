@@ -207,6 +207,8 @@ function renderDetail(item) {
     )
     .join("");
 
+    
+
     const refsHTML = buildReferencesHTML(item);
 
 
