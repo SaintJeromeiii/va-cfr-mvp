@@ -1,8 +1,29 @@
 const express = require("express");
 const path = require("path");
 const fs = require("fs");
+const livereload = require("livereload");
+const connectLiveReload = require("connect-livereload");
+
+
+
 
 const app = express();
+// --- LIVE RELOAD (local dev only) ---
+if (process.env.NODE_ENV !== "production") {
+  const livereload = require("livereload");
+  const connectLiveReload = require("connect-livereload");
+
+  const liveReloadServer = livereload.createServer({
+    port: 35730   // 👈 change port so it never conflicts
+  });
+
+  liveReloadServer.watch(path.join(__dirname, "public"));
+  liveReloadServer.watch(path.join(__dirname, "data"));
+
+  app.use(connectLiveReload({ port: 35730 }));
+}
+
+
 
 const DATA_PATH = path.join(__dirname, "data", "conditions.json");
 

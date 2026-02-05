@@ -3,7 +3,11 @@
     "id": "tinnitus",
     "name": "Tinnitus",
     "body_system": "Ear",
-    "aliases": ["ringing in ears", "ear ringing", "buzzing in ears"],
+    "aliases": [
+      "ringing in ears",
+      "ear ringing",
+      "buzzing in ears"
+    ],
     "cfr": [
       {
         "section": "38 CFR § 4.87",
@@ -28,7 +32,11 @@
     "id": "knee_flexion",
     "name": "Limitation of Flexion of the Knee",
     "body_system": "Musculoskeletal",
-    "aliases": ["knee flexion", "knee range of motion", "limited bending knee"],
+    "aliases": [
+      "knee flexion",
+      "knee range of motion",
+      "limited bending knee"
+    ],
     "cfr": [
       {
         "section": "38 CFR § 4.71a",
@@ -41,10 +49,22 @@
       "type": "thresholds",
       "summary": "Rating depends on measured flexion (degrees).",
       "thresholds": [
-        { "flexion_deg": 60, "rating_percent": 0 },
-        { "flexion_deg": 45, "rating_percent": 10 },
-        { "flexion_deg": 30, "rating_percent": 20 },
-        { "flexion_deg": 15, "rating_percent": 30 }
+        {
+          "flexion_deg": 60,
+          "rating_percent": 0
+        },
+        {
+          "flexion_deg": 45,
+          "rating_percent": 10
+        },
+        {
+          "flexion_deg": 30,
+          "rating_percent": 20
+        },
+        {
+          "flexion_deg": 15,
+          "rating_percent": 30
+        }
       ]
     },
     "evidence_checklist": [
@@ -55,47 +75,50 @@
     ],
     "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
   },
- {
-  "id": "sciatic_nerve",
-  "name": "Paralysis of the Sciatic Nerve (Sciatica)",
-  "body_system": "Neurological",
-  "aliases": ["sciatica","sciatic nerve","radiculopathy","shooting pain leg"],
-
-  "cfr": [
-    {
-      "section": "38 CFR § 4.124a",
-      "diagnostic_code": "8520",
-      "title": "Sciatic nerve paralysis",
-      "url": "https://www.law.cornell.edu/cfr/text/38/4.124a"
-    }
-  ],
-
-  "rating_logic": {
-    "type": "severity_ladder",
-    "summary": "Rating is based on severity (mild → complete)."
+  {
+    "id": "sciatic_nerve",
+    "name": "Paralysis of the Sciatic Nerve (Sciatica)",
+    "body_system": "Neurological",
+    "aliases": [
+      "sciatica",
+      "sciatic nerve",
+      "radiculopathy",
+      "shooting pain leg"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.124a",
+        "diagnostic_code": "8520",
+        "title": "Sciatic nerve paralysis",
+        "url": "https://www.law.cornell.edu/cfr/text/38/4.124a"
+      }
+    ],
+    "rating_logic": {
+      "type": "severity_ladder",
+      "summary": "Rating is based on severity (mild → complete)."
+    },
+    "excerpts": [
+      {
+        "label": "Rating criteria excerpt",
+        "text": "Mild incomplete paralysis of the sciatic nerve warrants a 10 percent evaluation. Moderate incomplete paralysis warrants 20 percent...",
+        "source_url": "https://www.law.cornell.edu/cfr/text/38/4.124a"
+      }
+    ],
+    "evidence_checklist": [
+      "Symptoms + pattern (radiating pain, numbness, weakness)",
+      "Neuro findings (reflexes, strength, sensation) if documented"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
   },
-
-  "excerpts": [
-    {
-      "label": "Rating criteria excerpt",
-      "text": "Mild incomplete paralysis of the sciatic nerve warrants a 10 percent evaluation. Moderate incomplete paralysis warrants 20 percent...",
-      "source_url": "https://www.law.cornell.edu/cfr/text/38/4.124a"
-    }
-  ],
-
-  "evidence_checklist": [
-    "Symptoms + pattern (radiating pain, numbness, weakness)",
-    "Neuro findings (reflexes, strength, sensation) if documented"
-  ],
-
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-}
-,
   {
     "id": "hearing_loss",
     "name": "Hearing Loss",
     "body_system": "Ear",
-    "aliases": ["hearing impairment", "hard of hearing", "cannot hear speech"],
+    "aliases": [
+      "hearing impairment",
+      "hard of hearing",
+      "cannot hear speech"
+    ],
     "cfr": [
       {
         "section": "38 CFR § 4.85",
@@ -114,7 +137,6 @@
       "type": "table_method",
       "summary": "Rating uses puretone thresholds + speech discrimination to find Roman numerals (Tables VI/VIa) and combine them (Table VII)."
     },
-    
     "evidence_checklist": [
       "Audiogram results (puretone thresholds at 1000/2000/3000/4000 Hz)",
       "Maryland CNC speech discrimination scores",
@@ -123,136 +145,171 @@
     ],
     "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
   },
-  
-  
   {
-  "id": "ptsd",
-  "name": "Post-Traumatic Stress Disorder (PTSD)",
-  "body_system": "Mental Health",
-  "aliases": ["ptsd", "post traumatic stress", "trauma", "nightmares", "hypervigilance"],
-  "cfr": [
-    {
-      "section": "38 CFR § 4.130",
-      "diagnostic_code": "9411",
-      "title": "General Rating Formula for Mental Disorders (PTSD)",
-      "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFRfa64377db09ae97/section-4.130"
-    }
-  ],
-  "rating_logic": {
-    "type": "general_formula",
-    "summary": "PTSD is evaluated under the General Rating Formula (0–100%) based on occupational and social impairment and symptoms."
+    "id": "ptsd",
+    "name": "Post-Traumatic Stress Disorder (PTSD)",
+    "body_system": "Mental Health",
+    "aliases": [
+      "ptsd",
+      "post traumatic stress",
+      "trauma",
+      "nightmares",
+      "hypervigilance"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.130",
+        "diagnostic_code": "9411",
+        "title": "General Rating Formula for Mental Disorders (PTSD)",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFRfa64377db09ae97/section-4.130"
+      }
+    ],
+    "rating_logic": {
+      "type": "general_formula",
+      "summary": "PTSD is evaluated under the General Rating Formula (0–100%) based on occupational and social impairment and symptoms."
+    },
+    "evidence_checklist": [
+      "Mental health diagnosis and treatment notes (therapy/medication) if present",
+      "Symptom frequency/severity and functional impact (work, relationships, sleep)",
+      "Stressors/events documented where possible (records or statements)",
+      "Any relevant exam results (e.g., C&P mental health exam) if performed"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
   },
-  "evidence_checklist": [
-    "Mental health diagnosis and treatment notes (therapy/medication) if present",
-    "Symptom frequency/severity and functional impact (work, relationships, sleep)",
-    "Stressors/events documented where possible (records or statements)",
-    "Any relevant exam results (e.g., C&P mental health exam) if performed"
-  ],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-
-{
-  "id": "migraines",
-  "name": "Migraine Headaches",
-  "body_system": "Neurological",
-  "aliases": ["migraines", "migraine headaches", "prostrating headaches", "severe headaches"],
-  "cfr": [
-    {
-      "section": "38 CFR § 4.124a",
-      "diagnostic_code": "8100",
-      "title": "Migraine headaches",
-      "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFR378242b2776122d/section-4.124a"
-    }
-  ],
-  "rating_logic": {
-    "type": "severity_ladder",
-    "summary": "Ratings depend on frequency and severity of prostrating attacks.",
-    "levels": [
-      { "level": "Less frequent attacks", "rating_percent": 0 },
-      { "level": "Characteristic prostrating attacks averaging one in 2 months", "rating_percent": 10 },
-      { "level": "Characteristic prostrating attacks occurring on average once a month", "rating_percent": 30 },
-      { "level": "Very frequent completely prostrating and prolonged attacks with severe economic inadaptability", "rating_percent": 50 }
-    ]
+  {
+    "id": "migraines",
+    "name": "Migraine Headaches",
+    "body_system": "Neurological",
+    "aliases": [
+      "migraines",
+      "migraine headaches",
+      "prostrating headaches",
+      "severe headaches"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.124a",
+        "diagnostic_code": "8100",
+        "title": "Migraine headaches",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFR378242b2776122d/section-4.124a"
+      }
+    ],
+    "rating_logic": {
+      "type": "severity_ladder",
+      "summary": "Ratings depend on frequency and severity of prostrating attacks.",
+      "levels": [
+        {
+          "level": "Less frequent attacks",
+          "rating_percent": 0
+        },
+        {
+          "level": "Characteristic prostrating attacks averaging one in 2 months",
+          "rating_percent": 10
+        },
+        {
+          "level": "Characteristic prostrating attacks occurring on average once a month",
+          "rating_percent": 30
+        },
+        {
+          "level": "Very frequent completely prostrating and prolonged attacks with severe economic inadaptability",
+          "rating_percent": 50
+        }
+      ]
+    },
+    "evidence_checklist": [
+      "Frequency and severity of headaches documented in medical records or statements",
+      "Notes describing prostrating attacks (needing to lie down, inability to function)",
+      "Impact on work, concentration, or daily functioning",
+      "Treatment history (medication, neurology visits, ER visits if applicable)"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
   },
-  "evidence_checklist": [
-    "Frequency and severity of headaches documented in medical records or statements",
-    "Notes describing prostrating attacks (needing to lie down, inability to function)",
-    "Impact on work, concentration, or daily functioning",
-    "Treatment history (medication, neurology visits, ER visits if applicable)"
-  ],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "sleep_apnea",
-  "name": "Sleep Apnea (including obstructive sleep apnea)",
-  "body_system": "Respiratory",
-  "aliases": ["sleep apnea","osa","obstructive sleep apnea","cpap"],
-  "cfr": [
-    {
-      "section": "38 CFR § 4.97",
-      "diagnostic_code": "6847",
-      "title": "Sleep Apnea Syndromes",
-      "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B"
-    }
-  ],
-  "rating_logic": {
-    "type": "severity_ladder",
-    "summary": "Sleep apnea ratings depend largely on CPAP use and respiratory complications."
+  {
+    "id": "sleep_apnea",
+    "name": "Sleep Apnea (including obstructive sleep apnea)",
+    "body_system": "Respiratory",
+    "aliases": [
+      "sleep apnea",
+      "osa",
+      "obstructive sleep apnea",
+      "cpap"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.97",
+        "diagnostic_code": "6847",
+        "title": "Sleep Apnea Syndromes",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B"
+      }
+    ],
+    "rating_logic": {
+      "type": "severity_ladder",
+      "summary": "Sleep apnea ratings depend largely on CPAP use and respiratory complications."
+    },
+    "evidence_checklist": [
+      "Sleep study confirming diagnosis",
+      "CPAP prescription or treatment documentation",
+      "Functional impact such as daytime fatigue"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
   },
-  "evidence_checklist": [
-    "Sleep study confirming diagnosis",
-    "CPAP prescription or treatment documentation",
-    "Functional impact such as daytime fatigue"
-  ],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "asthma",
-  "name": "Asthma (Bronchial)",
-  "body_system": "Respiratory",
-  "aliases": ["asthma","bronchial asthma","inhaler","wheezing"],
-  "cfr": [
-    {
-      "section": "38 CFR § 4.97",
-      "diagnostic_code": "6602",
-      "title": "Asthma, bronchial",
-      "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B"
-    }
-  ],
-  "rating_logic": {
-    "type": "general_formula",
-    "summary": "Asthma ratings consider pulmonary testing results and medication use."
+  {
+    "id": "asthma",
+    "name": "Asthma (Bronchial)",
+    "body_system": "Respiratory",
+    "aliases": [
+      "asthma",
+      "bronchial asthma",
+      "inhaler",
+      "wheezing"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.97",
+        "diagnostic_code": "6602",
+        "title": "Asthma, bronchial",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B"
+      }
+    ],
+    "rating_logic": {
+      "type": "general_formula",
+      "summary": "Asthma ratings consider pulmonary testing results and medication use."
+    },
+    "evidence_checklist": [
+      "Pulmonary function testing results",
+      "Medication usage history",
+      "Frequency of exacerbations"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
   },
-  "evidence_checklist": [
-    "Pulmonary function testing results",
-    "Medication usage history",
-    "Frequency of exacerbations"
-  ],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "depression",
-  "name": "Major Depressive Disorder",
-  "body_system": "Mental Health",
-  "aliases": ["depression","major depressive disorder","mdd","low mood"],
-  "cfr": [
-    {
-      "section": "38 CFR § 4.130",
-      "diagnostic_code": "9434",
-      "title": "General Rating Formula for Mental Disorders (Depression)",
-      "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFRfa64377db09ae97/section-4.130"
-    }
-  ],
-  "rating_logic": {
-    "type": "general_formula",
-    "summary": "Depression is evaluated under the General Rating Formula (0–100%) based on occupational and social impairment and symptoms."
-  },
-  "evidence_checklist": [
-    "Mental health diagnosis and treatment notes (therapy/medication) if present",
-    "Symptom frequency/severity and functional impact (work, relationships, sleep)",
-    "Stressors/events documented where possible (records or statements)",
-    "Any relevant exam results (e.g., C&P mental health exam) if performed"
-  ],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-}
+  {
+    "id": "depression",
+    "name": "Major Depressive Disorder",
+    "body_system": "Mental Health",
+    "aliases": [
+      "depression",
+      "major depressive disorder",
+      "mdd",
+      "low mood"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.130",
+        "diagnostic_code": "9434",
+        "title": "General Rating Formula for Mental Disorders (Depression)",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFRfa64377db09ae97/section-4.130"
+      }
+    ],
+    "rating_logic": {
+      "type": "general_formula",
+      "summary": "Depression is evaluated under the General Rating Formula (0–100%) based on occupational and social impairment and symptoms."
+    },
+    "evidence_checklist": [
+      "Mental health diagnosis and treatment notes (therapy/medication) if present",
+      "Symptom frequency/severity and functional impact (work, relationships, sleep)",
+      "Stressors/events documented where possible (records or statements)",
+      "Any relevant exam results (e.g., C&P mental health exam) if performed"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  }
 ]

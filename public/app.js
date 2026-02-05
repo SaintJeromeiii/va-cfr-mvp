@@ -4,6 +4,32 @@ function normalize(s) {
   return (s || "").toLowerCase().trim();
 }
 
+function escapeHtml(str) {
+  return (str ?? "")
+    .toString()
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function escapeRegExp(str) {
+  return (str ?? "").toString().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function highlight(text, query) {
+  const q = normalize(query);
+  const t = (text ?? "").toString();
+  if (!q) return escapeHtml(t);
+
+  // highlight is based on the raw query, but case-insensitive
+  const re = new RegExp(escapeRegExp(q), "ig");
+  return escapeHtml(t).replace(re, (m) => `<mark class="hl">${m}</mark>`);
+}
+
+
+
 function systemClassName(bodySystem) {
   const s = normalize(bodySystem);
 
@@ -40,6 +66,51 @@ function matches(condition, query) {
 
   return hay.some(x => x.includes(q));
 }
+
+function matchReason(condition, query) {
+  const q = normalize(query);
+  if (!q) return "";
+
+  // DC match
+  for (const r of (condition.cfr || [])) {
+    const dc = normalize(r.diagnostic_code);
+    if (dc === q) return "Diagnostic Code";
+    if (dc.includes(q)) return "Diagnostic Code (partial)";
+  }
+
+  // CFR section match
+  for (const r of (condition.cfr || [])) {
+    const section = normalize(r.section);
+    const short = normalize((r.section || "").replace("38 cfr §", "").trim());
+    if (short === q || section === q) return "CFR Section";
+    if (short.includes(q) || section.includes(q)) return "CFR Section (partial)";
+  }
+
+  // Name match
+  const name = normalize(condition.name);
+  if (name === q) return "Name";
+  if (name.startsWith(q)) return "Name (starts with)";
+  if (name.includes(q)) return "Name (contains)";
+
+  // ID match
+  const id = normalize(condition.id);
+  if (id === q) return "ID";
+  if (id.includes(q)) return "ID (partial)";
+
+  // Alias match
+  const aliases = (condition.aliases || []).map(normalize);
+  if (aliases.some(a => a === q)) return "Alias";
+  if (aliases.some(a => a.startsWith(q))) return "Alias (starts with)";
+  if (aliases.some(a => a.includes(q))) return "Alias (contains)";
+
+  // CFR title match
+  const titles = (condition.cfr || []).map(r => normalize(r.title));
+  if (titles.some(t => t.includes(q))) return "CFR Title";
+
+  return "Match";
+}
+
+
 
 function scoreMatch(condition, query) {
   const q = normalize(query);
@@ -102,6 +173,7 @@ function renderResults(list) {
     return;
   }
 
+
   list.forEach(item => {
     const div = document.createElement("div");
     div.className = `result ${systemClassName(item.body_system)}`;
@@ -109,14 +181,32 @@ function renderResults(list) {
     const dc = (item.cfr && item.cfr.length) ? item.cfr[0].diagnostic_code : "";
     const sys = item.body_system || "";
 
-    div.innerHTML = `
-      <div class="metaRow">
-        ${sys ? `<span class="systemBadge ${systemClassName(sys)}">${sys}</span>` : ""}
-        ${dc ? `<span class="dcBadge">DC ${dc}</span>` : ""}
-      </div>
-      <div><strong>${item.name}</strong></div>
-      <div class="small">Aliases: ${(item.aliases || []).slice(0,3).join(", ")}${(item.aliases||[]).length>3 ? "…" : ""}</div>
-    `;
+   const reason = matchReason(item, (document.getElementById("q")?.value || ""));
+
+const q = document.getElementById("q")?.value || "";
+
+const nameHTML = highlight(item.name, q);
+const aliasesPreview = (item.aliases || []).slice(0, 3).join(", ");
+const aliasesHTML = highlight(aliasesPreview, q);
+
+div.innerHTML = `
+  <div class="metaRow">
+    ${sys ? `<span class="systemBadge ${systemClassName(sys)}">${escapeHtml(sys)}</span>` : ""}
+    ${dc ? `<span class="dcBadge">${highlight(`DC ${dc}`, q)}</span>` : ""}
+  </div>
+
+  <div><strong>${nameHTML}</strong></div>
+
+  ${
+    (q || "").trim()
+      ? `<div class="matchNote">Matched: <strong>${escapeHtml(matchReason(item, q))}</strong></div>`
+      : ""
+  }
+
+  <div class="small">Aliases: ${aliasesHTML}${(item.aliases || []).length > 3 ? "…" : ""}</div>
+`;
+
+
 
     div.addEventListener("click", () => showDetail(item.id));
     el.appendChild(div);
