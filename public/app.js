@@ -4,6 +4,50 @@ function normalize(s) {
   return (s || "").toLowerCase().trim();
 }
 
+function parseCommandQuery(raw) {
+  const q = (raw || "").trim();
+  const lower = q.toLowerCase();
+
+  // Normalize separators: "dc:8100" -> "dc 8100"
+  const normalized = lower.replace(/[:=]/g, " ").replace(/\s+/g, " ").trim();
+
+  // Quick commands (no args)
+  if (normalized === "notes" || normalized === "note") {
+    return { mode: "jump", jump: "notes", text: "" };
+  }
+  if (normalized === "evidence" || normalized === "checklist") {
+    return { mode: "jump", jump: "evidence", text: "" };
+  }
+
+  // dc command
+  const dcMatch = normalized.match(/^(dc)\s+(\d{3,5})$/);
+  if (dcMatch) {
+    return { mode: "jump", jump: dcMatch[2], text: dcMatch[2] };
+  }
+
+  // sec / section command (4.124a)
+  const secMatch = normalized.match(/^(sec|section|§)\s+([0-9]+\.[0-9]+[a-z]?)$/);
+  if (secMatch) {
+    return { mode: "jump", jump: secMatch[2], text: secMatch[2] };
+  }
+
+  // Allow direct section like "§4.124a" without space
+  const directSec = normalized.match(/^§?([0-9]+\.[0-9]+[a-z]?)$/);
+  if (directSec && q.includes("§")) {
+    return { mode: "jump", jump: directSec[1], text: directSec[1] };
+  }
+
+  // system command: "system neurological" or "system:ear"
+  const sysMatch = normalized.match(/^(system|sys)\s+(.+)$/);
+  if (sysMatch) {
+    return { mode: "system", system: sysMatch[2].trim(), text: "" };
+  }
+
+  // Default: treat as normal search text
+  return { mode: "text", text: q };
+}
+
+
 function escapeHtml(str) {
   return (str ?? "")
     .toString()
@@ -384,7 +428,13 @@ function renderResults(list) {
 
 
 
-    div.addEventListener("click", () => showDetail(item.id));
+    div.addEventListener("click", () => {
+      const raw = document.getElementById("q")?.value || "";
+      const parsed = parseCommandQuery(raw);
+      const hint = parsed.mode === "jump" ? parsed.jump : raw;
+      showDetail(item.id, true, hint);
+    });
+
     el.appendChild(div);
   });
 }
@@ -755,12 +805,12 @@ ${excerptsHTML}
     const h = hint.toLowerCase().trim();
     showIndicator(`Jumped to: ${hint}`);
 
-      if (hint.toLowerCase().includes("note")) {
-    const notesAnchor = document.getElementById("jump-notes");
-    if (notesAnchor) notesAnchor.scrollIntoView({ behavior: "smooth", block: "start" });
-    const notesEl = document.getElementById("notes");
-    if (notesEl) setTimeout(() => notesEl.focus(), 150);
-  }
+    if (hint.toLowerCase().includes("note")) {
+      const notesAnchor = document.getElementById("jump-notes");
+      if (notesAnchor) notesAnchor.scrollIntoView({ behavior: "smooth", block: "start" });
+      const notesEl = document.getElementById("notes");
+      if (notesEl) setTimeout(() => notesEl.focus(), 150);
+    }
 
 
     const rows = el.querySelectorAll("li[data-dc-id], li[data-sec-id]");
@@ -833,8 +883,25 @@ async function init() {
   });
 
   function applyFilters() {
-    const q = input.value || "";
+    const parsed = parseCommandQuery(input.value || "");
+    const q = parsed.mode === "text" ? parsed.text : (parsed.text || "");
+
+    // If user typed a system command, set the dropdown automatically
+    if (parsed.mode === "system" && parsed.system) {
+      // best-effort match against dropdown values
+      const target = parsed.system.toLowerCase();
+      const options = [...filter.options].map(o => o.value).filter(Boolean);
+
+      const found = options.find(v => v.toLowerCase() === target)
+        || options.find(v => v.toLowerCase().includes(target))
+        || options.find(v => target.includes(v.toLowerCase()));
+
+      if (found) filter.value = found;
+    }
+
+
     const sys = filter.value || "";
+
 
     let filtered = CONDITIONS.filter(c => {
       const sysOk = !sys || c.body_system === sys;
