@@ -3,11 +3,12 @@
   "version": "1.0.0",
   "description": "VA CFR Finder MVP",
   "main": "server.js",
-  "scripts": {
+"scripts": {
   "start": "node server.js",
   "dev": "set NODE_ENV=development&& nodemon server.js",
-  "save": "git add . && git commit -m \"auto save\" && git push"
-},
+  "save": "node scripts/git-save.js"
+}
+,
 
   "author": "",
   "license": "ISC",
