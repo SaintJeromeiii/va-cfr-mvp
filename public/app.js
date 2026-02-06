@@ -110,6 +110,75 @@ function matchReason(condition, query) {
   return "Match";
 }
 
+function cfrSummary(condition) {
+  const refs = (condition.cfr || []).slice(0, 2);
+  if (!refs.length) return "";
+
+  const parts = refs.map(r => {
+    const short = (r.section || "").replace(/38\s*cfr\s*§/i, "").trim();
+    const dc = r.diagnostic_code ? `DC ${r.diagnostic_code}` : "";
+    const title = r.title || "";
+    const sec = short ? `§ ${short}` : (r.section || "");
+    return `${sec}${dc ? ` • ${dc}` : ""}${title ? ` • ${title}` : ""}`;
+  });
+
+  return parts.join(" | ");
+}
+
+function smartJumpAfterDetailRender(query) {
+  const q = normalize(query);
+  if (!q) return;
+
+  const detail = document.getElementById("detail");
+  if (!detail) return;
+
+  // Helper: try to find a CFR <li> that matches DC or section
+  function findCfrLiBy(queryNorm) {
+    const lis = detail.querySelectorAll("li[data-dc-id], li[data-sec-id]");
+    for (const li of lis) {
+      const dcId = li.getAttribute("data-dc-id") || "";
+      const secId = li.getAttribute("data-sec-id") || "";
+
+      // DC: 8520 -> jump-dc-8520
+      if (/^\d{3,5}$/.test(queryNorm) && dcId === `jump-dc-${queryNorm}`) return li;
+
+      // Section: 4.124a -> jump-sec-4.124a
+      if (/^\d+\.\d+[a-z]?$/.test(queryNorm)) {
+        const clean = queryNorm.replace(/[^a-z0-9.]+/g, "");
+        if (secId === `jump-sec-${clean}`) return li;
+      }
+    }
+    return null;
+  }
+
+  // 1) DC jump (most specific)
+  if (/^\d{3,5}$/.test(q)) {
+    const li = findCfrLiBy(q);
+    if (li) return li.scrollIntoView({ behavior: "smooth", block: "start" });
+    const refs = document.getElementById("jump-refs");
+    if (refs) return refs.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  // 2) CFR section jump (e.g., 4.124a) to the exact li if possible
+  if (/^\d+\.\d+[a-z]?$/.test(q)) {
+    const li = findCfrLiBy(q);
+    if (li) return li.scrollIntoView({ behavior: "smooth", block: "start" });
+    const cfr = document.getElementById("jump-cfr");
+    if (cfr) return cfr.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  // 3) Keyword-based rating jump (cpap, flare-ups, etc.)
+  if (q.includes("cpap") || q.includes("hypersomnol") || q.includes("prostrat") || q.includes("flare")) {
+    const rating = document.getElementById("jump-rating");
+    if (rating) return rating.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  // Fallback
+  const cfr = document.getElementById("jump-cfr");
+  if (cfr) cfr.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+
 
 
 function scoreMatch(condition, query) {
@@ -173,38 +242,67 @@ function renderResults(list) {
     return;
   }
 
+  const q = document.getElementById("q")?.value || "";
 
   list.forEach(item => {
     const div = document.createElement("div");
     div.className = `result ${systemClassName(item.body_system)}`;
 
-    const dc = (item.cfr && item.cfr.length) ? item.cfr[0].diagnostic_code : "";
     const sys = item.body_system || "";
+    const dc = (item.cfr && item.cfr.length) ? item.cfr[0].diagnostic_code : "";
 
-   const reason = matchReason(item, (document.getElementById("q")?.value || ""));
+    const nameHTML = highlight(item.name, q);
+    const aliasesPreview = (item.aliases || []).slice(0, 3).join(", ");
+    const aliasesHTML = highlight(aliasesPreview, q);
 
-const q = document.getElementById("q")?.value || "";
+    const reason = matchReason(item, q);
 
-const nameHTML = highlight(item.name, q);
-const aliasesPreview = (item.aliases || []).slice(0, 3).join(", ");
-const aliasesHTML = highlight(aliasesPreview, q);
+    const cfrLine = cfrSummary(item);
+    const cfrHTML = cfrLine ? highlight(cfrLine, q) : "";
 
-div.innerHTML = `
-  <div class="metaRow">
-    ${sys ? `<span class="systemBadge ${systemClassName(sys)}">${escapeHtml(sys)}</span>` : ""}
-    ${dc ? `<span class="dcBadge">${highlight(`DC ${dc}`, q)}</span>` : ""}
-  </div>
+    div.innerHTML = `
+      <div class="metaRow">
+        ${sys ? `<span class="systemBadge ${systemClassName(sys)}">${escapeHtml(sys)}</span>` : ""}
+        ${dc ? `<span class="dcBadge">${highlight(`DC ${dc}`, q)}</span>` : ""}
+      </div>
 
-  <div><strong>${nameHTML}</strong></div>
+      <div><strong>${nameHTML}</strong></div>
 
-  ${
-    (q || "").trim()
-      ? `<div class="matchNote">Matched: <strong>${escapeHtml(matchReason(item, q))}</strong></div>`
-      : ""
-  }
+      ${
+  cfrHTML
+    ? `<div class="cfrLine">
+         <span class="cfrJump"
+           data-dc="${escapeHtml(dc)}"
+           data-sec="${escapeHtml((item.cfr?.[0]?.section || "").replace(/38\\s*cfr\\s*§/i, "").trim())}">
+           CFR: ${cfrHTML}
+         </span>
+       </div>`
+    : ""
+}
 
-  <div class="small">Aliases: ${aliasesHTML}${(item.aliases || []).length > 3 ? "…" : ""}</div>
-`;
+
+      ${
+        (q || "").trim()
+          ? `<div class="matchNote">Matched: <strong>${escapeHtml(reason)}</strong></div>`
+          : ""
+      }
+
+      <div class="small">Aliases: ${aliasesHTML}${(item.aliases || []).length > 3 ? "…" : ""}</div>
+    `;
+const cfrJumpEl = div.querySelector(".cfrJump");
+if (cfrJumpEl) {
+  cfrJumpEl.addEventListener("click", (e) => {
+    e.stopPropagation();
+
+    const dcHint = (e.currentTarget.dataset.dc || "").trim();
+    const secHint = (e.currentTarget.dataset.sec || "").trim();
+
+    // Prefer DC if it exists, otherwise use section
+    const hint = dcHint || secHint;
+    showDetail(item.id, true, hint);
+  });
+}
+
 
 
 
@@ -212,6 +310,7 @@ div.innerHTML = `
     el.appendChild(div);
   });
 }
+
 
 
 function buildReferencesHTML(item) {
@@ -291,11 +390,27 @@ function renderDetail(item) {
 
   // --- CFR links ---
   const cfrLinks = (item.cfr || [])
-    .map(
-      (r) =>
-        `<li><span class="badge">${r.section}</span> DC <strong>${r.diagnostic_code}</strong> — ${r.title} — <a href="${r.url}" target="_blank" rel="noreferrer">Open source</a></li>`
-    )
-    .join("");
+  .map((r) => {
+    const dc = (r.diagnostic_code || "").toString().trim();
+    const secShort = (r.section || "")
+      .replace(/38\s*cfr\s*§/i, "")
+      .trim()
+      .toLowerCase();
+
+    const dcId = dc ? `jump-dc-${dc}` : "";
+    const secId = secShort ? `jump-sec-${secShort.replace(/[^a-z0-9.]+/g, "")}` : "";
+
+    // Put both ids in data- attributes so we can target either
+    return `
+      <li data-dc-id="${dcId}" data-sec-id="${secId}">
+        <span class="badge">${r.section}</span>
+        DC <strong>${r.diagnostic_code}</strong> — ${r.title}
+        — <a href="${r.url}" target="_blank" rel="noreferrer">Open source</a>
+      </li>
+    `;
+  })
+  .join("");
+
 
     
 
@@ -361,6 +476,10 @@ function renderDetail(item) {
 
 <h2 style="margin-top:6px">${item.name}</h2>
 
+<div id="jumpIndicator" class="jumpIndicator hidden">
+  <span id="jumpIndicatorText"></span>
+  <button id="jumpIndicatorClose" class="jumpIndicatorClose" type="button" aria-label="Close">×</button>
+</div>
 
 
     <div class="small">${item.disclaimer || ""}</div>
@@ -369,21 +488,22 @@ function renderDetail(item) {
 
     <hr/>
 
-    <h3>Where it fits in 38 CFR</h3>
+    <h3 id="jump-cfr">Where it fits in 38 CFR</h3>
 <ul>${cfrLinks}</ul>
 
-${refsHTML}
+${refsHTML ? `<div id="jump-refs"></div>${refsHTML}` : ""}
+
 
 ${excerptsHTML}
 
 <hr/>
-<h3>How VA rates it (high-level)</h3>
+<h3 id="jump-rating">How VA rates it (high-level)</h3>
 
     ${ratingBlock}
 
     <hr/>
 
-    <h3>General evidence categories (educational)</h3>
+    <h3 id="jump-evidence">General evidence categories (educational)</h3>
     <ul>${evidence}</ul>
 
     <hr/>
@@ -403,18 +523,78 @@ ${excerptsHTML}
       alert("Link copied!");
     });
   }
+
+// --- CFR Jump Highlighter + Indicator ---
+const params = new URLSearchParams(window.location.search);
+const hint = params.get("jump");
+
+const indicator = document.getElementById("jumpIndicator");
+const indicatorText = document.getElementById("jumpIndicatorText");
+const indicatorClose = document.getElementById("jumpIndicatorClose");
+
+function showIndicator(msg) {
+  if (!indicator || !indicatorText) return;
+  indicatorText.textContent = msg;
+  indicator.classList.remove("hidden");
+
+  // Auto-hide after 4 seconds
+  window.clearTimeout(window.__jumpIndicatorTimer);
+  window.__jumpIndicatorTimer = window.setTimeout(() => {
+    indicator.classList.add("hidden");
+  }, 4000);
+}
+
+if (indicatorClose) {
+  indicatorClose.addEventListener("click", () => {
+    indicator?.classList.add("hidden");
+  });
+}
+
+if (hint) {
+  const h = hint.toLowerCase().trim();
+  showIndicator(`Jumped to: ${hint}`);
+
+  const rows = el.querySelectorAll("li[data-dc-id], li[data-sec-id]");
+
+  rows.forEach(row => {
+    const dc = row.dataset.dcId || "";
+    const sec = row.dataset.secId || "";
+
+    if (dc.includes(h) || sec.includes(h)) {
+      row.classList.add("cfrFocus");
+      row.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  });
+
+  history.replaceState(history.state, "", window.location.pathname);
+
+}
+
 }
 
 
-async function showDetail(id, pushState = true) {
+async function showDetail(id, pushState = true, jumpHint = "") {
+  const hint = (jumpHint || document.getElementById("q")?.value || "").trim();
+
+  // ✅ IMPORTANT: update URL FIRST so renderDetail reads the correct ?jump=
+  if (pushState) {
+    const url = hint
+      ? `/condition/${id}?jump=${encodeURIComponent(hint)}`
+      : `/condition/${id}`;
+
+    history.pushState({ id, jump: hint }, "", url);
+  }
+
   const res = await fetch(`/api/conditions/${id}`);
   const item = await res.json();
+
   renderDetail(item);
 
-  if (pushState) {
-    history.pushState({ id }, "", `/condition/${id}`);
-  }
+  // Jump immediately too (smooth UX)
+  smartJumpAfterDetailRender(hint);
 }
+
+
 
 async function init() {
   const res = await fetch("/api/conditions");

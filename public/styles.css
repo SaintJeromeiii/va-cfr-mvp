@@ -151,3 +151,47 @@ mark.hl {
   padding: 0 3px;
   border-radius: 6px;
 }
+
+
+.cfrLine {
+  margin-top: 6px;
+  font-size: 0.9rem;
+  opacity: 0.92;
+}
+
+.cfrJump {
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.cfrJump:hover {
+  opacity: 1;
+}
+
+.jumpIndicator {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 10px 0 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.12);
+  background: rgba(255, 230, 120, 0.22);
+  font-size: 0.95rem;
+}
+
+.jumpIndicatorClose {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+
+.jumpIndicatorClose:hover {
+  background: rgba(0,0,0,0.06);
+}
