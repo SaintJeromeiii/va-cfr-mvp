@@ -14,6 +14,72 @@ function escapeHtml(str) {
     .replaceAll("'", "&#039;");
 }
 
+function evidenceKey(conditionId) {
+  return `vaCfrEvidence:${conditionId}`;
+}
+
+function loadEvidenceState(conditionId) {
+  try {
+    return JSON.parse(localStorage.getItem(evidenceKey(conditionId)) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function saveEvidenceState(conditionId, stateObj) {
+  localStorage.setItem(evidenceKey(conditionId), JSON.stringify(stateObj || {}));
+}
+
+function notesKey(conditionId) {
+  return `vaCfrNotes:${conditionId}`;
+}
+
+function loadNotes(conditionId) {
+  return localStorage.getItem(notesKey(conditionId)) || "";
+}
+
+function saveNotes(conditionId, text) {
+  localStorage.setItem(notesKey(conditionId), (text ?? "").toString());
+}
+
+
+
+function exportChecklistText(item, state) {
+  const lines = [];
+  lines.push(`${item.name} — Evidence Checklist`);
+  lines.push(`(Educational tool; not legal advice)`);
+  lines.push("");
+  (item.evidence_checklist || []).forEach((t, i) => {
+    const checked = !!state[i];
+    lines.push(`${checked ? "[x]" : "[ ]"} ${t}`);
+  });
+  lines.push("");
+  lines.push("");
+  lines.push("Notes:");
+  const notes = loadNotes(item.id).trim();
+  lines.push(notes ? notes : "(none)");
+  lines.push("");
+  lines.push(`Source links:`);
+  (item.cfr || []).forEach(r => {
+    lines.push(`- ${r.section} DC ${r.diagnostic_code}: ${r.url}`);
+  });
+  return lines.join("\n");
+}
+
+function downloadText(filename, text) {
+  const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+
+
 function escapeRegExp(str) {
   return (str ?? "").toString().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -128,6 +194,20 @@ function cfrSummary(condition) {
 function smartJumpAfterDetailRender(query) {
   const q = normalize(query);
   if (!q) return;
+
+  // Notes jump (special)
+  if (q === "notes" || q === "note" || q.includes("notes")) {
+    const notesAnchor = document.getElementById("jump-notes");
+    if (notesAnchor) notesAnchor.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    const notesEl = document.getElementById("notes");
+    if (notesEl) {
+      // small delay helps after scroll/render
+      setTimeout(() => notesEl.focus(), 150);
+    }
+    return;
+  }
+
 
   const detail = document.getElementById("detail");
   if (!detail) return;
@@ -268,40 +348,38 @@ function renderResults(list) {
 
       <div><strong>${nameHTML}</strong></div>
 
-      ${
-  cfrHTML
-    ? `<div class="cfrLine">
+      ${cfrHTML
+        ? `<div class="cfrLine">
          <span class="cfrJump"
            data-dc="${escapeHtml(dc)}"
            data-sec="${escapeHtml((item.cfr?.[0]?.section || "").replace(/38\\s*cfr\\s*§/i, "").trim())}">
            CFR: ${cfrHTML}
          </span>
        </div>`
-    : ""
-}
+        : ""
+      }
 
 
-      ${
-        (q || "").trim()
-          ? `<div class="matchNote">Matched: <strong>${escapeHtml(reason)}</strong></div>`
-          : ""
+      ${(q || "").trim()
+        ? `<div class="matchNote">Matched: <strong>${escapeHtml(reason)}</strong></div>`
+        : ""
       }
 
       <div class="small">Aliases: ${aliasesHTML}${(item.aliases || []).length > 3 ? "…" : ""}</div>
     `;
-const cfrJumpEl = div.querySelector(".cfrJump");
-if (cfrJumpEl) {
-  cfrJumpEl.addEventListener("click", (e) => {
-    e.stopPropagation();
+    const cfrJumpEl = div.querySelector(".cfrJump");
+    if (cfrJumpEl) {
+      cfrJumpEl.addEventListener("click", (e) => {
+        e.stopPropagation();
 
-    const dcHint = (e.currentTarget.dataset.dc || "").trim();
-    const secHint = (e.currentTarget.dataset.sec || "").trim();
+        const dcHint = (e.currentTarget.dataset.dc || "").trim();
+        const secHint = (e.currentTarget.dataset.sec || "").trim();
 
-    // Prefer DC if it exists, otherwise use section
-    const hint = dcHint || secHint;
-    showDetail(item.id, true, hint);
-  });
-}
+        // Prefer DC if it exists, otherwise use section
+        const hint = dcHint || secHint;
+        showDetail(item.id, true, hint);
+      });
+    }
 
 
 
@@ -330,8 +408,8 @@ function buildReferencesHTML(item) {
       ${source ? ` — <a href="${source}" target="_blank" rel="noreferrer">Source</a>` : ""}</p>
       <ul>
         ${item.rating_logic.levels
-          .map(l => `<li><strong>${l.level}</strong> → <strong>${l.rating_percent}%</strong></li>`)
-          .join("")}
+        .map(l => `<li><strong>${l.level}</strong> → <strong>${l.rating_percent}%</strong></li>`)
+        .join("")}
       </ul>
     `;
   }
@@ -345,8 +423,8 @@ function buildReferencesHTML(item) {
       ${source ? ` — <a href="${source}" target="_blank" rel="noreferrer">Source</a>` : ""}</p>
       <ul>
         ${item.rating_logic.thresholds
-          .map(t => `<li>Flexion limited to <strong>${t.flexion_deg}°</strong> → <strong>${t.rating_percent}%</strong></li>`)
-          .join("")}
+        .map(t => `<li>Flexion limited to <strong>${t.flexion_deg}°</strong> → <strong>${t.rating_percent}%</strong></li>`)
+        .join("")}
       </ul>
     `;
   }
@@ -377,10 +455,9 @@ function renderDetail(item) {
           (e) => `
             <p><strong>${e.label || "Excerpt"}</strong></p>
             <p class="small">${e.text || ""}</p>
-            ${
-              e.source_url
-                ? `<p><a href="${e.source_url}" target="_blank" rel="noreferrer">View Source</a></p>`
-                : ""
+            ${e.source_url
+              ? `<p><a href="${e.source_url}" target="_blank" rel="noreferrer">View Source</a></p>`
+              : ""
             }
           `
         )
@@ -390,31 +467,31 @@ function renderDetail(item) {
 
   // --- CFR links ---
   const cfrLinks = (item.cfr || [])
-  .map((r) => {
-    const dc = (r.diagnostic_code || "").toString().trim();
-    const secShort = (r.section || "")
-      .replace(/38\s*cfr\s*§/i, "")
-      .trim()
-      .toLowerCase();
+    .map((r) => {
+      const dc = (r.diagnostic_code || "").toString().trim();
+      const secShort = (r.section || "")
+        .replace(/38\s*cfr\s*§/i, "")
+        .trim()
+        .toLowerCase();
 
-    const dcId = dc ? `jump-dc-${dc}` : "";
-    const secId = secShort ? `jump-sec-${secShort.replace(/[^a-z0-9.]+/g, "")}` : "";
+      const dcId = dc ? `jump-dc-${dc}` : "";
+      const secId = secShort ? `jump-sec-${secShort.replace(/[^a-z0-9.]+/g, "")}` : "";
 
-    // Put both ids in data- attributes so we can target either
-    return `
+      // Put both ids in data- attributes so we can target either
+      return `
       <li data-dc-id="${dcId}" data-sec-id="${secId}">
         <span class="badge">${r.section}</span>
         DC <strong>${r.diagnostic_code}</strong> — ${r.title}
         — <a href="${r.url}" target="_blank" rel="noreferrer">Open source</a>
       </li>
     `;
-  })
-  .join("");
+    })
+    .join("");
 
 
-    
 
-    const refsHTML = buildReferencesHTML(item);
+
+  const refsHTML = buildReferencesHTML(item);
 
 
   // --- Rating block ---
@@ -427,11 +504,11 @@ function renderDetail(item) {
     ratingBlock += `
       <ul>
         ${item.rating_logic.thresholds
-          .map(
-            (t) =>
-              `<li>Flexion limited to <strong>${t.flexion_deg}°</strong> → <strong>${t.rating_percent}%</strong></li>`
-          )
-          .join("")}
+        .map(
+          (t) =>
+            `<li>Flexion limited to <strong>${t.flexion_deg}°</strong> → <strong>${t.rating_percent}%</strong></li>`
+        )
+        .join("")}
       </ul>
     `;
   }
@@ -443,11 +520,11 @@ function renderDetail(item) {
     ratingBlock += `
       <ul>
         ${item.rating_logic.levels
-          .map(
-            (l) =>
-              `<li><strong>${l.level}</strong> → <strong>${l.rating_percent}%</strong></li>`
-          )
-          .join("")}
+        .map(
+          (l) =>
+            `<li><strong>${l.level}</strong> → <strong>${l.rating_percent}%</strong></li>`
+        )
+        .join("")}
       </ul>
     `;
   }
@@ -457,21 +534,37 @@ function renderDetail(item) {
     .map((x) => `<li>${x}</li>`)
     .join("");
 
+  const evidenceState = loadEvidenceState(item.id);
+  const evidenceItems = item.evidence_checklist || [];
+
+  const evidenceChecksHTML = evidenceItems
+    .map((text, idx) => {
+      const checked = evidenceState[idx] ? "checked" : "";
+      return `
+      <label class="evItem">
+        <input type="checkbox" class="evCheck" data-idx="${idx}" ${checked} />
+        <span>${escapeHtml(text)}</span>
+      </label>
+    `;
+    })
+    .join("");
+
+  const completedCount = evidenceItems.reduce((acc, _, idx) => acc + (evidenceState[idx] ? 1 : 0), 0);
+
+
   // --- Render ---
   el.innerHTML = `
     <div class="metaRow">
-  ${
-    item.body_system
+  ${item.body_system
       ? `<span class="systemBadge ${systemClassName(item.body_system)}">${item.body_system}</span>
 `
       : ""
-  }
+    }
 
-  ${
-    item.cfr && item.cfr.length
+  ${item.cfr && item.cfr.length
       ? `<span class="dcBadge">DC ${item.cfr[0].diagnostic_code}</span>`
       : ""
-  }
+    }
 </div>
 
 <h2 style="margin-top:6px">${item.name}</h2>
@@ -503,10 +596,39 @@ ${excerptsHTML}
 
     <hr/>
 
-    <h3 id="jump-evidence">General evidence categories (educational)</h3>
-    <ul>${evidence}</ul>
+    <h3 id="jump-evidence">Evidence checklist (trackable)</h3>
+
+<div class="evHeader">
+  <div class="evProgress">
+    <strong id="evCount">${completedCount}</strong> / <strong>${evidenceItems.length}</strong> complete
+  </div>
+
+  <div class="evBtns">
+    <button id="evCopy" class="miniBtn" type="button">Copy</button>
+    <button id="evExport" class="miniBtn" type="button">Export .txt</button>
+    <button id="evClear" class="miniBtn danger" type="button">Clear</button>
+  </div>
+</div>
+
+<div id="evList" class="evList">
+  ${evidenceChecksHTML || `<div class="small">No checklist provided for this condition yet.</div>`}
+</div>
+
 
     <hr/>
+
+    <hr/>
+
+<h3 id="jump-notes">Notes (saved locally)</h3>
+
+<div class="notesWrap">
+  <textarea id="notes" class="notesBox" placeholder="Add your notes here (saved to this browser)…"></textarea>
+  <div class="notesBtns">
+    <button id="notesClear" class="miniBtn danger" type="button">Clear notes</button>
+  </div>
+  <div class="small">Notes are stored in your browser (localStorage) for this device.</div>
+</div>
+
 
     <h3>Get accredited help</h3>
     <p class="small">
@@ -522,53 +644,140 @@ ${excerptsHTML}
       await navigator.clipboard.writeText(window.location.href);
       alert("Link copied!");
     });
+
+    // --- Notes behavior (persist per condition) ---
+    const notesEl = document.getElementById("notes");
+    const notesClearBtn = document.getElementById("notesClear");
+
+    if (notesEl) {
+      notesEl.value = loadNotes(item.id);
+
+      // Auto-save while typing (small debounce)
+      let t;
+      notesEl.addEventListener("input", () => {
+        clearTimeout(t);
+        t = setTimeout(() => saveNotes(item.id, notesEl.value), 200);
+      });
+    }
+
+    if (notesClearBtn) {
+      notesClearBtn.addEventListener("click", () => {
+        saveNotes(item.id, "");
+        if (notesEl) notesEl.value = "";
+      });
+    }
+
   }
 
-// --- CFR Jump Highlighter + Indicator ---
-const params = new URLSearchParams(window.location.search);
-const hint = params.get("jump");
+  // --- Evidence checklist behavior (persist per condition) ---
+  const evList = document.getElementById("evList");
+  const evCountEl = document.getElementById("evCount");
 
-const indicator = document.getElementById("jumpIndicator");
-const indicatorText = document.getElementById("jumpIndicatorText");
-const indicatorClose = document.getElementById("jumpIndicatorClose");
 
-function showIndicator(msg) {
-  if (!indicator || !indicatorText) return;
-  indicatorText.textContent = msg;
-  indicator.classList.remove("hidden");
 
-  // Auto-hide after 4 seconds
-  window.clearTimeout(window.__jumpIndicatorTimer);
-  window.__jumpIndicatorTimer = window.setTimeout(() => {
-    indicator.classList.add("hidden");
-  }, 4000);
-}
+  function updateEvCount() {
+    const st = loadEvidenceState(item.id);
+    const done = (item.evidence_checklist || []).reduce((acc, _, idx) => acc + (st[idx] ? 1 : 0), 0);
+    if (evCountEl) evCountEl.textContent = String(done);
+  }
 
-if (indicatorClose) {
-  indicatorClose.addEventListener("click", () => {
-    indicator?.classList.add("hidden");
-  });
-}
+  if (evList) {
+    evList.addEventListener("change", (e) => {
+      const cb = e.target;
+      if (!cb || !cb.classList || !cb.classList.contains("evCheck")) return;
 
-if (hint) {
-  const h = hint.toLowerCase().trim();
-  showIndicator(`Jumped to: ${hint}`);
+      const idx = Number(cb.dataset.idx);
+      const st = loadEvidenceState(item.id);
+      st[idx] = cb.checked;
+      saveEvidenceState(item.id, st);
+      updateEvCount();
+    });
+  }
 
-  const rows = el.querySelectorAll("li[data-dc-id], li[data-sec-id]");
+  const evCopyBtn = document.getElementById("evCopy");
+  if (evCopyBtn) {
+    evCopyBtn.addEventListener("click", async () => {
+      const st = loadEvidenceState(item.id);
+      const text = exportChecklistText(item, st);
+      await navigator.clipboard.writeText(text);
+      alert("Checklist copied!");
+    });
+  }
 
-  rows.forEach(row => {
-    const dc = row.dataset.dcId || "";
-    const sec = row.dataset.secId || "";
+  const evExportBtn = document.getElementById("evExport");
+  if (evExportBtn) {
+    evExportBtn.addEventListener("click", () => {
+      const st = loadEvidenceState(item.id);
+      const text = exportChecklistText(item, st);
+      const safeName = (item.id || "condition").replace(/[^a-z0-9_-]+/gi, "_");
+      downloadText(`${safeName}_evidence_checklist.txt`, text);
+    });
+  }
 
-    if (dc.includes(h) || sec.includes(h)) {
-      row.classList.add("cfrFocus");
-      row.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-  });
+  const evClearBtn = document.getElementById("evClear");
+  if (evClearBtn) {
+    evClearBtn.addEventListener("click", () => {
+      saveEvidenceState(item.id, {});
+      // uncheck all boxes in UI
+      document.querySelectorAll(".evCheck").forEach(cb => (cb.checked = false));
+      updateEvCount();
+    });
+  }
 
-  history.replaceState(history.state, "", window.location.pathname);
 
-}
+  // --- CFR Jump Highlighter + Indicator ---
+  const params = new URLSearchParams(window.location.search);
+  const hint = params.get("jump");
+
+  const indicator = document.getElementById("jumpIndicator");
+  const indicatorText = document.getElementById("jumpIndicatorText");
+  const indicatorClose = document.getElementById("jumpIndicatorClose");
+
+  function showIndicator(msg) {
+    if (!indicator || !indicatorText) return;
+    indicatorText.textContent = msg;
+    indicator.classList.remove("hidden");
+
+    // Auto-hide after 4 seconds
+    window.clearTimeout(window.__jumpIndicatorTimer);
+    window.__jumpIndicatorTimer = window.setTimeout(() => {
+      indicator.classList.add("hidden");
+    }, 4000);
+  }
+
+  if (indicatorClose) {
+    indicatorClose.addEventListener("click", () => {
+      indicator?.classList.add("hidden");
+    });
+  }
+
+  if (hint) {
+    const h = hint.toLowerCase().trim();
+    showIndicator(`Jumped to: ${hint}`);
+
+      if (hint.toLowerCase().includes("note")) {
+    const notesAnchor = document.getElementById("jump-notes");
+    if (notesAnchor) notesAnchor.scrollIntoView({ behavior: "smooth", block: "start" });
+    const notesEl = document.getElementById("notes");
+    if (notesEl) setTimeout(() => notesEl.focus(), 150);
+  }
+
+
+    const rows = el.querySelectorAll("li[data-dc-id], li[data-sec-id]");
+
+    rows.forEach(row => {
+      const dc = row.dataset.dcId || "";
+      const sec = row.dataset.secId || "";
+
+      if (dc.includes(h) || sec.includes(h)) {
+        row.classList.add("cfrFocus");
+        row.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    });
+
+    history.replaceState(history.state, "", window.location.pathname);
+
+  }
 
 }
 

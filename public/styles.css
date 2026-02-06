@@ -1,32 +1,103 @@
-body { font-family: system-ui, Arial, sans-serif; margin: 0; background: #0b0f14; color: #e8eef6; }
-.container { max-width: 880px; margin: 0 auto; padding: 24px; }
-h1 { margin: 0 0 8px; }
-.sub { margin: 0 0 18px; color: #b8c4d6; }
+body {
+  font-family: system-ui, Arial, sans-serif;
+  margin: 0;
+  background: #0b0f14;
+  color: #e8eef6;
+}
+
+.container {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+h1 {
+  margin: 0 0 8px;
+}
+
+.sub {
+  margin: 0 0 18px;
+  color: #b8c4d6;
+}
+
 .search input {
-  width: 100%; padding: 12px 14px; border-radius: 10px;
-  border: 1px solid #253043; background: #111826; color: #e8eef6;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #253043;
+  background: #111826;
+  color: #e8eef6;
   outline: none;
 }
+
 .controls {
   display: flex;
   gap: 10px;
   align-items: center;
 }
 
-.results { margin-top: 10px; display: grid; gap: 10px; }
-.result {
-  padding: 12px 14px; border: 1px solid #253043; background: #0f1622;
-  border-radius: 12px; cursor: pointer;
+.results {
+  margin-top: 10px;
+  display: grid;
+  gap: 10px;
 }
-.result:hover { border-color: #3b82f6; }
-.detail { margin-top: 18px; border: 1px solid #253043; background: #0f1622; border-radius: 14px; padding: 16px; }
-.hidden { display: none; }
-.badge { display: inline-block; padding: 4px 8px; border-radius: 999px; background: #111826; border: 1px solid #253043; margin-right: 8px; }
-ul { margin: 8px 0 0 18px; }
-a { color: #7ab7ff; text-decoration: none; }
-a:hover { text-decoration: underline; }
-hr { border: none; border-top: 1px solid #253043; margin: 14px 0; }
-.small { color: #b8c4d6; font-size: 0.95rem; }
+
+.result {
+  padding: 12px 14px;
+  border: 1px solid #253043;
+  background: #0f1622;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.result:hover {
+  border-color: #3b82f6;
+}
+
+.detail {
+  margin-top: 18px;
+  border: 1px solid #253043;
+  background: #0f1622;
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.hidden {
+  display: none;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #111826;
+  border: 1px solid #253043;
+  margin-right: 8px;
+}
+
+ul {
+  margin: 8px 0 0 18px;
+}
+
+a {
+  color: #7ab7ff;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #253043;
+  margin: 14px 0;
+}
+
+.small {
+  color: #b8c4d6;
+  font-size: 0.95rem;
+}
 
 .dcBadge {
   margin-left: 10px;
@@ -52,8 +123,9 @@ hr { border: none; border-top: 1px solid #253043; margin: 14px 0; }
   font-size: 0.8rem;
   color: #9cc9ff;
 }
+
 /* ===== Body system color tokens ===== */
-:root{
+:root {
   --sys-default-bg: #111826;
   --sys-default-bd: #253043;
   --sys-default-fg: #e8eef6;
@@ -104,34 +176,84 @@ hr { border: none; border-top: 1px solid #253043; margin: 14px 0; }
 }
 
 /* System color variants */
-.systemBadge.sys-mental-health { background: var(--sys-mental-bg); border-color: var(--sys-mental-bd); color: var(--sys-mental-fg); }
-.systemBadge.sys-neurological  { background: var(--sys-neuro-bg);  border-color: var(--sys-neuro-bd);  color: var(--sys-neuro-fg);  }
-.systemBadge.sys-musculoskeletal { background: var(--sys-msk-bg); border-color: var(--sys-msk-bd); color: var(--sys-msk-fg); }
-.systemBadge.sys-ear           { background: var(--sys-ear-bg);    border-color: var(--sys-ear-bd);    color: var(--sys-ear-fg);   }
-.systemBadge.sys-respiratory   { background: var(--sys-resp-bg);   border-color: var(--sys-resp-bd);   color: var(--sys-resp-fg);  }
-.systemBadge.sys-cardiovascular{ background: var(--sys-cardio-bg); border-color: var(--sys-cardio-bd); color: var(--sys-cardio-fg); }
+.systemBadge.sys-mental-health {
+  background: var(--sys-mental-bg);
+  border-color: var(--sys-mental-bd);
+  color: var(--sys-mental-fg);
+}
+
+.systemBadge.sys-neurological {
+  background: var(--sys-neuro-bg);
+  border-color: var(--sys-neuro-bd);
+  color: var(--sys-neuro-fg);
+}
+
+.systemBadge.sys-musculoskeletal {
+  background: var(--sys-msk-bg);
+  border-color: var(--sys-msk-bd);
+  color: var(--sys-msk-fg);
+}
+
+.systemBadge.sys-ear {
+  background: var(--sys-ear-bg);
+  border-color: var(--sys-ear-bd);
+  color: var(--sys-ear-fg);
+}
+
+.systemBadge.sys-respiratory {
+  background: var(--sys-resp-bg);
+  border-color: var(--sys-resp-bd);
+  color: var(--sys-resp-fg);
+}
+
+.systemBadge.sys-cardiovascular {
+  background: var(--sys-cardio-bg);
+  border-color: var(--sys-cardio-bd);
+  color: var(--sys-cardio-fg);
+}
 
 /* Optional: make result cards react to system color (subtle left bar) */
 .result {
   position: relative;
 }
-.result::before{
-  content:"";
-  position:absolute;
-  left:0; top:0; bottom:0;
+
+.result::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
   width: 6px;
   border-radius: 10px 0 0 10px;
   background: var(--sys-default-bd);
   opacity: 0.9;
 }
-.result.sys-mental-health::before { background: var(--sys-mental-bd); }
-.result.sys-neurological::before { background: var(--sys-neuro-bd); }
-.result.sys-musculoskeletal::before { background: var(--sys-msk-bd); }
-.result.sys-ear::before { background: var(--sys-ear-bd); }
-.result.sys-respiratory::before { background: var(--sys-resp-bd); }
-.result.sys-cardiovascular::before { background: var(--sys-cardio-bd); }
 
-.clearBtn{
+.result.sys-mental-health::before {
+  background: var(--sys-mental-bd);
+}
+
+.result.sys-neurological::before {
+  background: var(--sys-neuro-bd);
+}
+
+.result.sys-musculoskeletal::before {
+  background: var(--sys-msk-bd);
+}
+
+.result.sys-ear::before {
+  background: var(--sys-ear-bd);
+}
+
+.result.sys-respiratory::before {
+  background: var(--sys-resp-bd);
+}
+
+.result.sys-cardiovascular::before {
+  background: var(--sys-cardio-bd);
+}
+
+.clearBtn {
   padding: 12px 14px;
   border-radius: 10px;
   border: 1px solid #253043;
@@ -139,7 +261,10 @@ hr { border: none; border-top: 1px solid #253043; margin: 14px 0; }
   color: #e8eef6;
   cursor: pointer;
 }
-.clearBtn:hover { border-color:#3b82f6; }
+
+.clearBtn:hover {
+  border-color: #3b82f6;
+}
 
 .matchNote {
   margin-top: 6px;
@@ -177,7 +302,7 @@ mark.hl {
   margin: 10px 0 0 0;
   padding: 10px 12px;
   border-radius: 10px;
-  border: 1px solid rgba(0,0,0,0.12);
+  border: 1px solid rgba(0, 0, 0, 0.12);
   background: rgba(255, 230, 120, 0.22);
   font-size: 0.95rem;
 }
@@ -193,5 +318,84 @@ mark.hl {
 }
 
 .jumpIndicatorClose:hover {
-  background: rgba(0,0,0,0.06);
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.evHeader {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  margin: 8px 0 10px 0;
+}
+
+.evProgress {
+  font-size: 0.95rem;
+  opacity: 0.95;
+}
+
+.evBtns {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.miniBtn {
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+}
+
+.miniBtn:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.miniBtn.danger {
+  border-color: rgba(220, 60, 60, 0.35);
+}
+
+.evList {
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.evItem {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.evItem input[type="checkbox"] {
+  margin-top: 2px;
+  transform: scale(1.1);
+}
+
+.notesWrap {
+  display: grid;
+  gap: 10px;
+}
+
+.notesBox {
+  width: 100%;
+  min-height: 140px;
+  resize: vertical;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.12);
+  background: rgba(255,255,255,0.03);
+  font: inherit;
+}
+
+.notesBtns {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
