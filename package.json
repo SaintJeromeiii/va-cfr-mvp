@@ -4,10 +4,11 @@
   "description": "VA CFR Finder MVP",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "set NODE_ENV=development&& nodemon server.js"
+  "start": "node server.js",
+  "dev": "set NODE_ENV=development&& nodemon server.js",
+  "save": "git add . && git commit -m \"auto save\" && git push"
+},
 
-  },
   "author": "",
   "license": "ISC",
   "dependencies": {
