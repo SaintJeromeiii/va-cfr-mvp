@@ -4,10 +4,10 @@
   "description": "VA CFR Finder MVP",
   "main": "server.js",
 "scripts": {
-  "start": "node server.js",
   "dev": "set NODE_ENV=development&& nodemon server.js",
-  "save": "node scripts/git-save.js"
+  "save": "git pull --ff-only && git add . && git diff --cached --quiet || git commit -m \"auto save\" && git push"
 }
+
 ,
 
   "author": "",

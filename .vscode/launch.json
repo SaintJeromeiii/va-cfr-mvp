@@ -1,0 +1,31 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "🚀 Dev Server",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["nodemon", "server.js"],
+      "console": "integratedTerminal",
+      "env": {
+        "NODE_ENV": "development"
+      }
+    },
+      {
+  "name": "🌐 Open Browser (Edge)",
+  "type": "pwa-msedge",
+  "request": "launch",
+  "url": "http://localhost:3000",
+  "webRoot": "${workspaceFolder}/public"
+}
+
+  ],
+  "compounds": [
+    {
+      "name": "🔥 VA CFR MVP (Full Launch)",
+      "configurations": ["🚀 Dev Server", "🌐 Open Browser (Edge)"]
+
+    }
+  ]
+}

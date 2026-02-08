@@ -1,0 +1,22 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "echo",
+            "type": "shell",
+            "command": "echo Hello"
+        },
+        {
+            "label": "Sync (pull fast-forward only)",
+            "type": "shell",
+            "command": "git pull --ff-only",
+            "problemMatcher": []
+        },
+        {
+            "label": "Dev Server",
+            "type": "shell",
+            "command": "npm run dev",
+            "problemMatcher": []
+        }
+    ]
+}
