@@ -543,6 +543,20 @@ function renderDetail(item) {
 
   const refsHTML = buildReferencesHTML(item);
 
+  // --- Strategy block (NEW) ---
+let strategyHTML = "";
+
+if (item.strategy && item.strategy.length) {
+  strategyHTML = `
+    <hr/>
+    <h3>🧭 Claim Strategy (Educational)</h3>
+    <ul>
+      ${item.strategy.map(s => `<li>${escapeHtml(s)}</li>`).join("")}
+    </ul>
+  `;
+}
+
+
 
   // --- Rating block ---
   let ratingBlock = `<p class="small">${item.rating_logic?.summary || ""}</p>`;
@@ -638,6 +652,8 @@ ${refsHTML ? `<div id="jump-refs"></div>${refsHTML}` : ""}
 
 
 ${excerptsHTML}
+
+${strategyHTML}
 
 <hr/>
 <h3 id="jump-rating">How VA rates it (high-level)</h3>

@@ -216,6 +216,13 @@
         }
       ]
     },
+   "strategy": [
+  "Document frequency and severity of headaches.",
+  "Describe prostrating attacks (needing to lie down).",
+  "Show functional impact (missed work, reduced productivity).",
+  "Match symptoms to DC 8100 language (severity ladder)."
+],
+
     "evidence_checklist": [
       "Frequency and severity of headaches documented in medical records or statements",
       "Notes describing prostrating attacks (needing to lie down, inability to function)",
