@@ -424,6 +424,7 @@ function renderResults(list) {
         showDetail(item.id, true, hint);
       });
     }
+    
 
 
 
@@ -656,7 +657,13 @@ ${excerptsHTML}
 ${strategyHTML}
 
 <hr/>
-<h3 id="jump-rating">How VA rates it (high-level)</h3>
+<h3>🧩 Related / Secondary Conditions</h3>
+<div id="secondaryList"></div>
+<button id="addSecondaryBtn" class="secondaryBtn">+ Add secondary condition</button>
+
+<hr/>
+<h3>How VA rates it (high-level)</h3>
+
 
     ${ratingBlock}
 
@@ -710,6 +717,38 @@ ${strategyHTML}
       await navigator.clipboard.writeText(window.location.href);
       alert("Link copied!");
     });
+
+    // --- Secondary condition logic ---
+const secBtn = document.getElementById("addSecondaryBtn");
+const secList = document.getElementById("secondaryList");
+
+if (secBtn && secList) {
+  secBtn.addEventListener("click", () => {
+    const select = document.createElement("select");
+    select.className = "secondarySelect";
+
+    select.innerHTML = `
+      <option value="">Choose a condition…</option>
+      ${CONDITIONS.map(c => `<option value="${c.id}">${c.name}</option>`).join("")}
+    `;
+
+    select.addEventListener("change", () => {
+      const chosen = CONDITIONS.find(c => c.id === select.value);
+      if (!chosen) return;
+
+      const div = document.createElement("div");
+      div.className = "secondaryCard";
+      div.textContent = chosen.name;
+
+      div.addEventListener("click", () => showDetail(chosen.id));
+
+      secList.appendChild(div);
+    });
+
+    secList.appendChild(select);
+  });
+}
+
 
     // --- Notes behavior (persist per condition) ---
     const notesEl = document.getElementById("notes");
