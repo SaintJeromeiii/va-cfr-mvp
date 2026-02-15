@@ -399,3 +399,102 @@ mark.hl {
   gap: 8px;
   flex-wrap: wrap;
 }
+
+/* Evidence readiness bar */
+.evScoreRow {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 8px 0 12px 0;
+}
+.evBar {
+  width: 220px;
+  height: 12px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 8px;
+  border: 1px solid rgba(0,0,0,0.06);
+  overflow: hidden;
+}
+.evBarFill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+  transition: width 320ms ease;
+}
+
+/* Workspace panel styles */
+.wsCard {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.08);
+  background: rgba(255,255,255,0.02);
+  margin-bottom: 8px;
+}
+.wsRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+.wsRowBtns { display: flex; gap: 8px; align-items: center; }
+.wsBarFill {
+  height: 12px;
+  width: 0%;
+  background: linear-gradient(90deg, #10b981, #34d399);
+  border-radius: 8px;
+  transition: width 320ms ease;
+}
+
+.small { font-size: 0.95rem; }
+
+.evScoreRow { display: grid; gap: 8px; margin: 8px 0 10px; }
+.evBar { height: 10px; border-radius: 999px; background: rgba(255,255,255,0.12); overflow: hidden; }
+.evBarFill { height: 100%; width: 0%; border-radius: 999px; background: rgba(255,255,255,0.55); transition: width 120ms ease; }
+
+.workspace { margin-top: 16px; padding: 12px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.12); }
+.wsHead { display:flex; gap:10px; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+.wsBtns { display:flex; gap:8px; flex-wrap: wrap; }
+.wsList { display:grid; gap:10px; margin: 10px 0; }
+.wsCard { padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.10); }
+.wsRow { display:flex; justify-content: space-between; align-items:center; gap:10px; flex-wrap: wrap; }
+.wsRowBtns { display:flex; gap:8px; }
+
+
+.wsSectionTitle { margin: 10px 0 6px; }
+.wsBadge { font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.18); margin-left: 6px; }
+
+.treeBox {
+  margin-top: 8px;
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  overflow: auto;
+}
+
+.treeSvg text {
+  font-size: 12px;
+}
+
+.treeNode {
+  cursor: pointer;
+}
+
+.treeNode rect {
+  rx: 10;
+  ry: 10;
+  stroke: rgba(255,255,255,0.25);
+  fill: rgba(255,255,255,0.07);
+}
+
+.treeNode:hover rect {
+  fill: rgba(255,255,255,0.14);
+}
+
+.treeLine {
+  stroke: rgba(255,255,255,0.25);
+  stroke-width: 2;
+}
+
+.treeHint {
+  padding: 8px;
+}

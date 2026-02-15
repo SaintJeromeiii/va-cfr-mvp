@@ -31,6 +31,28 @@
       <div id="results" class="results"></div>
     </div>
 
+    <!-- Workspace panel -->
+    <section id="workspace" class="workspace">
+      <div class="wsHead">
+        <h2 style="margin:0">Claim Workspace</h2>
+        <div class="wsBtns">
+          <button id="wsExport" class="miniBtn" type="button">Export Full Packet (.txt)</button>
+          <button id="wsClear" class="miniBtn danger" type="button">Clear Workspace</button>
+        </div>
+      </div>
+
+      <div class="small" id="wsScore">Evidence Readiness: 0/0 (0%)</div>
+      <div class="evBar"><div id="wsBarFill" class="evBarFill"></div></div>
+
+      <hr/>
+      <h3 style="margin:10px 0 6px">🌳 Claim Tree View</h3>
+      <div id="tree" class="treeBox"></div>
+      <div class="small">Tip: Set a Primary, then add Secondary conditions to see the tree.</div>
+
+      <div id="wsList" class="wsList"></div>
+      <div class="small">Tip: open a condition and click “Add to Workspace”.</div>
+    </section>
+
     <!-- Detail view (ONLY ONE) -->
     <section id="detail" class="detail hidden"></section>
 

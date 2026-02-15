@@ -86,6 +86,91 @@ function saveNotes(conditionId, text) {
   localStorage.setItem(notesKey(conditionId), (text ?? "").toString());
 }
 
+const WORKSPACE_KEY = "vaCfrWorkspace:v2";
+
+function loadWorkspaceState() {
+  try {
+    const raw = localStorage.getItem(WORKSPACE_KEY);
+    if (!raw) return { ids: [], primaryId: "", secondaryIds: [] };
+
+    const parsed = JSON.parse(raw);
+
+    // Migration: if older version stored an array, convert it
+    if (Array.isArray(parsed)) {
+      return { ids: parsed, primaryId: parsed[0] || "", secondaryIds: parsed.slice(1) };
+    }
+
+    // Normal case
+    const ids = Array.isArray(parsed.ids) ? parsed.ids : [];
+    const primaryId = typeof parsed.primaryId === "string" ? parsed.primaryId : "";
+    const secondaryIds = Array.isArray(parsed.secondaryIds) ? parsed.secondaryIds : [];
+
+    return { ids, primaryId, secondaryIds };
+  } catch {
+    return { ids: [], primaryId: "", secondaryIds: [] };
+  }
+}
+
+function saveWorkspaceState(state) {
+  const s = state || { ids: [], primaryId: "", secondaryIds: [] };
+  localStorage.setItem(WORKSPACE_KEY, JSON.stringify(s));
+}
+
+function addToWorkspace(id) {
+  const st = loadWorkspaceState();
+  if (!st.ids.includes(id)) st.ids.push(id);
+
+  // If no primary yet, default first added as primary
+  if (!st.primaryId) st.primaryId = id;
+
+  saveWorkspaceState(st);
+  return st;
+}
+
+function setPrimary(id) {
+  const st = loadWorkspaceState();
+  if (!st.ids.includes(id)) st.ids.push(id);
+  st.primaryId = id;
+
+  // Ensure primary is not duplicated inside secondary list
+  st.secondaryIds = st.secondaryIds.filter(x => x !== id);
+
+  saveWorkspaceState(st);
+  return st;
+}
+
+function addSecondary(id) {
+  const st = loadWorkspaceState();
+  if (!st.ids.includes(id)) st.ids.push(id);
+  if (!st.primaryId) st.primaryId = id; // fallback
+
+  if (id !== st.primaryId && !st.secondaryIds.includes(id)) {
+    st.secondaryIds.push(id);
+  }
+
+  saveWorkspaceState(st);
+  return st;
+}
+
+function removeFromWorkspace(id) {
+  const st = loadWorkspaceState();
+  st.ids = st.ids.filter(x => x !== id);
+  st.secondaryIds = st.secondaryIds.filter(x => x !== id);
+
+  // If removing primary, clear primary and secondaries (or pick new primary)
+  if (st.primaryId === id) {
+    st.primaryId = st.ids[0] || "";
+    st.secondaryIds = st.secondaryIds.filter(x => x !== st.primaryId);
+  }
+
+  saveWorkspaceState(st);
+  return st;
+}
+
+function clearWorkspace() {
+  saveWorkspaceState({ ids: [], primaryId: "", secondaryIds: [] });
+}
+
 
 
 function exportChecklistText(item, state) {
@@ -110,6 +195,52 @@ function exportChecklistText(item, state) {
   return lines.join("\n");
 }
 
+function evidenceCompletion(item, state) {
+  const total = (item.evidence_checklist || []).length;
+  if (!total) return { done: 0, total: 0, pct: 0 };
+  const done = (item.evidence_checklist || []).reduce((acc, _, idx) => acc + (state[idx] ? 1 : 0), 0);
+  return { done, total, pct: Math.round((done / total) * 100) };
+}
+
+function buildClaimPacketText(item, evState) {
+  const lines = [];
+  lines.push(`${item.name}`);
+  lines.push(`Body system: ${item.body_system || "(unknown)"}`);
+  lines.push("");
+
+  // CFR refs
+  lines.push("CFR References:");
+  (item.cfr || []).forEach(r => {
+    lines.push(`- ${r.section || ""} | DC ${r.diagnostic_code || ""} | ${r.title || ""}`);
+    if (r.url) lines.push(`  ${r.url}`);
+  });
+  lines.push("");
+
+  // Strategy
+  if (item.strategy && item.strategy.length) {
+    lines.push("Claim Strategy (Educational):");
+    item.strategy.forEach(s => lines.push(`- ${s}`));
+    lines.push("");
+  }
+
+  // Evidence checklist
+  lines.push("Evidence Checklist:");
+  (item.evidence_checklist || []).forEach((e, idx) => {
+    const mark = evState[idx] ? "[x]" : "[ ]";
+    lines.push(`${mark} ${e}`);
+  });
+  lines.push("");
+
+  // Notes
+  lines.push("Notes:");
+  const notes = (loadNotes(item.id) || "").trim();
+  lines.push(notes ? notes : "(none)");
+  lines.push("");
+
+  lines.push("Disclaimer: Educational only. Not legal advice/representation.");
+  return lines.join("\n");
+}
+
 function downloadText(filename, text) {
   const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
   const url = URL.createObjectURL(blob);
@@ -120,6 +251,177 @@ function downloadText(filename, text) {
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+}
+
+function workspaceCompletion(conditions) {
+  let done = 0, total = 0;
+
+  conditions.forEach(item => {
+    const st = loadEvidenceState(item.id);
+    const t = (item.evidence_checklist || []).length;
+    total += t;
+    done += (item.evidence_checklist || []).reduce((acc, _, idx) => acc + (st[idx] ? 1 : 0), 0);
+  });
+
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  return { done, total, pct };
+}
+
+function buildWorkspacePacketText(items) {
+  const lines = [];
+  lines.push("VA CFR Finder — Claim Workspace Packet");
+  lines.push(new Date().toLocaleString());
+  lines.push("");
+  lines.push(`Conditions in workspace: ${items.length}`);
+  lines.push("");
+
+  items.forEach((item, i) => {
+    const st = loadEvidenceState(item.id);
+    lines.push("============================================================");
+    lines.push(`${i + 1}) ${item.name} (${item.id})`);
+    lines.push(`Body system: ${item.body_system || "(unknown)"}`);
+    lines.push("");
+
+    // CFR refs
+    lines.push("CFR References:");
+    (item.cfr || []).forEach(r => {
+      lines.push(`- ${r.section || ""} | DC ${r.diagnostic_code || ""} | ${r.title || ""}`);
+      if (r.url) lines.push(`  ${r.url}`);
+    });
+    lines.push("");
+
+    // Strategy
+    if (item.strategy && item.strategy.length) {
+      lines.push("Claim Strategy (Educational):");
+      item.strategy.forEach(s => lines.push(`- ${s}`));
+      lines.push("");
+    }
+
+    // Evidence checklist
+    lines.push("Evidence Checklist:");
+    (item.evidence_checklist || []).forEach((e, idx) => {
+      const mark = st[idx] ? "[x]" : "[ ]";
+      lines.push(`${mark} ${e}`);
+    });
+    lines.push("");
+
+    // Notes
+    lines.push("Notes:");
+    const notes = (loadNotes(item.id) || "").trim();
+    lines.push(notes ? notes : "(none)");
+    lines.push("");
+  });
+
+  lines.push("============================================================");
+  lines.push("Disclaimer: Educational only. Not legal advice/representation.");
+  return lines.join("\n");
+}
+
+function renderWorkspace() {
+  const wsList = document.getElementById("wsList");
+  const wsScore = document.getElementById("wsScore");
+  const wsBarFill = document.getElementById("wsBarFill");
+
+  if (!wsList || !wsScore || !wsBarFill) return;
+
+  const st = loadWorkspaceState();
+  const items = st.ids.map(id => CONDITIONS.find(c => c.id === id)).filter(Boolean);
+
+  wsList.innerHTML = "";
+
+  if (!items.length) {
+    wsScore.textContent = "Evidence Readiness: 0/0 (0%)";
+    wsBarFill.style.width = "0%";
+    wsList.innerHTML = `<div class="small">Workspace is empty. Open a condition and click “Add to Workspace”.</div>`;
+    return;
+  }
+
+  // Compute readiness across ALL workspace items
+  const { done, total, pct } = workspaceCompletion(items);
+  wsScore.textContent = `Evidence Readiness: ${done}/${total} (${pct}%)`;
+  wsBarFill.style.width = `${pct}%`;
+
+  const primary = st.primaryId ? CONDITIONS.find(c => c.id === st.primaryId) : null;
+  const secondaries = st.secondaryIds
+    .map(id => CONDITIONS.find(c => c.id === id))
+    .filter(Boolean);
+
+  // Helper to create a card
+  const makeCard = (item, badge) => {
+    const card = document.createElement("div");
+    card.className = `wsCard ${systemClassName(item.body_system)}`;
+
+    const ev = evidenceCompletion(item, loadEvidenceState(item.id));
+    card.innerHTML = `
+      <div class="wsRow">
+        <div>
+          <div><strong>${escapeHtml(item.name)}</strong> ${badge ? `<span class="wsBadge">${badge}</span>` : ""}</div>
+          <div class="small">${escapeHtml(item.body_system || "")} • ${ev.done}/${ev.total} (${ev.pct}%)</div>
+        </div>
+        <div class="wsRowBtns">
+          <button class="miniBtn" data-open="${item.id}" type="button">Open</button>
+          ${badge !== "Primary" ? `<button class="miniBtn" data-primary="${item.id}" type="button">Set Primary</button>` : ""}
+          ${badge !== "Primary" ? "" : ""}
+          <button class="miniBtn danger" data-rm="${item.id}" type="button">Remove</button>
+        </div>
+      </div>
+    `;
+    return card;
+  };
+
+  // Primary section
+  const pWrap = document.createElement("div");
+  pWrap.innerHTML = `<div class="wsSectionTitle"><strong>Primary Condition</strong></div>`;
+  wsList.appendChild(pWrap);
+
+  if (primary) {
+    wsList.appendChild(makeCard(primary, "Primary"));
+  } else {
+    wsList.innerHTML += `<div class="small">No primary set yet.</div>`;
+  }
+
+  // Secondary section
+  const sWrap = document.createElement("div");
+  sWrap.innerHTML = `
+    <div class="wsSectionTitle"><strong>Secondary Conditions</strong></div>
+    <div class="small">Tip: Open a condition and click "Add as Secondary" (or add to workspace then set primary).</div>
+  `;
+  wsList.appendChild(sWrap);
+
+  if (secondaries.length) {
+    secondaries.forEach(sec => wsList.appendChild(makeCard(sec, "Secondary")));
+  } else {
+    wsList.innerHTML += `<div class="small">(none yet)</div>`;
+  }
+
+  // Any "unassigned" items (in ids but not primary/secondary)
+  const assigned = new Set([st.primaryId, ...st.secondaryIds].filter(Boolean));
+  const unassigned = items.filter(x => !assigned.has(x.id));
+  if (unassigned.length) {
+    const uWrap = document.createElement("div");
+    uWrap.innerHTML = `<div class="wsSectionTitle"><strong>Unassigned</strong></div>`;
+    wsList.appendChild(uWrap);
+    unassigned.forEach(u => wsList.appendChild(makeCard(u, "")));
+  }
+
+  // Wire buttons
+  wsList.querySelectorAll("button[data-open]").forEach(b => {
+    b.addEventListener("click", () => showDetail(b.dataset.open));
+  });
+
+  wsList.querySelectorAll("button[data-primary]").forEach(b => {
+    b.addEventListener("click", () => {
+      setPrimary(b.dataset.primary);
+      renderWorkspace();
+    });
+  });
+
+  wsList.querySelectorAll("button[data-rm]").forEach(b => {
+    b.addEventListener("click", () => {
+      removeFromWorkspace(b.dataset.rm);
+      renderWorkspace();
+    });
+  });
 }
 
 
@@ -643,6 +945,8 @@ if (item.strategy && item.strategy.length) {
     <div class="small">${item.disclaimer || ""}</div>
 
     <button id="copyLink" class="copyBtn">Copy link</button>
+    <button id="wsAdd" class="miniBtn" type="button">+ Add to Workspace</button>
+    <button id="wsAddSecondary" class="miniBtn" type="button">+ Add as Secondary</button>
 
     <hr/>
 
@@ -668,6 +972,15 @@ ${strategyHTML}
     ${ratingBlock}
 
     <hr/>
+
+    <h3>📈 Evidence Readiness</h3>
+    <div class="evScoreRow">
+      <div class="evBar"><div id="evBarFill" class="evBarFill"></div></div>
+      <div class="small"><span id="evScoreText">0/0</span> complete</div>
+    </div>
+
+    <button id="packetCopy" class="miniBtn" type="button">Copy Claim Packet</button>
+    <button id="packetExport" class="miniBtn" type="button">Export Claim Packet (.txt)</button>
 
     <h3 id="jump-evidence">Evidence checklist (trackable)</h3>
 
@@ -717,6 +1030,32 @@ ${strategyHTML}
       await navigator.clipboard.writeText(window.location.href);
       alert("Link copied!");
     });
+  }
+
+  const wsAdd = document.getElementById("wsAdd");
+  if (wsAdd) {
+    wsAdd.addEventListener("click", () => {
+      addToWorkspace(item.id);
+      renderWorkspace();
+      alert("Added to workspace!");
+    });
+  }
+
+  const wsAddSecondary = document.getElementById("wsAddSecondary");
+  if (wsAddSecondary) {
+    wsAddSecondary.addEventListener("click", () => {
+      const st = loadWorkspaceState();
+      if (!st.primaryId) {
+        // If no primary yet, make current item primary
+        setPrimary(item.id);
+        alert("No primary set—set this as Primary.");
+      } else {
+        addSecondary(item.id);
+        alert("Added as Secondary to Primary.");
+      }
+      renderWorkspace();
+    });
+  }
 
     // --- Secondary condition logic ---
 const secBtn = document.getElementById("addSecondaryBtn");
@@ -772,8 +1111,7 @@ if (secBtn && secList) {
       });
     }
 
-  }
-
+  
   // --- Evidence checklist behavior (persist per condition) ---
   const evList = document.getElementById("evList");
   const evCountEl = document.getElementById("evCount");
@@ -796,6 +1134,46 @@ if (secBtn && secList) {
       st[idx] = cb.checked;
       saveEvidenceState(item.id, st);
       updateEvCount();
+      renderWorkspace();
+    });
+  }
+
+  // Evidence readiness UI + packet buttons
+  function updateEvidenceUI() {
+    const st = loadEvidenceState(item.id);
+    const { done, total, pct } = evidenceCompletion(item, st);
+
+    const scoreText = document.getElementById("evScoreText");
+    const barFill = document.getElementById("evBarFill");
+    if (scoreText) scoreText.textContent = `${done}/${total} (${pct}%)`;
+    if (barFill) barFill.style.width = `${pct}%`;
+  }
+
+  updateEvidenceUI();
+
+  // Recompute when checklist changes
+  if (evList) {
+    evList.addEventListener("change", () => updateEvidenceUI());
+  }
+
+  // Packet buttons
+  const packetCopy = document.getElementById("packetCopy");
+  const packetExport = document.getElementById("packetExport");
+
+  if (packetCopy) {
+    packetCopy.addEventListener("click", async () => {
+      const st = loadEvidenceState(item.id);
+      const text = buildClaimPacketText(item, st);
+      await navigator.clipboard.writeText(text);
+      alert("Claim packet copied!");
+    });
+  }
+
+  if (packetExport) {
+    packetExport.addEventListener("click", () => {
+      const st = loadEvidenceState(item.id);
+      const text = buildClaimPacketText(item, st);
+      downloadText(`${item.id}_claim_packet.txt`, text);
     });
   }
 
@@ -883,7 +1261,6 @@ if (secBtn && secList) {
     history.replaceState(history.state, "", window.location.pathname);
 
   }
-
 }
 
 
@@ -1013,6 +1390,41 @@ async function init() {
 
   applyFilters();
   tryLoadFromPath(); // load /condition/:id if present
+
+  // Workspace buttons
+  const wsExport = document.getElementById("wsExport");
+  const wsClear = document.getElementById("wsClear");
+
+  if (wsClear) {
+    wsClear.addEventListener("click", () => {
+      clearWorkspace();
+      renderWorkspace();
+    });
+  }
+
+  if (wsExport) {
+    wsExport.addEventListener("click", () => {
+      const st = loadWorkspaceState();
+      const primary = st.primaryId ? CONDITIONS.find(c => c.id === st.primaryId) : null;
+      const secondaries = st.secondaryIds.map(id => CONDITIONS.find(c => c.id === id)).filter(Boolean);
+      const unassigned = st.ids
+        .filter(id => id !== st.primaryId && !st.secondaryIds.includes(id))
+        .map(id => CONDITIONS.find(c => c.id === id))
+        .filter(Boolean);
+
+      const ordered = [
+        ...(primary ? [primary] : []),
+        ...secondaries,
+        ...unassigned
+      ];
+
+      const text = buildWorkspacePacketText(ordered);
+      downloadText(`claim_workspace_packet.txt`, text);
+    });
+  }
+
+  // First render
+  renderWorkspace();
 }
 
 
