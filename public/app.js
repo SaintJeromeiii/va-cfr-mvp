@@ -86,6 +86,111 @@ function saveNotes(conditionId, text) {
   localStorage.setItem(notesKey(conditionId), (text ?? "").toString());
 }
 
+function timelineKey(id) {
+  return `vaCfrTimeline:${id}`;
+}
+
+function loadTimeline(id) {
+  try {
+    const raw = localStorage.getItem(timelineKey(id));
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveTimeline(id, entries) {
+  localStorage.setItem(timelineKey(id), JSON.stringify(entries || []));
+}
+
+function addTimelineEntry(id, entry) {
+  const items = loadTimeline(id);
+  items.push(entry);
+  saveTimeline(id, items);
+  return items;
+}
+
+function removeTimelineEntry(id, entryId) {
+  const items = loadTimeline(id).filter(e => e && e.id !== entryId);
+  saveTimeline(id, items);
+  return items;
+}
+
+function toSortableDateKey(dateStr) {
+  // Accept: YYYY-MM-DD or YYYY-MM or YYYY
+  const s = (dateStr || "").trim();
+  if (!s) return "9999-99-99";
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  if (/^\d{4}-\d{2}$/.test(s)) return `${s}-01`;
+  if (/^\d{4}$/.test(s)) return `${s}-01-01`;
+
+  // fallback: put unknown formats last
+  return "9999-99-99";
+}
+
+function sortTimeline(entries) {
+  return (entries || [])
+    .slice()
+    .sort((a, b) => toSortableDateKey(a.date).localeCompare(toSortableDateKey(b.date)));
+}
+
+const TIMELINE_TYPES = [
+  "Onset",
+  "Diagnosis",
+  "Treatment",
+  "C&P Exam",
+  "Flare-up",
+  "ER/Urgent visit",
+  "Work/Functional impact",
+  "Other"
+];
+
+function evidenceLinksKey(id) {
+  return `vaCfrEvidenceLinks:${id}`;
+}
+
+function loadEvidenceLinks(id) {
+  try {
+    const raw = localStorage.getItem(evidenceLinksKey(id));
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveEvidenceLinks(id, links) {
+  localStorage.setItem(evidenceLinksKey(id), JSON.stringify(links || []));
+}
+
+function addEvidenceLink(id, link) {
+  const arr = loadEvidenceLinks(id);
+  arr.push(link);
+  saveEvidenceLinks(id, arr);
+  return arr;
+}
+
+function removeEvidenceLink(id, linkId) {
+  const arr = loadEvidenceLinks(id).filter(x => x && x.id !== linkId);
+  saveEvidenceLinks(id, arr);
+  return arr;
+}
+
+const EVIDENCE_LINK_TYPES = [
+  "Medical record",
+  "Diagnosis note",
+  "Lab result",
+  "Imaging",
+  "Prescription/Medication",
+  "DBQ",
+  "C&P exam",
+  "Lay statement / Buddy statement",
+  "Service record",
+  "Other"
+];
+
 const WORKSPACE_KEY = "vaCfrWorkspace:v4";
 
 const REL_TYPES = [
@@ -774,8 +879,8 @@ function renderWorkspace() {
 
   // wire buttons
   wsList.querySelectorAll("button[data-open]").forEach(b => b.addEventListener("click", () => showDetail(b.dataset.open)));
-  wsList.querySelectorAll("button[data-primary]").forEach(b => b.addEventListener("click", () => { setPrimary(b.dataset.primary); renderWorkspace(); }));
-  wsList.querySelectorAll("button[data-rm]").forEach(b => b.addEventListener("click", () => { removeNode(b.dataset.rm); renderWorkspace(); }));
+  wsList.querySelectorAll("button[data-primary]").forEach(b => b.addEventListener("click", () => { setPrimary(b.dataset.primary); renderWorkspace(); renderClaimTree(); renderHealthPanel(); }));
+  wsList.querySelectorAll("button[data-rm]").forEach(b => b.addEventListener("click", () => { removeNode(b.dataset.rm); renderWorkspace(); renderClaimTree(); renderHealthPanel(); }));
 
   // wire relationship type changes
   wsList.querySelectorAll("select.wsRelSelect").forEach(sel => {
@@ -785,6 +890,7 @@ function renderWorkspace() {
       updateLinkType(fromId, toId, sel.value);
       renderWorkspace();
       renderClaimTree();
+      renderHealthPanel();
     });
   });
 
@@ -796,6 +902,7 @@ function renderWorkspace() {
       removeLink(fromId, toId);
       renderWorkspace();
       renderClaimTree();
+      renderHealthPanel();
     });
   });
 
@@ -815,6 +922,7 @@ function renderWorkspace() {
         addLink(parentId, childId, relType);
         renderWorkspace();
         renderClaimTree();
+        renderHealthPanel();
       } catch (err) {
         alert(err.message || "That link would create a cycle. Choose a different parent.");
       }
@@ -832,6 +940,7 @@ function renderWorkspace() {
         addLink(st2.primaryId, childId, "Secondary to");
         renderWorkspace();
         renderClaimTree();
+        renderHealthPanel();
       } catch (err) {
         alert(err.message || "Could not link to Primary.");
       }
@@ -1550,6 +1659,55 @@ ${strategyHTML}
   <div class="small">Notes are stored in your browser (localStorage) for this device.</div>
 </div>
 
+<hr/>
+
+<h3>Timeline</h3>
+<div class="small">Add dated events for this condition (educational). Supports YYYY-MM-DD, YYYY-MM, or YYYY.</div>
+
+<div class="tlForm">
+  <input id="tlDate" placeholder="Date (YYYY-MM-DD or YYYY-MM or YYYY)" />
+  <select id="tlType">
+    ${TIMELINE_TYPES.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("")}
+  </select>
+</div>
+
+<textarea id="tlNote" rows="3" placeholder="Event details (e.g., first symptoms, diagnosis visit, CPAP issued, ER visit, missed work, etc.)"></textarea>
+
+<div class="healthBtns" style="margin-top:8px">
+  <button id="tlAdd" class="miniBtn" type="button">Add timeline entry</button>
+  <button id="tlExport" class="miniBtn" type="button">Download timeline (.txt)</button>
+</div>
+
+<div id="tlList" class="tlList"></div>
+
+<hr/>
+
+<h3>Evidence Links</h3>
+<div class="small">
+  Save links to documents (medical records, DBQs, buddy statements, etc.). Stored locally in your browser.
+</div>
+
+<div class="evLinksForm">
+  <input id="evLinksLabel" placeholder="Label (e.g., Sleep study 2023-11-02)" />
+  <input id="evLinksUrl" placeholder="URL (https://...)" />
+</div>
+
+<div class="evLinksForm">
+  <select id="evLinksType">
+    ${EVIDENCE_LINK_TYPES.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("")}
+  </select>
+  <input id="evLinksDate" placeholder="Date (optional: YYYY-MM-DD or YYYY-MM or YYYY)" />
+</div>
+
+<textarea id="evLinksNote" rows="2" placeholder="Notes (optional: what this proves, key page numbers, etc.)"></textarea>
+
+<div class="healthBtns" style="margin-top:8px">
+  <button id="evLinksAdd" class="miniBtn" type="button">Add evidence link</button>
+  <button id="evLinksExport" class="miniBtn" type="button">Download evidence list (.txt)</button>
+</div>
+
+<div id="evLinksList" class="evLinksList"></div>
+
 
     <h3>Get accredited help</h3>
     <p class="small">
@@ -1658,6 +1816,211 @@ if (secBtn && secList) {
         if (notesEl) notesEl.value = "";
       });
     }
+
+  // ---- Timeline wiring ----
+  const tlDate = document.getElementById("tlDate");
+  const tlType = document.getElementById("tlType");
+  const tlNote = document.getElementById("tlNote");
+  const tlAdd = document.getElementById("tlAdd");
+  const tlList = document.getElementById("tlList");
+  const tlExport = document.getElementById("tlExport");
+
+  function renderTimelineList() {
+    if (!tlList) return;
+    const entries = sortTimeline(loadTimeline(item.id));
+    if (!entries.length) {
+      tlList.innerHTML = `<div class="small">(No timeline entries yet.)</div>`;
+      return;
+    }
+
+    tlList.innerHTML = entries.map(e => `
+      <div class="tlRow">
+        <div class="tlMeta">
+          <span class="badge">${escapeHtml(e.date || "Date?")}</span>
+          <span class="badge">${escapeHtml(e.type || "Other")}</span>
+        </div>
+        <div class="small">${escapeHtml(e.note || "")}</div>
+        <div style="margin-top:6px">
+          <button class="miniBtn danger" data-tlrm="${escapeHtml(e.id)}" type="button">Remove</button>
+        </div>
+      </div>
+    `).join("");
+
+    tlList.querySelectorAll("button[data-tlrm]").forEach(b => {
+      b.addEventListener("click", () => {
+        removeTimelineEntry(item.id, b.dataset.tlrm);
+        renderTimelineList();
+      });
+    });
+  }
+
+  function exportTimelineTxt() {
+    const entries = sortTimeline(loadTimeline(item.id));
+    const lines = [];
+    lines.push(`${item.name} — Timeline (Educational)`);
+    lines.push(new Date().toLocaleString());
+    lines.push("");
+
+    entries.forEach(e => {
+      lines.push(`${e.date || ""} • ${e.type || "Other"}`);
+      lines.push(`${e.note || ""}`);
+      lines.push("");
+    });
+
+    downloadText(`${item.id}_timeline.txt`, lines.join("\\n"));
+  }
+
+  if (tlAdd) {
+    tlAdd.addEventListener("click", () => {
+      const date = (tlDate?.value || "").trim();
+      const type = (tlType?.value || "Other").trim();
+      const note = (tlNote?.value || "").trim();
+
+      if (!date || !note) {
+        alert("Please enter a date and a note.");
+        return;
+      }
+
+      addTimelineEntry(item.id, {
+        id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+        date,
+        type,
+        note,
+        created_at: Date.now()
+      });
+
+      if (tlDate) tlDate.value = "";
+      if (tlNote) tlNote.value = "";
+      renderTimelineList();
+    });
+  }
+
+  if (tlExport) {
+    tlExport.addEventListener("click", exportTimelineTxt);
+  }
+
+  renderTimelineList();
+
+  // ---- Evidence Links wiring ----
+  const evLinksLabel = document.getElementById("evLinksLabel");
+  const evLinksUrl = document.getElementById("evLinksUrl");
+  const evLinksType = document.getElementById("evLinksType");
+  const evLinksDate = document.getElementById("evLinksDate");
+  const evLinksNote = document.getElementById("evLinksNote");
+  const evLinksAdd = document.getElementById("evLinksAdd");
+  const evLinksList = document.getElementById("evLinksList");
+  const evLinksExport = document.getElementById("evLinksExport");
+
+  function renderEvidenceLinks() {
+    if (!evLinksList) return;
+
+    const links = loadEvidenceLinks(item.id);
+
+    if (!links.length) {
+      evLinksList.innerHTML = `<div class="small">(No evidence links yet.)</div>`;
+      return;
+    }
+
+    // Sort by date-ish then label
+    const sorted = links.slice().sort((a, b) => {
+      const da = toSortableDateKey(a.date);
+      const db = toSortableDateKey(b.date);
+      if (da !== db) return da.localeCompare(db);
+      return (a.label || "").localeCompare(b.label || "");
+    });
+
+    evLinksList.innerHTML = sorted.map(l => `
+      <div class="evLinksRow">
+        <div class="evLinksMeta">
+          ${l.date ? `<span class="badge">${escapeHtml(l.date)}</span>` : ""}
+          <span class="badge">${escapeHtml(l.type || "Other")}</span>
+        </div>
+
+        <div><strong>${escapeHtml(l.label || "Evidence")}</strong></div>
+
+        ${l.url ? `<div class="small"><a href="${escapeHtml(l.url)}" target="_blank" rel="noreferrer">Open link</a></div>` : ""}
+
+        ${l.note ? `<div class="small">${escapeHtml(l.note)}</div>` : ""}
+
+        <div style="margin-top:6px">
+          <button class="miniBtn danger" data-evlinksrm="${escapeHtml(l.id)}" type="button">Remove</button>
+        </div>
+      </div>
+    `).join("");
+
+    evLinksList.querySelectorAll("button[data-evlinksrm]").forEach(b => {
+      b.addEventListener("click", () => {
+        removeEvidenceLink(item.id, b.dataset.evlinksrm);
+        renderEvidenceLinks();
+      });
+    });
+  }
+
+  function exportEvidenceLinksTxt() {
+    const links = loadEvidenceLinks(item.id);
+    const sorted = links.slice().sort((a, b) => {
+      const da = toSortableDateKey(a.date);
+      const db = toSortableDateKey(b.date);
+      if (da !== db) return da.localeCompare(db);
+      return (a.label || "").localeCompare(b.label || "");
+    });
+
+    const lines = [];
+    lines.push(`${item.name} — Evidence Links (Local list / Educational)`);
+    lines.push(new Date().toLocaleString());
+    lines.push("");
+
+    if (!sorted.length) {
+      lines.push("(No evidence links.)");
+    } else {
+      sorted.forEach(l => {
+        lines.push(`${l.date || ""} • ${l.type || "Other"} • ${l.label || ""}`.trim());
+        if (l.url) lines.push(`URL: ${l.url}`);
+        if (l.note) lines.push(`Notes: ${l.note}`);
+        lines.push("");
+      });
+    }
+
+    downloadText(`${item.id}_evidence_links.txt`, lines.join("\n"));
+  }
+
+  if (evLinksAdd) {
+    evLinksAdd.addEventListener("click", () => {
+      const label = (evLinksLabel?.value || "").trim();
+      const url = (evLinksUrl?.value || "").trim();
+      const type = (evLinksType?.value || "Other").trim();
+      const date = (evLinksDate?.value || "").trim();
+      const note = (evLinksNote?.value || "").trim();
+
+      if (!label || !url) {
+        alert("Please enter at least a Label and a URL.");
+        return;
+      }
+
+      addEvidenceLink(item.id, {
+        id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+        label,
+        url,
+        type,
+        date,
+        note,
+        created_at: Date.now()
+      });
+
+      if (evLinksLabel) evLinksLabel.value = "";
+      if (evLinksUrl) evLinksUrl.value = "";
+      if (evLinksDate) evLinksDate.value = "";
+      if (evLinksNote) evLinksNote.value = "";
+
+      renderEvidenceLinks();
+    });
+  }
+
+  if (evLinksExport) {
+    evLinksExport.addEventListener("click", exportEvidenceLinksTxt);
+  }
+
+  renderEvidenceLinks();
 
   
   // --- Evidence checklist behavior (persist per condition) ---
@@ -1835,6 +2198,414 @@ async function showDetail(id, pushState = true, jumpHint = "") {
 
 
 
+function getConditionById(id) {
+  return CONDITIONS.find(c => c.id === id) || null;
+}
+
+function parentsOfChild(childId, links) {
+  return (links || []).filter(l => l.to === childId);
+}
+
+function shortCfrRefs(cond) {
+  const refs = (cond?.cfr || []).slice(0, 2);
+  if (!refs.length) return "";
+  return refs.map(r => {
+    const secShort = (r.section || "").replace(/38\s*cfr\s*§/i, "").trim();
+    const dc = (r.diagnostic_code || "").toString().trim();
+    const title = (r.title || "").trim();
+    const parts = [];
+    if (secShort) parts.push(`§${secShort}`);
+    else if (r.section) parts.push(r.section);
+    if (dc) parts.push(`DC ${dc}`);
+    if (title) parts.push(title);
+    return parts.join(" — ");
+  }).join(" | ");
+}
+
+function firstLine(s, fallback = "") {
+  const t = (s || "").trim();
+  if (!t) return fallback;
+  const lines = t.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
+  return lines[0] || fallback;
+}
+
+function roleLineForNode(nodeId, st) {
+  if (nodeId === st.primaryId) return "Role: Primary";
+  const linksToMe = (st.links || []).filter(l => l.to === nodeId);
+  if (!linksToMe.length) return "Role: Unlinked (in workspace)";
+  return "Role: Linked";
+}
+
+function linkedToLines(nodeId, st) {
+  if (nodeId === st.primaryId) return [];
+  const linksToMe = (st.links || []).filter(l => l.to === nodeId);
+  if (!linksToMe.length) return [];
+
+  return linksToMe.map(l => {
+    const p = getConditionById(l.from);
+    const pName = p ? p.name : l.from;
+    const type = l.type || "Secondary to";
+    return `- Linked to: ${pName} (${type})`;
+  });
+}
+
+function isLinkedNode(nodeId, st) {
+  if (!nodeId) return false;
+  if (nodeId === st.primaryId) return true;
+  return (st.links || []).some(l => l.to === nodeId || l.from === nodeId);
+}
+
+function relationshipSentence(childId, st) {
+  const linksToMe = (st.links || []).filter(l => l.to === childId);
+  if (!linksToMe.length) return "";
+
+  // If multiple parents, mention the first two for readability
+  const parts = linksToMe.slice(0, 2).map(l => {
+    const parent = getConditionById(l.from);
+    const pName = parent ? parent.name : l.from;
+    const type = l.type || "Secondary to";
+    return `${type} ${pName}`;
+  });
+
+  if (parts.length === 1) return `This condition is modeled as ${parts[0]}.`;
+  return `This condition is modeled as ${parts.join(" and ")}.`;
+}
+
+function autoDraftParagraph(cond, st, style = "concise") {
+  // Use first line of notes if present
+  const notes = (loadNotes(cond.id) || "").trim();
+  const opening = firstLine(notes, "");
+  if (opening) {
+    // style controls whether we add extra context
+    if (style === "detailed") {
+      const rel = relationshipSentence(cond.id, st);
+      return `${opening} ${rel ? rel + " " : ""}Functional impact, frequency/severity, and treatment history can be expanded in Notes.`;
+    }
+    return opening;
+  }
+
+  // If no notes: generate a safe educational template
+  const rel = relationshipSentence(cond.id, st);
+  const body = cond.body_system ? `within the ${cond.body_system} system` : "within the VA rating system";
+  const cfr = shortCfrRefs(cond);
+  const cfrPart = cfr ? `Relevant rating reference(s) include ${cfr}.` : "";
+
+  if (cond.id === st.primaryId) {
+    if (style === "detailed") {
+      return `The Veteran seeks consideration for ${cond.name} ${body}. ${cfrPart} Add Notes describing symptom timeline, frequency/severity, and occupational/social impact, then regenerate this draft.`;
+    }
+    return `The Veteran seeks consideration for ${cond.name}. Add Notes describing symptoms and functional impact, then regenerate.`;
+  }
+
+  if (style === "detailed") {
+    return `The Veteran reports ${cond.name} ${body}. ${rel ? rel + " " : ""}${cfrPart}Add Notes describing onset/timeline, current severity, functional impact, and treatment history, then regenerate this draft.`;
+  }
+
+  return `The Veteran reports ${cond.name}. ${rel ? rel : ""} Add Notes for timeline, severity, and impact, then regenerate.`;
+}
+
+function workspaceTimelineDraft(scope = "all") {
+  const st = loadWorkspaceState();
+  const primaryId = st.primaryId || "";
+
+  let ids = (st.nodes || []).slice();
+
+  if (scope === "primary") {
+    ids = primaryId ? [primaryId] : [];
+  } else if (scope === "linked") {
+    ids = ids.filter(id => isLinkedNode(id, st));
+    if (primaryId && !ids.includes(primaryId)) ids.unshift(primaryId);
+  }
+
+  const merged = [];
+
+  ids.forEach(id => {
+    const cond = getConditionById(id);
+    if (!cond) return;
+
+    const entries = loadTimeline(id);
+    entries.forEach(e => {
+      merged.push({
+        conditionId: id,
+        conditionName: cond.name,
+        date: e.date,
+        type: e.type,
+        note: e.note
+      });
+    });
+  });
+
+  merged.sort((a, b) => toSortableDateKey(a.date).localeCompare(toSortableDateKey(b.date)));
+
+  const lines = [];
+  lines.push("VA CFR Finder — Workspace Timeline (Educational)");
+  lines.push(new Date().toLocaleString());
+  lines.push("");
+
+  if (!merged.length) {
+    lines.push("(No timeline entries found in this scope.)");
+    return lines.join("\\n");
+  }
+
+  merged.forEach(e => {
+    lines.push(`${e.date || ""} • ${e.type || "Other"} • ${e.conditionName}`);
+    lines.push(`${e.note || ""}`);
+    lines.push("");
+  });
+
+  return lines.join("\\n");
+}
+
+function generateNarrativeDraft(options = {}) {
+  const linkedOnly = !!options.linkedOnly;
+  const style = options.style === "detailed" ? "detailed" : "concise";
+  const st = loadWorkspaceState();
+  const nodes = (st.nodes || []).slice();
+
+  // Option: only include nodes that are part of the link graph (plus primary)
+  let chosenNodes = nodes;
+  if (linkedOnly) {
+    chosenNodes = nodes.filter(id => isLinkedNode(id, st));
+    // Always keep primary
+    if (st.primaryId && !chosenNodes.includes(st.primaryId)) chosenNodes.unshift(st.primaryId);
+  }
+
+  const primary = st.primaryId ? getConditionById(st.primaryId) : null;
+  if (!primary) {
+    return "No Primary is set. Set a Primary in the Workspace first, then generate the narrative.";
+  }
+
+  // Build items list in a stable order: Primary first, then others alphabetically
+  const items = chosenNodes
+    .map(id => getConditionById(id))
+    .filter(Boolean)
+    .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+
+  const primaryFirst = [
+    primary,
+    ...items.filter(x => x.id !== primary.id)
+  ];
+
+  const lines = [];
+  lines.push("VA CFR Finder — Claim Narrative Draft (Educational)");
+  lines.push(new Date().toLocaleString());
+  lines.push("");
+  lines.push("DISCLAIMER: This is an educational draft only. It is not legal advice and not representation. Always verify current CFR language and consult an accredited representative if needed.");
+  lines.push("");
+
+  // Primary section
+  lines.push(`PRIMARY CONDITION: ${primary.name}`);
+  lines.push(`CFR refs (high-level): ${shortCfrRefs(primary) || "(none listed)"}`);
+  const pNotes = (loadNotes(primary.id) || "").trim();
+  if (pNotes) {
+    lines.push("");
+    lines.push("Primary notes (user-entered):");
+    lines.push(pNotes);
+  } else {
+    lines.push("");
+    lines.push("Primary notes (user-entered): (none)");
+  }
+
+  // Relationship summary
+  lines.push("");
+  lines.push("RELATIONSHIP SUMMARY (from workspace links):");
+  if (!(st.links || []).length) {
+    lines.push("- (no links yet)");
+  } else {
+    (st.links || []).forEach(l => {
+      const from = getConditionById(l.from);
+      const to = getConditionById(l.to);
+      const fromName = from ? from.name : l.from;
+      const toName = to ? to.name : l.to;
+      lines.push(`- ${toName} — ${l.type || "Secondary to"} — ${fromName}`);
+    });
+  }
+
+  // Workspace timeline (if any exists)
+  const mergedTimeline = workspaceTimelineDraft(options.linkedOnly ? "linked" : "all");
+  const hasAnyTimeline = !mergedTimeline.includes("(No timeline entries");
+
+  lines.push("");
+  lines.push("TIMELINE (if provided):");
+  if (hasAnyTimeline) {
+    // Include only the body lines (skip header for narrative)
+    const tlLines = mergedTimeline.split("\\n").slice(3); // drops title/date/blank
+    lines.push(...tlLines);
+  } else {
+    lines.push("(No timeline entries yet — add timelines in each condition detail view.)");
+  }
+
+  // Condition blocks
+  lines.push("");
+  lines.push("CONDITION-BY-CONDITION DRAFT:");
+  lines.push("");
+
+  primaryFirst.forEach(cond => {
+    const ev = evidenceCompletion(cond, loadEvidenceState(cond.id));
+    const notes = (loadNotes(cond.id) || "").trim();
+
+    lines.push("------------------------------------------------------------");
+    lines.push(`${cond.name}`);
+    lines.push(roleLineForNode(cond.id, st));
+    linkedToLines(cond.id, st).forEach(x => lines.push(x));
+    lines.push(`Body system: ${cond.body_system || "(not set)"}`);
+    lines.push(`CFR refs (high-level): ${shortCfrRefs(cond) || "(none listed)"}`);
+    lines.push(`Evidence readiness: ${ev.done}/${ev.total} (${ev.pct}%)`);
+    const evLinksCount = loadEvidenceLinks(cond.id).length;
+    lines.push(`Evidence links saved: ${evLinksCount}`);
+
+    // Short "narrative" paragraph using notes if available
+    lines.push("");
+    lines.push(`Draft paragraph: ${autoDraftParagraph(cond, st, style)}`);
+
+    // Evidence checklist bullets
+    if (Array.isArray(cond.evidence_checklist) && cond.evidence_checklist.length) {
+      lines.push("");
+      lines.push("Evidence categories (educational):");
+      cond.evidence_checklist.forEach((e, i) => lines.push(`- ${e}`));
+    }
+
+    // Full notes (verbatim)
+    lines.push("");
+    lines.push("Notes (verbatim):");
+    lines.push(notes ? notes : "(none)");
+    lines.push("");
+  });
+
+  // Closing suggestions
+  lines.push("------------------------------------------------------------");
+  lines.push("NEXT STEPS (Educational):");
+  lines.push("- Fill in missing Notes for each linked condition (timeline, severity, functional impact, treatment).");
+  lines.push("- Ensure evidence checklist items are supported by your records or statements.");
+  lines.push("- If filing secondary relationships, consider adding clear medical nexus language in notes (from your provider if applicable).");
+  lines.push("- Consult an accredited representative for claim-specific guidance.");
+  lines.push("");
+
+  return lines.join("\n");
+}
+
+function normalizeUrl(u) {
+  return (u || "").trim().toLowerCase();
+}
+
+function workspaceEvidenceBinderDraft(scope = "all", sortMode = "date") {
+  const st = loadWorkspaceState();
+  const primaryId = st.primaryId || "";
+
+  let ids = (st.nodes || []).slice();
+
+  if (scope === "primary") {
+    ids = primaryId ? [primaryId] : [];
+  } else if (scope === "linked") {
+    ids = ids.filter(id => isLinkedNode(id, st));
+    if (primaryId && !ids.includes(primaryId)) ids.unshift(primaryId);
+  }
+
+  // Collect + de-duplicate by URL
+  const byUrl = new Map();
+
+  ids.forEach(id => {
+    const cond = getConditionById(id);
+    if (!cond) return;
+
+    const links = loadEvidenceLinks(id);
+    links.forEach(l => {
+      const urlKey = normalizeUrl(l.url);
+      if (!urlKey) return;
+
+      if (!byUrl.has(urlKey)) {
+        byUrl.set(urlKey, {
+          url: l.url,
+          label: l.label || "",
+          type: l.type || "Other",
+          date: l.date || "",
+          note: l.note || "",
+          conditions: new Set([cond.name]),
+        });
+      } else {
+        const existing = byUrl.get(urlKey);
+        existing.conditions.add(cond.name);
+
+        // Prefer the "best" metadata if duplicates differ
+        if (!existing.label && l.label) existing.label = l.label;
+        if ((!existing.type || existing.type === "Other") && l.type) existing.type = l.type;
+        if (!existing.date && l.date) existing.date = l.date;
+
+        // Merge notes lightly (avoid huge duplicates)
+        if (l.note && existing.note && !existing.note.includes(l.note)) {
+          existing.note = `${existing.note} | ${l.note}`.slice(0, 600);
+        } else if (l.note && !existing.note) {
+          existing.note = l.note;
+        }
+      }
+    });
+  });
+
+  const merged = [...byUrl.values()].map(x => ({
+    ...x,
+    conditions: [...x.conditions].sort()
+  }));
+
+  // Sort
+  if (sortMode === "type") {
+    merged.sort((a, b) => (a.type || "").localeCompare(b.type || "") || toSortableDateKey(a.date).localeCompare(toSortableDateKey(b.date)));
+  } else if (sortMode === "condition") {
+    merged.sort((a, b) => (a.conditions[0] || "").localeCompare(b.conditions[0] || "") || toSortableDateKey(a.date).localeCompare(toSortableDateKey(b.date)));
+  } else {
+    merged.sort((a, b) => toSortableDateKey(a.date).localeCompare(toSortableDateKey(b.date)) || (a.type || "").localeCompare(b.type || ""));
+  }
+
+  const lines = [];
+  lines.push("VA CFR Finder — Workspace Evidence Binder (Educational / Local list)");
+  lines.push(new Date().toLocaleString());
+  lines.push(`Scope: ${scope} | Sort: ${sortMode}`);
+  lines.push("");
+
+  if (!merged.length) {
+    lines.push("(No evidence links found in this scope.)");
+    return lines.join("\n");
+  }
+
+  merged.forEach((e, i) => {
+    lines.push(`#${i + 1} ${e.label || "Evidence"}`);
+    if (e.date) lines.push(`Date: ${e.date}`);
+    if (e.type) lines.push(`Type: ${e.type}`);
+    lines.push(`Conditions: ${e.conditions.join(", ")}`);
+    lines.push(`URL: ${e.url}`);
+    if (e.note) lines.push(`Notes: ${e.note}`);
+    lines.push("");
+  });
+
+  return lines.join("\n");
+}
+
+function binderStats(scope = "all") {
+  const st = loadWorkspaceState();
+  const primaryId = st.primaryId || "";
+  let ids = (st.nodes || []).slice();
+
+  if (scope === "primary") ids = primaryId ? [primaryId] : [];
+  else if (scope === "linked") {
+    ids = ids.filter(id => isLinkedNode(id, st));
+    if (primaryId && !ids.includes(primaryId)) ids.unshift(primaryId);
+  }
+
+  let total = 0;
+  const uniq = new Set();
+
+  ids.forEach(id => {
+    const links = loadEvidenceLinks(id);
+    links.forEach(l => {
+      if (l?.url) {
+        total++;
+        uniq.add(normalizeUrl(l.url));
+      }
+    });
+  });
+
+  return { total, unique: uniq.size };
+}
+
 async function init() {
   const res = await fetch("/api/conditions");
   CONDITIONS = await res.json();
@@ -1969,6 +2740,8 @@ async function init() {
     wsClear.addEventListener("click", () => {
       clearWorkspace();
       renderWorkspace();
+      renderClaimTree();
+      renderHealthPanel();
     });
   }
 
@@ -2037,6 +2810,133 @@ async function init() {
       alert("Share link copied!");
     });
   }
+
+  // Narrative buttons
+  const wsNarrativeBtn = document.getElementById("wsNarrativeBtn");
+  const wsNarrativeCopy = document.getElementById("wsNarrativeCopy");
+  const wsNarrativeDownload = document.getElementById("wsNarrativeDownload");
+  const wsNarrativeClear = document.getElementById("wsNarrativeClear");
+  const wsNarrativeOut = document.getElementById("wsNarrativeOut");
+
+  if (wsNarrativeBtn && wsNarrativeOut) {
+    wsNarrativeBtn.addEventListener("click", () => {
+      const linkedOnly = document.getElementById("wsNarrativeLinkedOnly")?.checked;
+      const style = document.getElementById("wsNarrativeStyle")?.value || "concise";
+      wsNarrativeOut.value = generateNarrativeDraft({ linkedOnly, style });
+    });
+  }
+
+  if (wsNarrativeCopy && wsNarrativeOut) {
+    wsNarrativeCopy.addEventListener("click", async () => {
+      await navigator.clipboard.writeText(wsNarrativeOut.value || "");
+      alert("Narrative copied!");
+    });
+  }
+
+  if (wsNarrativeDownload && wsNarrativeOut) {
+    wsNarrativeDownload.addEventListener("click", () => {
+      const linkedOnly = document.getElementById("wsNarrativeLinkedOnly")?.checked;
+      const style = document.getElementById("wsNarrativeStyle")?.value || "concise";
+      downloadText("claim_narrative_draft.txt", wsNarrativeOut.value || generateNarrativeDraft({ linkedOnly, style }));
+    });
+  }
+
+  if (wsNarrativeClear && wsNarrativeOut) {
+    wsNarrativeClear.addEventListener("click", () => {
+      wsNarrativeOut.value = "";
+    });
+  }
+
+  // Auto-regenerate when toggles change (nice UX)
+  const narLinkedOnly = document.getElementById("wsNarrativeLinkedOnly");
+  const narStyle = document.getElementById("wsNarrativeStyle");
+
+  function regenIfAnyText() {
+    if (!wsNarrativeOut) return;
+    if (!wsNarrativeOut.value.trim()) return; // only regen after first generation
+    const linkedOnly = narLinkedOnly?.checked;
+    const style = narStyle?.value || "concise";
+    wsNarrativeOut.value = generateNarrativeDraft({ linkedOnly, style });
+  }
+
+  if (narLinkedOnly) narLinkedOnly.addEventListener("change", regenIfAnyText);
+  if (narStyle) narStyle.addEventListener("change", regenIfAnyText);
+
+  // Workspace timeline buttons
+  const wsTimelineBtn = document.getElementById("wsTimelineBtn");
+  const wsTimelineCopy = document.getElementById("wsTimelineCopy");
+  const wsTimelineDownload = document.getElementById("wsTimelineDownload");
+  const wsTimelineOut = document.getElementById("wsTimelineOut");
+  const wsTimelineScope = document.getElementById("wsTimelineScope");
+
+  function regenWsTimeline() {
+    const scope = wsTimelineScope?.value || "all";
+    const text = workspaceTimelineDraft(scope);
+    if (wsTimelineOut) wsTimelineOut.value = text;
+  }
+
+  if (wsTimelineBtn) wsTimelineBtn.addEventListener("click", regenWsTimeline);
+
+  if (wsTimelineCopy && wsTimelineOut) {
+    wsTimelineCopy.addEventListener("click", async () => {
+      await navigator.clipboard.writeText(wsTimelineOut.value || "");
+      alert("Timeline copied!");
+    });
+  }
+
+  if (wsTimelineDownload && wsTimelineOut) {
+    wsTimelineDownload.addEventListener("click", () => {
+      const scope = wsTimelineScope?.value || "all";
+      downloadText(`workspace_timeline_${scope}.txt`, wsTimelineOut.value || workspaceTimelineDraft(scope));
+    });
+  }
+
+  if (wsTimelineScope) wsTimelineScope.addEventListener("change", () => {
+    // only regenerate if user already generated once
+    if (wsTimelineOut && wsTimelineOut.value.trim()) regenWsTimeline();
+  });
+
+  // Workspace evidence binder buttons
+  const wsBinderBtn = document.getElementById("wsBinderBtn");
+  const wsBinderCopy = document.getElementById("wsBinderCopy");
+  const wsBinderDownload = document.getElementById("wsBinderDownload");
+  const wsBinderOut = document.getElementById("wsBinderOut");
+  const wsBinderScope = document.getElementById("wsBinderScope");
+  const wsBinderSort = document.getElementById("wsBinderSort");
+
+  function regenBinder() {
+    const scope = wsBinderScope?.value || "all";
+    const sortMode = wsBinderSort?.value || "date";
+    const text = workspaceEvidenceBinderDraft(scope, sortMode);
+    if (wsBinderOut) wsBinderOut.value = text;
+  }
+
+  if (wsBinderBtn) wsBinderBtn.addEventListener("click", regenBinder);
+
+  if (wsBinderCopy && wsBinderOut) {
+    wsBinderCopy.addEventListener("click", async () => {
+      await navigator.clipboard.writeText(wsBinderOut.value || "");
+      alert("Binder copied!");
+    });
+  }
+
+  if (wsBinderDownload && wsBinderOut) {
+    wsBinderDownload.addEventListener("click", () => {
+      const scope = wsBinderScope?.value || "all";
+      const sortMode = wsBinderSort?.value || "date";
+      downloadText(`workspace_evidence_binder_${scope}_${sortMode}.txt`,
+        wsBinderOut.value || workspaceEvidenceBinderDraft(scope, sortMode)
+      );
+    });
+  }
+
+  if (wsBinderScope) wsBinderScope.addEventListener("change", () => {
+    if (wsBinderOut && wsBinderOut.value.trim()) regenBinder();
+  });
+
+  if (wsBinderSort) wsBinderSort.addEventListener("change", () => {
+    if (wsBinderOut && wsBinderOut.value.trim()) regenBinder();
+  });
 
   // First render
   renderWorkspace();

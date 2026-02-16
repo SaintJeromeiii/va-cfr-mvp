@@ -64,6 +64,81 @@
 
       <div id="wsList" class="wsList"></div>
       <div class="small">Tip: open a condition and click “Add to Workspace”.</div>
+      <hr/>
+      <h3 style="margin:10px 0 6px">🧠 Claim Narrative Draft</h3>
+
+      <div class="healthBtns">
+        <button id="wsNarrativeBtn" class="miniBtn" type="button">Generate Narrative</button>
+        <button id="wsNarrativeCopy" class="miniBtn" type="button">Copy Narrative</button>
+        <button id="wsNarrativeDownload" class="miniBtn" type="button">Download Narrative (.txt)</button>
+        <button id="wsNarrativeClear" class="miniBtn danger" type="button">Clear</button>
+
+        <label class="small" style="display:flex;align-items:center;gap:6px">
+          <input id="wsNarrativeLinkedOnly" type="checkbox" />
+          Only include linked items
+        </label>
+
+        <label class="small" style="display:flex;align-items:center;gap:6px">
+          Style:
+          <select id="wsNarrativeStyle">
+            <option value="concise">Concise</option>
+            <option value="detailed">Detailed</option>
+          </select>
+        </label>
+      </div>
+
+      <textarea id="wsNarrativeOut" class="wsNarrativeOut" rows="16" placeholder="Click "Generate Narrative" to create a draft..."></textarea>
+
+      <div class="small" style="margin-top:6px">
+        Educational draft only — not legal advice and not representation. Always verify current CFR language and consult an accredited rep if needed.
+      </div>
+
+      <hr/>
+      <h3 style="margin:10px 0 6px">🗓️ Workspace Timeline</h3>
+
+      <div class="healthBtns">
+        <button id="wsTimelineBtn" class="miniBtn" type="button">Generate Timeline</button>
+        <button id="wsTimelineCopy" class="miniBtn" type="button">Copy Timeline</button>
+        <button id="wsTimelineDownload" class="miniBtn" type="button">Download Timeline (.txt)</button>
+
+        <label class="small" style="display:flex;align-items:center;gap:6px">
+          <select id="wsTimelineScope">
+            <option value="all">All workspace items</option>
+            <option value="linked">Linked only</option>
+            <option value="primary">Primary only</option>
+          </select>
+        </label>
+      </div>
+
+      <textarea id="wsTimelineOut" class="wsNarrativeOut" rows="12" placeholder="Click "Generate Timeline" to merge and sort timeline entries..."></textarea>
+
+      <hr/>
+      <h3 style="margin:10px 0 6px">📎 Workspace Evidence Binder</h3>
+
+      <div class="healthBtns">
+        <button id="wsBinderBtn" class="miniBtn" type="button">Generate Binder</button>
+        <button id="wsBinderCopy" class="miniBtn" type="button">Copy Binder</button>
+        <button id="wsBinderDownload" class="miniBtn" type="button">Download Binder (.txt)</button>
+
+        <label class="small" style="display:flex;align-items:center;gap:6px">
+          <select id="wsBinderScope">
+            <option value="all">All workspace items</option>
+            <option value="linked">Linked only</option>
+            <option value="primary">Primary only</option>
+          </select>
+        </label>
+
+        <label class="small" style="display:flex;align-items:center;gap:6px">
+          Sort:
+          <select id="wsBinderSort">
+            <option value="date">Date</option>
+            <option value="type">Type</option>
+            <option value="condition">Condition</option>
+          </select>
+        </label>
+      </div>
+
+      <textarea id="wsBinderOut" class="wsNarrativeOut" rows="12" placeholder="Click "Generate Binder" to merge evidence links across your workspace..."></textarea>
     </section>
 
     <!-- Detail view (ONLY ONE) -->

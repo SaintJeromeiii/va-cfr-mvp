@@ -99,6 +99,88 @@ hr {
   font-size: 0.95rem;
 }
 
+.wsNarrativeOut {
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.05);
+  color: inherit;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  line-height: 1.4;
+}
+
+#wsNarrativeStyle, #wsTimelineScope {
+  padding: 6px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.06);
+  color: inherit;
+}
+
+.tlForm { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+.tlForm input, .tlForm select, #tlNote {
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.06);
+  color: inherit;
+}
+.tlForm input { min-width: 220px; }
+#tlNote { width:100%; margin-top:8px; }
+
+.tlList { display:grid; gap:10px; margin-top:10px; }
+.tlRow {
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+}
+.tlMeta { display:flex; gap:8px; align-items:center; margin-bottom:6px; }
+
+.evLinksForm { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+.evLinksForm input, .evLinksForm select, #evLinksNote {
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.06);
+  color: inherit;
+}
+.evLinksForm input { min-width: 240px; flex: 1; }
+.evLinksForm select { min-width: 220px; }
+#evLinksNote { width:100%; margin-top:8px; }
+
+.evLinksList { display:grid; gap:10px; margin-top:10px; }
+.evLinksRow {
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+}
+.evLinksMeta { display:flex; gap:8px; align-items:center; margin-bottom:6px; }
+
+.evForm { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+.evForm input, .evForm select, #evNote {
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.06);
+  color: inherit;
+}
+.evForm input { min-width: 240px; flex: 1; }
+.evForm select { min-width: 220px; }
+#evNote { width:100%; margin-top:8px; }
+
+.evList { display:grid; gap:10px; margin-top:10px; }
+.evRow {
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+}
+.evMeta { display:flex; gap:8px; align-items:center; margin-bottom:6px; }
+
 .dcBadge {
   margin-left: 10px;
   padding: 4px 8px;
@@ -258,7 +340,7 @@ hr {
   border-radius: 10px;
   border: 1px solid #253043;
   background: #111826;
-  color: #e8eef6;
+  color: #f5f9ff;
   cursor: pointer;
 }
 
@@ -346,6 +428,7 @@ mark.hl {
   border-radius: 10px;
   border: 1px solid rgba(0, 0, 0, 0.12);
   background: rgba(255, 255, 255, 0.06);
+  color: #f5f9ff;
   cursor: pointer;
 }
 
@@ -537,6 +620,18 @@ mark.hl {
 
 .treeSvg text {
   font-size: 12px;
+}
+
+input[type="radio"] {
+  accent-color: #7ab7ff;
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+}
+
+input[type="radio"]:focus {
+  outline: 2px solid #7ab7ff;
+  outline-offset: 2px;
 }
 
 .treeNode {
