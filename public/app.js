@@ -196,6 +196,221 @@ function isOrphan(nodeId, st) {
   return incomingCount(nodeId, st.links) === 0;
 }
 
+function reachableFromPrimary(st) {
+  const start = st.primaryId;
+  const seen = new Set();
+  if (!start) return seen;
+
+  const adj = buildAdjacencyFromLinks(st.links);
+  const stack = [start];
+
+  while (stack.length) {
+    const cur = stack.pop();
+    if (seen.has(cur)) continue;
+    seen.add(cur);
+    const kids = adj.get(cur) || [];
+    kids.forEach(k => stack.push(k));
+  }
+
+  return seen;
+}
+
+function listOrphans(st) {
+  return (st.nodes || []).filter(id => isOrphan(id, st));
+}
+
+function listDisconnected(st) {
+  if (!st.primaryId) return [];
+  const reachable = reachableFromPrimary(st);
+  return (st.nodes || []).filter(id => !reachable.has(id));
+}
+
+function countBrokenCfr(items) {
+  let broken = 0;
+  const examples = [];
+  items.forEach(c => {
+    if (!Array.isArray(c.cfr) || !c.cfr.length) {
+      broken++;
+      if (examples.length < 3) examples.push(`${c.name} (missing cfr[])`);
+      return;
+    }
+    c.cfr.forEach(r => {
+      if (!r.section || !r.diagnostic_code || !r.title || !r.url) {
+        broken++;
+        if (examples.length < 3) examples.push(`${c.name} (bad CFR ref)`);
+      }
+    });
+  });
+  return { broken, examples };
+}
+
+function missingNotes(items) {
+  // notes are optional, but helpful. We'll flag linked nodes that have zero notes.
+  const st = loadWorkspaceState();
+  const linked = new Set((st.links || []).map(l => l.to));
+  const misses = [];
+  items.forEach(it => {
+    if (it.id === st.primaryId) return;
+    if (!linked.has(it.id)) return;
+    const n = (loadNotes(it.id) || "").trim();
+    if (!n) misses.push(it.id);
+  });
+  return misses;
+}
+
+function computeHealthSummary() {
+  const st = loadWorkspaceState();
+  const items = (st.nodes || []).map(id => CONDITIONS.find(c => c.id === id)).filter(Boolean);
+
+  const orphans = listOrphans(st);
+  const disconnected = listDisconnected(st);
+
+  const { done, total, pct } = workspaceCompletion(items);
+  const lowReadiness = total ? pct < 50 : false; // threshold (change if you want)
+
+  const cfrCheck = countBrokenCfr(items);
+  const notesMiss = missingNotes(items);
+
+  return {
+    st,
+    items,
+    evidence: { done, total, pct, lowReadiness },
+    orphans,
+    disconnected,
+    brokenCfr: cfrCheck,
+    notesMissingIds: notesMiss
+  };
+}
+
+function renderHealthPanel() {
+  const el = document.getElementById("wsHealth");
+  if (!el) return;
+
+  const h = computeHealthSummary();
+
+  const row = (label, value, tag) => `
+    <div class="healthRow">
+      <div>${label}</div>
+      <div><span class="healthTag">${tag}</span> ${value}</div>
+    </div>
+  `;
+
+  const primaryName = h.st.primaryId
+    ? (CONDITIONS.find(c => c.id === h.st.primaryId)?.name || h.st.primaryId)
+    : "(none)";
+
+  el.innerHTML = `
+    ${row("Primary", escapeHtml(primaryName), "INFO")}
+    ${row("Evidence Readiness", `${h.evidence.done}/${h.evidence.total} (${h.evidence.pct}%)`, h.evidence.lowReadiness ? "LOW" : "OK")}
+    ${row("Orphans (no parents)", `${h.orphans.length}`, h.orphans.length ? "WARN" : "OK")}
+    ${row("Disconnected from Primary", `${h.disconnected.length}`, h.disconnected.length ? "WARN" : "OK")}
+    ${row("Broken CFR refs", `${h.brokenCfr.broken}${h.brokenCfr.examples.length ? ` (e.g., ${escapeHtml(h.brokenCfr.examples.join(", "))})` : ""}`, h.brokenCfr.broken ? "WARN" : "OK")}
+    ${row("Linked items missing notes", `${h.notesMissingIds.length}`, h.notesMissingIds.length ? "HINT" : "OK")}
+  `;
+}
+
+function exportHealthReport() {
+  const h = computeHealthSummary();
+  const lines = [];
+  lines.push("VA CFR Finder — Workspace Health Report");
+  lines.push(new Date().toLocaleString());
+  lines.push("");
+
+  lines.push(`Primary: ${h.st.primaryId || "(none)"}`);
+  lines.push(`Evidence: ${h.evidence.done}/${h.evidence.total} (${h.evidence.pct}%)`);
+  lines.push(`Orphans: ${h.orphans.length}`);
+  lines.push(`Disconnected: ${h.disconnected.length}`);
+  lines.push(`Broken CFR refs: ${h.brokenCfr.broken}`);
+  lines.push(`Linked items missing notes: ${h.notesMissingIds.length}`);
+  lines.push("");
+
+  if (h.orphans.length) {
+    lines.push("Orphans:");
+    h.orphans.forEach(id => lines.push(`- ${id}`));
+    lines.push("");
+  }
+
+  if (h.disconnected.length) {
+    lines.push("Disconnected:");
+    h.disconnected.forEach(id => lines.push(`- ${id}`));
+    lines.push("");
+  }
+
+  if (h.brokenCfr.broken) {
+    lines.push("Broken CFR examples:");
+    h.brokenCfr.examples.forEach(x => lines.push(`- ${x}`));
+    lines.push("");
+  }
+
+  if (h.notesMissingIds.length) {
+    lines.push("Missing notes (linked):");
+    h.notesMissingIds.forEach(id => lines.push(`- ${id}`));
+    lines.push("");
+  }
+
+  downloadText("workspace_health_report.txt", lines.join("\n"));
+}
+
+function fixLinkAllOrphansToPrimary() {
+  const h = computeHealthSummary();
+  if (!h.st.primaryId) return alert("Set a Primary first.");
+  let changed = 0;
+
+  h.orphans.forEach(id => {
+    try {
+      addLink(h.st.primaryId, id, "Secondary to");
+      changed++;
+    } catch {}
+  });
+
+  alert(`Linked ${changed} orphan(s) to Primary.`);
+}
+
+function fixAttachDisconnectedToPrimary() {
+  const h = computeHealthSummary();
+  if (!h.st.primaryId) return alert("Set a Primary first.");
+  let changed = 0;
+
+  h.disconnected.forEach(id => {
+    if (id === h.st.primaryId) return;
+    try {
+      addLink(h.st.primaryId, id, "Associated with");
+      changed++;
+    } catch {}
+  });
+
+  alert(`Attached ${changed} disconnected node(s) to Primary.`);
+}
+
+function base64UrlEncode(str) {
+  const b64 = btoa(unescape(encodeURIComponent(str)));
+  return b64.replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+}
+
+function base64UrlDecode(b64url) {
+  let b64 = b64url.replaceAll("-", "+").replaceAll("_", "/");
+  while (b64.length % 4) b64 += "=";
+  const str = decodeURIComponent(escape(atob(b64)));
+  return str;
+}
+
+function makeSharePayload() {
+  const st = loadWorkspaceState();
+  // Share ONLY the graph (nodes/links/primary). Notes/evidence remain local unless you want them in URL.
+  return { v: 1, nodes: st.nodes || [], primaryId: st.primaryId || "", links: st.links || [] };
+}
+
+function applySharePayload(payload) {
+  if (!payload || !Array.isArray(payload.nodes) || !Array.isArray(payload.links)) {
+    throw new Error("Invalid workspace share payload.");
+  }
+  saveWorkspaceState({
+    nodes: payload.nodes,
+    primaryId: payload.primaryId || payload.nodes[0] || "",
+    links: payload.links
+  });
+}
+
 function ensureNode(id) {
   const st = loadWorkspaceState();
   if (!st.nodes.includes(id)) st.nodes.push(id);
@@ -625,6 +840,9 @@ function renderWorkspace() {
 
   // Update tree view
   renderClaimTree();
+
+  // Update health panel
+  renderHealthPanel();
 }
 
 function renderClaimTree() {
@@ -1621,6 +1839,28 @@ async function init() {
   const res = await fetch("/api/conditions");
   CONDITIONS = await res.json();
 
+  // Auto-import workspace from share link
+  const params = new URLSearchParams(window.location.search);
+  const wsToken = params.get("ws");
+
+  if (wsToken) {
+    try {
+      const json = base64UrlDecode(wsToken);
+      const payload = JSON.parse(json);
+      applySharePayload(payload);
+
+      // optional: remove ws param after import (clean URL)
+      const clean = new URL(window.location.href);
+      clean.searchParams.delete("ws");
+      history.replaceState({}, "", clean.toString());
+
+      alert("Workspace imported from link!");
+    } catch (e) {
+      console.error(e);
+      alert("Could not import workspace from link (bad or corrupted token).");
+    }
+  }
+
   const input = document.getElementById("q");
   const filter = document.getElementById("systemFilter");
   const clearBtn = document.getElementById("clearBtn");
@@ -1756,8 +1996,52 @@ async function init() {
     });
   }
 
+  // Health panel buttons
+  const wsFixOrphans = document.getElementById("wsFixOrphans");
+  const wsFixDisconnected = document.getElementById("wsFixDisconnected");
+  const wsHealthExport = document.getElementById("wsHealthExport");
+
+  if (wsFixOrphans) {
+    wsFixOrphans.addEventListener("click", () => {
+      fixLinkAllOrphansToPrimary();
+      renderWorkspace();
+      renderClaimTree();
+      renderHealthPanel();
+    });
+  }
+
+  if (wsFixDisconnected) {
+    wsFixDisconnected.addEventListener("click", () => {
+      fixAttachDisconnectedToPrimary();
+      renderWorkspace();
+      renderClaimTree();
+      renderHealthPanel();
+    });
+  }
+
+  if (wsHealthExport) {
+    wsHealthExport.addEventListener("click", () => exportHealthReport());
+  }
+
+  // Share link button
+  const wsCopyShare = document.getElementById("wsCopyShare");
+  if (wsCopyShare) {
+    wsCopyShare.addEventListener("click", async () => {
+      const payload = makeSharePayload();
+      const token = base64UrlEncode(JSON.stringify(payload));
+
+      const url = new URL(window.location.href);
+      url.searchParams.set("ws", token);
+
+      await navigator.clipboard.writeText(url.toString());
+      alert("Share link copied!");
+    });
+  }
+
   // First render
   renderWorkspace();
+  renderClaimTree();
+  renderHealthPanel();
 }
 
 

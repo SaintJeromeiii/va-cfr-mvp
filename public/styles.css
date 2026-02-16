@@ -580,3 +580,23 @@ mark.hl {
   color: rgba(255, 220, 120, 0.95);
   margin-left: 6px;
 }
+
+.healthBox {
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  margin-top: 8px;
+}
+
+.healthRow { display:flex; justify-content: space-between; gap:10px; padding:6px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.healthRow:last-child { border-bottom: none; }
+
+.healthTag {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.18);
+  opacity: .9;
+}
+
+.healthBtns { display:flex; gap:8px; flex-wrap:wrap; margin-top: 10px; }
