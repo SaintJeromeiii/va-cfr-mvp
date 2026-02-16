@@ -566,3 +566,17 @@ mark.hl {
 .wsLinks { display: grid; gap: 8px; margin-top: 6px; }
 .wsLinkRow { display: grid; grid-template-columns: 1fr 220px auto; gap: 8px; align-items: center; }
 .wsAddLinkRow { display: grid; grid-template-columns: 1fr 220px auto; gap: 8px; align-items: center; margin-top: 6px; }
+
+.wsCard.orphan {
+  border-color: rgba(255, 196, 0, 0.35);
+  box-shadow: 0 0 0 1px rgba(255, 196, 0, 0.18) inset;
+}
+
+.orphanBadge {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 196, 0, 0.35);
+  color: rgba(255, 220, 120, 0.95);
+  margin-left: 6px;
+}

@@ -186,6 +186,16 @@ function wouldCreateCycle(links, fromId, toId) {
   return hasPath(adj, toId, fromId);
 }
 
+function incomingCount(nodeId, links) {
+  return (links || []).reduce((acc, l) => acc + (l.to === nodeId ? 1 : 0), 0);
+}
+
+function isOrphan(nodeId, st) {
+  if (!nodeId) return false;
+  if (nodeId === st.primaryId) return false;
+  return incomingCount(nodeId, st.links) === 0;
+}
+
 function ensureNode(id) {
   const st = loadWorkspaceState();
   if (!st.nodes.includes(id)) st.nodes.push(id);
@@ -461,8 +471,12 @@ function renderWorkspace() {
   wsScore.textContent = `Evidence Readiness: ${done}/${total} (${pct}%)`;
   wsBarFill.style.width = `${pct}%`;
 
+  const orphanItems = items.filter(it => isOrphan(it.id, st));
+  if (wsOrphans) wsOrphans.textContent = `Orphans: ${orphanItems.length}`;
+
   items.forEach(item => {
     const isPrimary = item.id === st.primaryId;
+    const orphan = isOrphan(item.id, st);
     const stNow = loadWorkspaceState();
     const parentLinks = parentsOf(item.id, stNow.links);
     const candidates = stNow.nodes.filter(x => x !== item.id);
@@ -470,13 +484,14 @@ function renderWorkspace() {
     const ev = evidenceCompletion(item, loadEvidenceState(item.id));
 
     const card = document.createElement("div");
-    card.className = `wsCard ${systemClassName(item.body_system)}`;
+    card.className = `wsCard ${systemClassName(item.body_system)}${orphan ? " orphan" : ""}`;
 
     card.innerHTML = `
       <div class="wsRow">
         <div style="min-width:260px">
           <div>
             <strong>${escapeHtml(item.name)}</strong>
+            ${orphan ? `<span class="orphanBadge">Orphan</span>` : ""}
             ${isPrimary ? `<span class="wsBadge">Primary</span>` : `<span class="wsBadge">Linked</span>`}
           </div>
           <div class="small">${escapeHtml(item.body_system || "")} • ${ev.done}/${ev.total} (${ev.pct}%)</div>
@@ -533,6 +548,7 @@ function renderWorkspace() {
         <div class="wsRowBtns">
           <button class="miniBtn" data-open="${item.id}" type="button">Open</button>
           ${isPrimary ? "" : `<button class="miniBtn" data-primary="${item.id}" type="button">Set Primary</button>`}
+          ${orphan && st.primaryId ? `<button class="miniBtn" data-link-primary="${escapeHtml(item.id)}" type="button">Link to Primary</button>` : ""}
           <button class="miniBtn danger" data-rm="${item.id}" type="button">Remove</button>
         </div>
       </div>
@@ -586,6 +602,23 @@ function renderWorkspace() {
         renderClaimTree();
       } catch (err) {
         alert(err.message || "That link would create a cycle. Choose a different parent.");
+      }
+    });
+  });
+
+  // wire "Link to Primary" button
+  wsList.querySelectorAll("button[data-link-primary]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const childId = btn.dataset.linkPrimary;
+      const st2 = loadWorkspaceState();
+      if (!st2.primaryId) return;
+
+      try {
+        addLink(st2.primaryId, childId, "Secondary to");
+        renderWorkspace();
+        renderClaimTree();
+      } catch (err) {
+        alert(err.message || "Could not link to Primary.");
       }
     });
   });
