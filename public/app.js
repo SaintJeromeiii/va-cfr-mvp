@@ -178,6 +178,56 @@ function removeEvidenceLink(id, linkId) {
   return arr;
 }
 
+function evidenceRelStoreKey() {
+  return "vaCfrEvidenceRelations:v1";
+}
+
+// Stored as: { [urlKey]: [urlKey2, urlKey3...] } (undirected)
+function loadEvidenceRelations() {
+  try {
+    const raw = localStorage.getItem(evidenceRelStoreKey());
+    const obj = raw ? JSON.parse(raw) : {};
+    return obj && typeof obj === "object" ? obj : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveEvidenceRelations(rel) {
+  localStorage.setItem(evidenceRelStoreKey(), JSON.stringify(rel || {}));
+}
+
+function addEvidenceRelation(urlA, urlB) {
+  const a = normalizeUrl(urlA);
+  const b = normalizeUrl(urlB);
+  if (!a || !b) throw new Error("Both evidence URLs are required.");
+  if (a === b) throw new Error("Cannot relate an evidence item to itself.");
+
+  const rel = loadEvidenceRelations();
+  rel[a] = Array.isArray(rel[a]) ? rel[a] : [];
+  rel[b] = Array.isArray(rel[b]) ? rel[b] : [];
+
+  if (!rel[a].includes(b)) rel[a].push(b);
+  if (!rel[b].includes(a)) rel[b].push(a);
+
+  saveEvidenceRelations(rel);
+}
+
+function removeEvidenceRelation(urlA, urlB) {
+  const a = normalizeUrl(urlA);
+  const b = normalizeUrl(urlB);
+  const rel = loadEvidenceRelations();
+  if (rel[a]) rel[a] = rel[a].filter(x => x !== b);
+  if (rel[b]) rel[b] = rel[b].filter(x => x !== a);
+  saveEvidenceRelations(rel);
+}
+
+function relatedEvidenceKeys(url) {
+  const key = normalizeUrl(url);
+  const rel = loadEvidenceRelations();
+  return Array.isArray(rel[key]) ? rel[key] : [];
+}
+
 const EVIDENCE_LINK_TYPES = [
   "Medical record",
   "Diagnosis note",
@@ -1706,6 +1756,21 @@ ${strategyHTML}
   <button id="evLinksExport" class="miniBtn" type="button">Download evidence list (.txt)</button>
 </div>
 
+<hr/>
+<div class="small"><strong>Link evidence ↔ evidence</strong> (pick an evidence item below, then link it to another)</div>
+
+<div id="evRelPanel" class="evRelPanel hidden">
+  <div class="small">
+    Relating FROM: <strong id="evRelFromLabel">(none)</strong>
+  </div>
+
+  <div class="evForm" style="margin-top:8px">
+    <select id="evRelPick"></select>
+    <button id="evRelAdd" class="miniBtn" type="button">Link as Related</button>
+    <button id="evRelCancel" class="miniBtn" type="button">Cancel</button>
+  </div>
+</div>
+
 <div id="evLinksList" class="evLinksList"></div>
 
 
@@ -1914,6 +1979,7 @@ if (secBtn && secList) {
   function renderEvidenceLinks() {
     if (!evLinksList) return;
 
+    const idx = buildWorkspaceEvidenceIndex("all");
     const links = loadEvidenceLinks(item.id);
 
     if (!links.length) {
@@ -1929,24 +1995,43 @@ if (secBtn && secList) {
       return (a.label || "").localeCompare(b.label || "");
     });
 
-    evLinksList.innerHTML = sorted.map(l => `
-      <div class="evLinksRow">
-        <div class="evLinksMeta">
-          ${l.date ? `<span class="badge">${escapeHtml(l.date)}</span>` : ""}
-          <span class="badge">${escapeHtml(l.type || "Other")}</span>
+    evLinksList.innerHTML = sorted.map(l => {
+      const key = normalizeUrl(l.url);
+      const relKeys = relatedEvidenceKeys(l.url);
+      const relList = relKeys
+        .map(k => idx.get(k))
+        .filter(Boolean)
+        .slice(0, 4); // cap display
+
+      return `
+        <div class="evLinksRow">
+          <div class="evLinksMeta">
+            ${l.date ? `<span class="badge">${escapeHtml(l.date)}</span>` : ""}
+            <span class="badge">${escapeHtml(l.type || "Other")}</span>
+            ${relKeys.length ? `<span class="relBadge">Related: ${relKeys.length}</span>` : ""}
+          </div>
+
+          <div><strong>${escapeHtml(l.label || "Evidence")}</strong></div>
+
+          ${l.url ? `<div class="small"><a href="${escapeHtml(l.url)}" target="_blank" rel="noreferrer">Open link</a></div>` : ""}
+
+          ${l.note ? `<div class="small">${escapeHtml(l.note)}</div>` : ""}
+
+          ${relList.length ? `
+            <div class="small" style="margin-top:6px">
+              <strong>Related:</strong>
+              <ul style="margin:6px 0 0 18px">
+                ${relList.map(r => `<li><a href="${escapeHtml(r.url)}" target="_blank" rel="noreferrer">${escapeHtml(evidenceDisplayName(r))}</a></li>`).join("")}
+              </ul>
+            </div>
+          ` : ""}
+
+          <div style="margin-top:6px">
+            <button class="miniBtn danger" data-evlinksrm="${escapeHtml(l.id)}" type="button">Remove</button>
+          </div>
         </div>
-
-        <div><strong>${escapeHtml(l.label || "Evidence")}</strong></div>
-
-        ${l.url ? `<div class="small"><a href="${escapeHtml(l.url)}" target="_blank" rel="noreferrer">Open link</a></div>` : ""}
-
-        ${l.note ? `<div class="small">${escapeHtml(l.note)}</div>` : ""}
-
-        <div style="margin-top:6px">
-          <button class="miniBtn danger" data-evlinksrm="${escapeHtml(l.id)}" type="button">Remove</button>
-        </div>
-      </div>
-    `).join("");
+      `;
+    }).join("");
 
     evLinksList.querySelectorAll("button[data-evlinksrm]").forEach(b => {
       b.addEventListener("click", () => {
@@ -2022,6 +2107,199 @@ if (secBtn && secList) {
 
   renderEvidenceLinks();
 
+  // ---- Evidence ↔ Evidence linking (PER-ROW) ----
+  const evRelPanel = document.getElementById("evRelPanel");
+  const evRelFromLabel = document.getElementById("evRelFromLabel");
+  const evRelPick = document.getElementById("evRelPick");
+  const evRelAdd = document.getElementById("evRelAdd");
+  const evRelCancel = document.getElementById("evRelCancel");
+
+  let currentRelFromUrl = "";   // the "FROM" evidence URL
+  let currentRelFromKey = "";   // normalized key used for filtering
+  let currentRelFromRowId = ""; // evidence row id for highlighting
+
+  function showRelPanel(fromUrl, fromLabel, rowId) {
+    currentRelFromUrl = fromUrl || "";
+    currentRelFromKey = normalizeUrl(fromUrl || "");
+    currentRelFromRowId = rowId || "";
+
+    if (evRelFromLabel) evRelFromLabel.textContent = fromLabel || fromUrl || "(unknown)";
+    if (evRelPanel) evRelPanel.classList.remove("hidden");
+
+    populateRelateDropdown();
+    highlightActiveRelRow();
+  }
+
+  function hideRelPanel() {
+    currentRelFromUrl = "";
+    currentRelFromKey = "";
+    currentRelFromRowId = "";
+
+    if (evRelPanel) evRelPanel.classList.add("hidden");
+    if (evRelFromLabel) evRelFromLabel.textContent = "(none)";
+    if (evRelPick) evRelPick.innerHTML = `<option value="">Select another evidence item…</option>`;
+
+    highlightActiveRelRow();
+  }
+
+  function highlightActiveRelRow() {
+    if (!evList) return;
+    evList.querySelectorAll(".evRow").forEach(row => row.classList.remove("activeRel"));
+    if (!currentRelFromRowId) return;
+    const r = evList.querySelector(`[data-evid="${CSS.escape(currentRelFromRowId)}"]`);
+    if (r) r.classList.add("activeRel");
+  }
+
+  function populateRelateDropdown() {
+    if (!evRelPick) return;
+
+    const idx = buildWorkspaceEvidenceIndex("all");
+    const opts = [];
+
+    for (const [urlKey, meta] of idx.entries()) {
+      // exclude "from" evidence item itself
+      if (urlKey === currentRelFromKey) continue;
+      opts.push(meta);
+    }
+
+    if (!currentRelFromUrl) {
+      evRelPick.innerHTML = `<option value="">(Click "Relate…" on an evidence item below)</option>`;
+      return;
+    }
+
+    evRelPick.innerHTML =
+      `<option value="">Select another evidence item…</option>` +
+      opts
+        .sort((a, b) => evidenceDisplayName(a).localeCompare(evidenceDisplayName(b)))
+        .map(m => `<option value="${escapeHtml(m.url)}">${escapeHtml(evidenceDisplayName(m))}</option>`)
+        .join("");
+  }
+
+  function renderEvidenceLinksWithRelated() {
+    if (!evList) return;
+
+    const idx = buildWorkspaceEvidenceIndex("all");
+    const links = loadEvidenceLinks(item.id);
+
+    if (!links.length) {
+      evList.innerHTML = `<div class="small">(No evidence links yet.)</div>`;
+      hideRelPanel();
+      return;
+    }
+
+    const sorted = links.slice().sort((a, b) => {
+      const da = toSortableDateKey(a.date);
+      const db = toSortableDateKey(b.date);
+      if (da !== db) return da.localeCompare(db);
+      return (a.label || "").localeCompare(b.label || "");
+    });
+
+    evList.innerHTML = sorted.map(l => {
+      const relKeys = relatedEvidenceKeys(l.url);
+      const relList = relKeys.map(k => idx.get(k)).filter(Boolean).slice(0, 4);
+
+      return `
+        <div class="evRow" data-evid="${escapeHtml(l.id)}">
+          <div class="evMeta">
+            ${l.date ? `<span class="badge">${escapeHtml(l.date)}</span>` : ""}
+            <span class="badge">${escapeHtml(l.type || "Other")}</span>
+            ${relKeys.length ? `<span class="relBadge">Related: ${relKeys.length}</span>` : ""}
+          </div>
+
+          <div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start">
+            <div style="flex:1">
+              <div><strong>${escapeHtml(l.label || "Evidence")}</strong></div>
+              ${l.url ? `<div class="small"><a href="${escapeHtml(l.url)}" target="_blank" rel="noreferrer">Open link</a></div>` : ""}
+              ${l.note ? `<div class="small">${escapeHtml(l.note)}</div>` : ""}
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:6px; min-width:120px">
+              <button class="miniBtn" data-relfrom="${escapeHtml(l.id)}" type="button">Relate…</button>
+              <button class="miniBtn danger" data-evrm="${escapeHtml(l.id)}" type="button">Remove</button>
+            </div>
+          </div>
+
+          ${relList.length ? `
+            <div class="small" style="margin-top:8px">
+              <strong>Related:</strong>
+              <ul style="margin:6px 0 0 18px">
+                ${relList.map(r => `
+  <li style="display:flex; gap:8px; align-items:center">
+    <a href="${escapeHtml(r.url)}" target="_blank" rel="noreferrer">${escapeHtml(evidenceDisplayName(r))}</a>
+    <button class="miniBtn danger" data-unrel-from="${escapeHtml(l.url)}" data-unrel-to="${escapeHtml(r.url)}" type="button">Unlink</button>
+  </li>
+`).join("")}
+              </ul>
+            </div>
+          ` : ""}
+        </div>
+      `;
+    }).join("");
+
+    // Remove
+    evList.querySelectorAll("button[data-evrm]").forEach(b => {
+      b.addEventListener("click", () => {
+        removeEvidenceLink(item.id, b.dataset.evrm);
+        renderEvidenceLinksWithRelated();
+        populateRelateDropdown();
+      });
+    });
+
+    // Relate… (per-row)
+    evList.querySelectorAll("button[data-relfrom]").forEach(b => {
+      b.addEventListener("click", () => {
+        const rowId = b.dataset.relfrom;
+        const myLinks = loadEvidenceLinks(item.id);
+        const found = myLinks.find(x => x.id === rowId);
+        if (!found || !found.url) return alert("This evidence item is missing a URL.");
+
+        const fromLabel = found.label || found.url;
+        showRelPanel(found.url, fromLabel, rowId);
+      });
+    });
+
+    // Unlink related evidence
+    evList.querySelectorAll("button[data-unrel-from][data-unrel-to]").forEach(b => {
+      b.addEventListener("click", () => {
+        const fromUrl = b.dataset.unrelFrom || "";
+        const toUrl = b.dataset.unrelTo || "";
+        try {
+          removeEvidenceRelation(fromUrl, toUrl);
+          renderEvidenceLinksWithRelated();
+          populateRelateDropdown();
+        } catch (e) {
+          alert(e.message || "Could not unlink evidence.");
+        }
+      });
+    });
+
+    highlightActiveRelRow();
+  }
+
+  if (evRelAdd) {
+    evRelAdd.addEventListener("click", () => {
+      if (!currentRelFromUrl) return alert("Click \"Relate…\" on an evidence item first.");
+      const toUrl = evRelPick?.value || "";
+      if (!toUrl) return alert("Pick another evidence item to relate.");
+
+      try {
+        addEvidenceRelation(currentRelFromUrl, toUrl);
+        alert("Related evidence link created!");
+        renderEvidenceLinksWithRelated();
+      } catch (e) {
+        alert(e.message || "Could not relate evidence.");
+      }
+    });
+  }
+
+  if (evRelCancel) {
+    evRelCancel.addEventListener("click", hideRelPanel);
+  }
+
+  // Call these instead of your old renderEvidenceLinks()
+  renderEvidenceLinksWithRelated();
+  populateRelateDropdown();
+
   
   // --- Evidence checklist behavior (persist per condition) ---
   const evList = document.getElementById("evList");
@@ -2038,7 +2316,8 @@ if (secBtn && secList) {
   if (evList) {
     evList.addEventListener("change", (e) => {
       const cb = e.target;
-      if (!cb || !cb.classList || !cb.classList.contains("evCheck")) return;
+      if (!cb || cb.tagName !== "INPUT" || cb.type !== "checkbox") return;
+      if (!cb.classList.contains("evCheck")) return;
 
       const idx = Number(cb.dataset.idx);
       const st = loadEvidenceState(item.id);
@@ -2488,7 +2767,727 @@ function normalizeUrl(u) {
   return (u || "").trim().toLowerCase();
 }
 
-function workspaceEvidenceBinderDraft(scope = "all", sortMode = "date") {
+function buildEvidenceGraphNodes(urlKeys) {
+  // urlKeys: array of normalized url keys present in binder scope
+  const rel = loadEvidenceRelations();
+
+  // adjacency for only nodes in scope
+  const inScope = new Set(urlKeys);
+  const adj = new Map();
+
+  urlKeys.forEach(k => adj.set(k, []));
+
+  urlKeys.forEach(k => {
+    const nbrs = Array.isArray(rel[k]) ? rel[k] : [];
+    nbrs.forEach(n => {
+      if (inScope.has(n)) adj.get(k).push(n);
+    });
+  });
+
+  return adj;
+}
+
+function findEvidenceClusters(urlKeys) {
+  const adj = buildEvidenceGraphNodes(urlKeys);
+  const visited = new Set();
+  const clusters = [];
+
+  for (const k of urlKeys) {
+    if (visited.has(k)) continue;
+
+    // BFS/DFS
+    const stack = [k];
+    visited.add(k);
+    const comp = [];
+
+    while (stack.length) {
+      const cur = stack.pop();
+      comp.push(cur);
+      const nbrs = adj.get(cur) || [];
+      nbrs.forEach(n => {
+        if (!visited.has(n)) {
+          visited.add(n);
+          stack.push(n);
+        }
+      });
+    }
+
+    clusters.push(comp);
+  }
+
+  // Sort clusters by size desc
+  clusters.sort((a, b) => b.length - a.length);
+  return clusters;
+}
+
+function freqMap(arr) {
+  const m = new Map();
+  (arr || []).forEach(x => {
+    const k = (x ?? "").toString().trim();
+    if (!k) return;
+    m.set(k, (m.get(k) || 0) + 1);
+  });
+  return m;
+}
+
+function topKFromFreq(map, k = 2) {
+  return [...map.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, k)
+    .map(([name]) => name);
+}
+
+const STOP_WORDS = new Set([
+  "the","a","an","and","or","of","for","to","in","on","with","without","by",
+  "from","at","as","is","are","was","were","be","been","being",
+  "note","notes","report","records","record","medical","doc","document",
+  "exam","c&p","cp","va","veteran","statement","letter","form","dbq",
+  "results","test","tests","visit","clinic","hospital"
+]);
+
+function tokenizeLabel(text) {
+  const s = (text || "")
+    .toLowerCase()
+    .replace(/https?:\/\/\S+/g, " ")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!s) return [];
+  return s
+    .split(" ")
+    .map(t => t.trim())
+    .filter(t => t.length >= 3)
+    .filter(t => !STOP_WORDS.has(t))
+    .filter(t => !/^\d+$/.test(t)); // drop pure numbers
+}
+
+function keywordSummaryFromEntries(entries, maxWords = 3) {
+  const tokens = [];
+
+  entries.forEach(e => {
+    // use label + note for keyword extraction (optional)
+    tokenizeLabel(e.label).forEach(t => tokens.push(t));
+    tokenizeLabel(e.note).forEach(t => tokens.push(t));
+  });
+
+  if (!tokens.length) return "";
+
+  const freq = freqMap(tokens);
+  const top = topKFromFreq(freq, maxWords);
+  return top.join(" / ");
+}
+
+function labelCluster(entries) {
+  // entries: {label,type,date,conditions:[...], url, note}
+  const allConditions = [];
+  const allTypes = [];
+
+  entries.forEach(e => {
+    (e.conditions || []).forEach(c => allConditions.push(c));
+    if (e.type) allTypes.push(e.type);
+  });
+
+  const condTop = topKFromFreq(freqMap(allConditions), 2);
+  const typeTop = topKFromFreq(freqMap(allTypes), 1);
+
+  const condLabel = condTop.length ? condTop.join(" + ") : "Mixed conditions";
+  const typeLabel = typeTop.length ? typeTop[0] : "Mixed evidence";
+
+  // NEW: keyword label from evidence labels/notes
+  const kw = keywordSummaryFromEntries(entries, 3); // e.g., "sleep / study / cpap"
+  const kwLabel = kw ? `${kw}` : "";
+
+  // Prefer keywords when available, but keep conditions as backup context
+  // Example: "sleep / cpap (Medical record) — PTSD + Sleep Apnea"
+  if (kwLabel) {
+    return `${kwLabel} (${typeLabel}) — ${condLabel}`;
+  }
+
+  return `${condLabel} (${typeLabel})`;
+}
+
+function clusterLabelConfidence(entries) {
+  const allConditions = [];
+  const allTypes = [];
+
+  entries.forEach(e => {
+    (e.conditions || []).forEach(c => allConditions.push(c));
+    if (e.type) allTypes.push(e.type);
+  });
+
+  const condFreq = freqMap(allConditions);
+  const typeFreq = freqMap(allTypes);
+
+  const totalCond = allConditions.length || 1;
+  const totalType = allTypes.length || 1;
+
+  const topCondCount = [...condFreq.values()].sort((a,b)=>b-a)[0] || 0;
+  const topTypeCount = [...typeFreq.values()].sort((a,b)=>b-a)[0] || 0;
+
+  const condPct = Math.round((topCondCount / totalCond) * 100);
+  const typePct = Math.round((topTypeCount / totalType) * 100);
+
+  return { condPct, typePct };
+}
+
+function buildBinderEntries(scope = "all") {
+  const st = loadWorkspaceState();
+  const primaryId = st.primaryId || "";
+
+  let ids = (st.nodes || []).slice();
+  if (scope === "primary") ids = primaryId ? [primaryId] : [];
+  else if (scope === "linked") {
+    ids = ids.filter(id => isLinkedNode(id, st));
+    if (primaryId && !ids.includes(primaryId)) ids.unshift(primaryId);
+  }
+
+  // urlKey -> entry
+  const byUrl = new Map();
+
+  ids.forEach(id => {
+    const cond = getConditionById(id);
+    if (!cond) return;
+
+    const links = loadEvidenceLinks(id);
+    links.forEach(l => {
+      const key = normalizeUrl(l.url);
+      if (!key) return;
+
+      if (!byUrl.has(key)) {
+        byUrl.set(key, {
+          url: l.url,
+          urlKey: key,
+          label: l.label || "",
+          type: l.type || "Other",
+          date: l.date || "",
+          note: l.note || "",
+          conditions: new Set([cond.name])
+        });
+      } else {
+        const e = byUrl.get(key);
+        e.conditions.add(cond.name);
+        if (!e.label && l.label) e.label = l.label;
+        if ((!e.type || e.type === "Other") && l.type) e.type = l.type;
+        if (!e.date && l.date) e.date = l.date;
+        if (!e.note && l.note) e.note = l.note;
+      }
+    });
+  });
+
+  const merged = [...byUrl.values()].map(e => ({
+    ...e,
+    conditions: [...e.conditions].sort()
+  }));
+
+  return merged;
+}
+
+function sortBinderEntries(merged, sortMode = "date") {
+  const out = (merged || []).slice();
+
+  if (sortMode === "type") {
+    out.sort((a, b) =>
+      (a.type || "").localeCompare(b.type || "") ||
+      toSortableDateKey(a.date).localeCompare(toSortableDateKey(b.date)) ||
+      (a.label || "").localeCompare(b.label || "")
+    );
+  } else if (sortMode === "condition") {
+    out.sort((a, b) =>
+      (a.conditions?.[0] || "").localeCompare(b.conditions?.[0] || "") ||
+      toSortableDateKey(a.date).localeCompare(toSortableDateKey(b.date)) ||
+      (a.label || "").localeCompare(b.label || "")
+    );
+  } else {
+    out.sort((a, b) =>
+      toSortableDateKey(a.date).localeCompare(toSortableDateKey(b.date)) ||
+      (a.type || "").localeCompare(b.type || "") ||
+      (a.label || "").localeCompare(b.label || "")
+    );
+  }
+
+  return out;
+}
+
+function renderBinderViewer({ scope, sortMode, viewMode }) {
+  const host = document.getElementById("wsBinderViewer");
+  if (!host) return;
+
+  const show = document.getElementById("wsBinderShowViewer");
+  if (show && !show.checked) {
+    host.innerHTML = "";
+    return;
+  }
+
+  const entriesRaw = buildBinderEntries(scope);
+  const entries = sortBinderEntries(entriesRaw, sortMode);
+
+  if (!entries.length) {
+    host.innerHTML = `<div class="small">(No evidence links found in this scope.)</div>`;
+    return;
+  }
+
+  // Flat view (clickable list)
+  if (viewMode !== "cluster") {
+    host.innerHTML = entries.map(e => binderItemHTML(e)).join("");
+    return;
+  }
+
+  // Cluster view
+  const keys = entries.map(e => e.urlKey);
+  const clusters = findEvidenceClusters(keys);
+
+  const entryByKey = new Map();
+  entries.forEach(e => entryByKey.set(e.urlKey, e));
+
+  host.innerHTML = clusters.map((clusterKeys, idx) => {
+    const clusterEntries = clusterKeys.map(k => entryByKey.get(k)).filter(Boolean);
+    const clusterName = labelCluster(clusterEntries);
+
+    // Sort inside each cluster like current sortMode
+    const sorted = sortBinderEntries(clusterEntries, sortMode);
+
+    return `
+      <details class="binderCluster" open>
+        <summary>
+          <span>Cluster ${idx + 1}: ${escapeHtml(clusterName)}</span>
+          <span class="clusterMeta">${sorted.length} item${sorted.length === 1 ? "" : "s"}</span>
+        </summary>
+        <div>
+          ${sorted.map(e => binderItemHTML(e)).join("")}
+        </div>
+      </details>
+    `;
+  }).join("");
+}
+
+function binderItemHTML(e) {
+  const relCount = relatedEvidenceKeys(e.url).length;
+
+  return `
+    <div class="binderItem">
+      <div class="rowTop">
+        <div style="flex:1">
+          <div class="title">${escapeHtml(e.label || "Evidence")}</div>
+          <div class="small"><a href="${escapeHtml(e.url)}" target="_blank" rel="noreferrer">Open link</a></div>
+          ${e.note ? `<div class="small">${escapeHtml(e.note)}</div>` : ""}
+          <div class="small" style="margin-top:6px"><strong>Conditions:</strong> ${escapeHtml((e.conditions || []).join(", "))}</div>
+        </div>
+
+        <div class="meta">
+          ${e.date ? `<span class="badge">${escapeHtml(e.date)}</span>` : ""}
+          ${e.type ? `<span class="badge">${escapeHtml(e.type)}</span>` : ""}
+          ${relCount ? `<span class="relBadge">Related: ${relCount}</span>` : ""}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function buildEvidenceGraphData(scope = "all", hideOrphans = false) {
+  const entries = buildBinderEntries(scope);
+  const entryByKey = new Map(entries.map(e => [e.urlKey, e]));
+
+  const rel = loadEvidenceRelations();
+  const nodes = [];
+  const edges = [];
+  const inScope = new Set(entries.map(e => e.urlKey));
+
+  // Build edges undirected, avoid duplicates
+  const seenEdge = new Set();
+  inScope.forEach(a => {
+    const nbrs = Array.isArray(rel[a]) ? rel[a] : [];
+    nbrs.forEach(b => {
+      if (!inScope.has(b)) return;
+      const key = a < b ? `${a}__${b}` : `${b}__${a}`;
+      if (seenEdge.has(key)) return;
+      seenEdge.add(key);
+      edges.push({ source: a, target: b });
+    });
+  });
+
+  // Degree for orphan filtering + sizing
+  const degree = new Map();
+  inScope.forEach(k => degree.set(k, 0));
+  edges.forEach(e => {
+    degree.set(e.source, (degree.get(e.source) || 0) + 1);
+    degree.set(e.target, (degree.get(e.target) || 0) + 1);
+  });
+
+  // Nodes
+  for (const k of inScope) {
+    const d = degree.get(k) || 0;
+    if (hideOrphans && d === 0) continue;
+
+    const meta = entryByKey.get(k);
+    nodes.push({
+      id: k,
+      url: meta?.url || "",
+      label: meta?.label || "(Evidence)",
+      type: meta?.type || "Other",
+      date: meta?.date || "",
+      note: meta?.note || "",
+      conditions: meta?.conditions || [],
+      degree: d
+    });
+  }
+
+  // Remove edges if hideOrphans removed nodes
+  const nodeSet = new Set(nodes.map(n => n.id));
+  const edgesFiltered = edges.filter(e => nodeSet.has(e.source) && nodeSet.has(e.target));
+
+  return { nodes, edges: edgesFiltered };
+}
+
+let __graphSim = null;
+
+function renderEvidenceGraph({ scope = "all", hideOrphans = false } = {}) {
+  const host = document.getElementById("wsGraph");
+  const info = document.getElementById("wsGraphInfo");
+  if (!host) return;
+
+  host.innerHTML = "";
+  const { nodes, edges } = buildEvidenceGraphData(scope, hideOrphans);
+
+  if (!nodes.length) {
+    host.innerHTML = `<div class="small" style="padding:12px">(No evidence nodes to display for this scope.)</div>`;
+    if (info) info.textContent = "No nodes found.";
+    return;
+  }
+
+  const w = host.clientWidth || 900;
+  const h = host.clientHeight || 520;
+
+  // SVG + group for pan/zoom
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("class", "graphSvg");
+  svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+
+  const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  svg.appendChild(g);
+
+  // edge layer
+  const edgeEls = edges.map(() => {
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    line.setAttribute("class", "edgeLine");
+    g.appendChild(line);
+    return line;
+  });
+
+  // node layer
+  const nodeGroupEls = nodes.map(n => {
+    const grp = document.createElementNS("http://www.w3.org/2000/svg", "g");
+
+    const r = Math.max(6, Math.min(18, 6 + n.degree * 2));
+    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    circle.setAttribute("r", r);
+    circle.setAttribute("class", "nodeCircle");
+    circle.setAttribute("fill", `rgba(255,255,255,${Math.min(0.35 + n.degree * 0.08, 0.80)})`);
+
+    const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    label.setAttribute("class", "nodeLabel");
+    label.setAttribute("x", r + 6);
+    label.setAttribute("y", 4);
+    label.textContent = (n.label || "(Evidence)").slice(0, 34);
+
+    grp.appendChild(circle);
+    grp.appendChild(label);
+    g.appendChild(grp);
+
+    // Click → open URL
+    circle.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      if (info) {
+        info.innerHTML = `
+          <strong>${escapeHtml(n.label || "Evidence")}</strong>
+          ${n.date ? ` • ${escapeHtml(n.date)}` : ""}
+          ${n.type ? ` • ${escapeHtml(n.type)}` : ""}
+          <br/>
+          <span>Conditions:</span> ${escapeHtml((n.conditions || []).join(", ") || "(none)")}
+          <br/>
+          <a href="${escapeHtml(n.url)}" target="_blank" rel="noreferrer">Open link</a>
+          ${n.note ? `<div style="margin-top:6px">${escapeHtml(n.note)}</div>` : ""}
+        `;
+      }
+      if (n.url) window.open(n.url, "_blank");
+    });
+
+    return { grp, circle, label };
+  });
+
+  host.appendChild(svg);
+
+  // Pan / Zoom
+  let scale = 1;
+  let panX = 0, panY = 0;
+
+  function applyTransform() {
+    g.setAttribute("transform", `translate(${panX},${panY}) scale(${scale})`);
+  }
+
+  svg.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const delta = Math.sign(e.deltaY);
+    const next = scale * (delta > 0 ? 0.92 : 1.08);
+    scale = Math.max(0.25, Math.min(2.5, next));
+    applyTransform();
+  }, { passive: false });
+
+  let panning = false;
+  let lastPan = null;
+
+  svg.addEventListener("mousedown", (e) => {
+    if (e.target && e.target.tagName === "circle") return;
+    panning = true;
+    lastPan = { x: e.clientX, y: e.clientY };
+  });
+
+  const panHandler = (e) => {
+    if (!panning || !lastPan) return;
+    panX += (e.clientX - lastPan.x);
+    panY += (e.clientY - lastPan.y);
+    lastPan = { x: e.clientX, y: e.clientY };
+    applyTransform();
+  };
+
+  window.addEventListener("mousemove", panHandler);
+
+  const upHandler = () => {
+    panning = false;
+    lastPan = null;
+  };
+
+  window.addEventListener("mouseup", upHandler);
+
+  // Force simulation
+  nodes.forEach(n => {
+    n.x = w / 2 + (Math.random() - 0.5) * 180;
+    n.y = h / 2 + (Math.random() - 0.5) * 180;
+    n.vx = 0; n.vy = 0;
+    n.fx = null; n.fy = null;
+  });
+
+  const nodeById = new Map(nodes.map(n => [n.id, n]));
+  const links = edges.map(e => ({
+    a: nodeById.get(e.source),
+    b: nodeById.get(e.target)
+  })).filter(l => l.a && l.b);
+
+  // drag behavior - need to track dragging per node
+  const dragState = new Map(); // nodeIndex -> { dragging: bool }
+  
+  nodeGroupEls.forEach(({ grp, circle }, idx) => {
+    const n = nodes[idx];
+    dragState.set(idx, { dragging: false });
+
+    circle.addEventListener("mousedown", (e) => {
+      e.stopPropagation();
+      dragState.get(idx).dragging = true;
+      n.fx = n.x; n.fy = n.y;
+    });
+  });
+
+  const dragMoveHandler = (e) => {
+    nodeGroupEls.forEach(({ grp, circle }, idx) => {
+      if (!dragState.get(idx).dragging) return;
+      const n = nodes[idx];
+      const rect = svg.getBoundingClientRect();
+      const mx = (e.clientX - rect.left - panX) / scale;
+      const my = (e.clientY - rect.top - panY) / scale;
+      n.fx = mx; n.fy = my;
+    });
+  };
+
+  const dragUpHandler = () => {
+    let anyDragging = false;
+    nodeGroupEls.forEach(({ grp, circle }, idx) => {
+      if (dragState.get(idx).dragging) {
+        anyDragging = true;
+        dragState.get(idx).dragging = false;
+        const n = nodes[idx];
+        n.fx = null; n.fy = null;
+      }
+    });
+  };
+
+  window.addEventListener("mousemove", dragMoveHandler);
+  window.addEventListener("mouseup", dragUpHandler);
+
+  if (__graphSim && __graphSim.stop) __graphSim.stop();
+
+  let running = true;
+  let tickCount = 0;
+
+  function tick() {
+    if (!running) return;
+
+    const centerX = w / 2;
+    const centerY = h / 2;
+    const springK = 0.015;
+    const restLen = 110;
+
+    links.forEach(l => {
+      const dx = l.b.x - l.a.x;
+      const dy = l.b.y - l.a.y;
+      const dist = Math.max(1, Math.hypot(dx, dy));
+      const diff = dist - restLen;
+      const fx = (dx / dist) * diff * springK;
+      const fy = (dy / dist) * diff * springK;
+
+      l.a.vx += fx;
+      l.a.vy += fy;
+      l.b.vx -= fx;
+      l.b.vy -= fy;
+    });
+
+    const repK = 1400;
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const a = nodes[i], b = nodes[j];
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const d2 = dx * dx + dy * dy + 0.01;
+        const f = repK / d2;
+        const fx = dx * f;
+        const fy = dy * f;
+        a.vx -= fx; a.vy -= fy;
+        b.vx += fx; b.vy += fy;
+      }
+    }
+
+    const damp = 0.85;
+    nodes.forEach(n => {
+      n.vx += (centerX - n.x) * 0.0015;
+      n.vy += (centerY - n.y) * 0.0015;
+
+      if (n.fx != null && n.fy != null) {
+        n.x = n.fx; n.y = n.fy;
+        n.vx = 0; n.vy = 0;
+      } else {
+        n.vx *= damp;
+        n.vy *= damp;
+        n.x += n.vx;
+        n.y += n.vy;
+      }
+
+      n.x = Math.max(10, Math.min(w - 10, n.x));
+      n.y = Math.max(10, Math.min(h - 10, n.y));
+    });
+
+    edges.forEach((e, i) => {
+      const a = nodeById.get(e.source);
+      const b = nodeById.get(e.target);
+      if (!a || !b) return;
+      edgeEls[i].setAttribute("x1", a.x);
+      edgeEls[i].setAttribute("y1", a.y);
+      edgeEls[i].setAttribute("x2", b.x);
+      edgeEls[i].setAttribute("y2", b.y);
+    });
+
+    nodes.forEach((n, i) => {
+      nodeGroupEls[i].grp.setAttribute("transform", `translate(${n.x},${n.y})`);
+    });
+
+    tickCount++;
+    if (tickCount > 900) running = false;
+
+    requestAnimationFrame(tick);
+  }
+
+  requestAnimationFrame(tick);
+
+  __graphSim = { stop: () => { running = false; } };
+
+  svg.__fit = () => {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    nodes.forEach(n => {
+      minX = Math.min(minX, n.x);
+      minY = Math.min(minY, n.y);
+      maxX = Math.max(maxX, n.x);
+      maxY = Math.max(maxY, n.y);
+    });
+
+    const bw = Math.max(1, maxX - minX);
+    const bh = Math.max(1, maxY - minY);
+    const pad = 40;
+    const sx = (w - pad) / bw;
+    const sy = (h - pad) / bh;
+    scale = Math.max(0.25, Math.min(2.5, Math.min(sx, sy)));
+
+    const cx = (minX + maxX) / 2;
+    const cy = (minY + maxY) / 2;
+    panX = w / 2 - cx * scale;
+    panY = h / 2 - cy * scale;
+    applyTransform();
+  };
+
+  setTimeout(() => { svg.__fit && svg.__fit(); }, 120);
+
+  if (info) {
+    info.textContent = `Nodes: ${nodes.length} | Links: ${edges.length}. Drag nodes, scroll to zoom, drag background to pan.`;
+  }
+}
+
+function buildWorkspaceEvidenceIndex(scope = "all") {
+  const st = loadWorkspaceState();
+  const primaryId = st.primaryId || "";
+
+  let ids = (st.nodes || []).slice();
+  if (scope === "primary") ids = primaryId ? [primaryId] : [];
+  else if (scope === "linked") {
+    ids = ids.filter(id => isLinkedNode(id, st));
+    if (primaryId && !ids.includes(primaryId)) ids.unshift(primaryId);
+  }
+
+  // urlKey -> { url,label,type,date,note, conditions:Set }
+  const byUrl = new Map();
+
+  ids.forEach(id => {
+    const cond = getConditionById(id);
+    if (!cond) return;
+
+    const links = loadEvidenceLinks(id);
+    links.forEach(l => {
+      const key = normalizeUrl(l.url);
+      if (!key) return;
+
+      if (!byUrl.has(key)) {
+        byUrl.set(key, {
+          url: l.url,
+          label: l.label || "",
+          type: l.type || "Other",
+          date: l.date || "",
+          note: l.note || "",
+          conditions: new Set([cond.name])
+        });
+      } else {
+        const e = byUrl.get(key);
+        e.conditions.add(cond.name);
+        if (!e.label && l.label) e.label = l.label;
+        if ((!e.type || e.type === "Other") && l.type) e.type = l.type;
+        if (!e.date && l.date) e.date = l.date;
+        if (l.note && !e.note) e.note = l.note;
+      }
+    });
+  });
+
+  // finalize sets
+  const out = new Map();
+  for (const [k, v] of byUrl.entries()) {
+    out.set(k, { ...v, conditions: [...v.conditions].sort() });
+  }
+  return out;
+}
+
+function evidenceDisplayName(e) {
+  const bits = [];
+  if (e.label) bits.push(e.label);
+  if (e.date) bits.push(e.date);
+  if (e.type) bits.push(e.type);
+  return bits.join(" • ") || e.url;
+}
+
+function workspaceEvidenceBinderDraft(scope = "all", sortMode = "date", viewMode = "flat") {
   const st = loadWorkspaceState();
   const primaryId = st.primaryId || "";
 
@@ -2555,6 +3554,58 @@ function workspaceEvidenceBinderDraft(scope = "all", sortMode = "date") {
     merged.sort((a, b) => toSortableDateKey(a.date).localeCompare(toSortableDateKey(b.date)) || (a.type || "").localeCompare(b.type || ""));
   }
 
+  // If clustered view, group by related graph clusters
+  if (viewMode === "cluster") {
+    const keys = merged.map(e => normalizeUrl(e.url));
+    const clusters = findEvidenceClusters(keys);
+
+    // Map key -> entry
+    const entryByKey = new Map();
+    merged.forEach(e => entryByKey.set(normalizeUrl(e.url), e));
+
+    const lines = [];
+    lines.push("VA CFR Finder — Workspace Evidence Binder (Clustered)");
+    lines.push(new Date().toLocaleString());
+    lines.push(`Scope: ${scope} | Sort: ${sortMode} | View: ${viewMode}`);
+    lines.push("");
+
+    clusters.forEach((clusterKeys, idx) => {
+      const entries = clusterKeys.map(k => entryByKey.get(k)).filter(Boolean);
+
+      // For readability: sort within cluster using the same sortMode logic
+      if (sortMode === "type") {
+        entries.sort((a, b) => (a.type || "").localeCompare(b.type || "") || toSortableDateKey(a.date).localeCompare(toSortableDateKey(b.date)));
+      } else if (sortMode === "condition") {
+        entries.sort((a, b) => (a.conditions?.[0] || "").localeCompare(b.conditions?.[0] || "") || toSortableDateKey(a.date).localeCompare(toSortableDateKey(b.date)));
+      } else {
+        entries.sort((a, b) => toSortableDateKey(a.date).localeCompare(toSortableDateKey(b.date)) || (a.type || "").localeCompare(b.type || ""));
+      }
+
+      const clusterName = labelCluster(entries);
+      lines.push(`=== Cluster ${idx + 1}: ${clusterName} (${entries.length} item${entries.length === 1 ? "" : "s"}) ===`);
+      const conf = clusterLabelConfidence(entries);
+      lines.push(`(Label confidence: Conditions ${conf.condPct}%, Type ${conf.typePct}%)`);
+
+      entries.forEach((e, i) => {
+        lines.push(`  #${i + 1} ${e.label || "Evidence"}`);
+        if (e.date) lines.push(`  Date: ${e.date}`);
+        if (e.type) lines.push(`  Type: ${e.type}`);
+        lines.push(`  Conditions: ${(e.conditions || []).join(", ")}`);
+        lines.push(`  URL: ${e.url}`);
+        if (e.note) lines.push(`  Notes: ${e.note}`);
+        lines.push("");
+      });
+
+      lines.push("");
+    });
+
+    if (!clusters.length) {
+      lines.push("(No evidence links found in this scope.)");
+    }
+
+    return lines.join("\n");
+  }
+
   const lines = [];
   lines.push("VA CFR Finder — Workspace Evidence Binder (Educational / Local list)");
   lines.push(new Date().toLocaleString());
@@ -2572,6 +3623,10 @@ function workspaceEvidenceBinderDraft(scope = "all", sortMode = "date") {
     if (e.type) lines.push(`Type: ${e.type}`);
     lines.push(`Conditions: ${e.conditions.join(", ")}`);
     lines.push(`URL: ${e.url}`);
+    const rel = relatedEvidenceKeys(e.url);
+    if (rel.length) {
+      lines.push(`Related URLs: ${rel.length}`);
+    }
     if (e.note) lines.push(`Notes: ${e.note}`);
     lines.push("");
   });
@@ -2903,12 +3958,19 @@ async function init() {
   const wsBinderOut = document.getElementById("wsBinderOut");
   const wsBinderScope = document.getElementById("wsBinderScope");
   const wsBinderSort = document.getElementById("wsBinderSort");
+  const wsBinderView = document.getElementById("wsBinderView");
+  const wsBinderViewer = document.getElementById("wsBinderViewer");
+  const wsBinderShowViewer = document.getElementById("wsBinderShowViewer");
 
   function regenBinder() {
     const scope = wsBinderScope?.value || "all";
     const sortMode = wsBinderSort?.value || "date";
-    const text = workspaceEvidenceBinderDraft(scope, sortMode);
+    const viewMode = wsBinderView?.value || "flat";
+    const text = workspaceEvidenceBinderDraft(scope, sortMode, viewMode);
     if (wsBinderOut) wsBinderOut.value = text;
+
+    // Render clickable viewer
+    renderBinderViewer({ scope, sortMode, viewMode });
   }
 
   if (wsBinderBtn) wsBinderBtn.addEventListener("click", regenBinder);
@@ -2924,8 +3986,9 @@ async function init() {
     wsBinderDownload.addEventListener("click", () => {
       const scope = wsBinderScope?.value || "all";
       const sortMode = wsBinderSort?.value || "date";
-      downloadText(`workspace_evidence_binder_${scope}_${sortMode}.txt`,
-        wsBinderOut.value || workspaceEvidenceBinderDraft(scope, sortMode)
+      const viewMode = wsBinderView?.value || "flat";
+      downloadText(`workspace_evidence_binder_${scope}_${sortMode}_${viewMode}.txt`,
+        wsBinderOut.value || workspaceEvidenceBinderDraft(scope, sortMode, viewMode)
       );
     });
   }
@@ -2937,6 +4000,49 @@ async function init() {
   if (wsBinderSort) wsBinderSort.addEventListener("change", () => {
     if (wsBinderOut && wsBinderOut.value.trim()) regenBinder();
   });
+
+  if (wsBinderView) wsBinderView.addEventListener("change", () => {
+    if (wsBinderOut && wsBinderOut.value.trim()) regenBinder();
+  });
+
+  if (wsBinderShowViewer) wsBinderShowViewer.addEventListener("change", () => {
+    if (wsBinderOut && wsBinderOut.value.trim()) regenBinder();
+  });
+
+  // Evidence relationship graph buttons
+  const wsGraphBuild = document.getElementById("wsGraphBuild");
+  const wsGraphFit = document.getElementById("wsGraphFit");
+  const wsGraphScope = document.getElementById("wsGraphScope");
+  const wsGraphHideOrphans = document.getElementById("wsGraphHideOrphans");
+
+  function buildGraphNow() {
+    const scope = wsGraphScope?.value || "all";
+    const hideOrphans = wsGraphHideOrphans?.checked || false;
+    renderEvidenceGraph({ scope, hideOrphans });
+  }
+
+  if (wsGraphBuild) wsGraphBuild.addEventListener("click", buildGraphNow);
+
+  if (wsGraphFit && wsGraphBuild) {
+    wsGraphFit.addEventListener("click", () => {
+      const svg = document.querySelector("#wsGraph svg");
+      if (svg && svg.__fit) svg.__fit();
+    });
+  }
+
+  if (wsGraphScope) {
+    wsGraphScope.addEventListener("change", () => {
+      const svg = document.querySelector("#wsGraph svg");
+      if (svg) buildGraphNow(); // rebuild if already exists
+    });
+  }
+
+  if (wsGraphHideOrphans) {
+    wsGraphHideOrphans.addEventListener("change", () => {
+      const svg = document.querySelector("#wsGraph svg");
+      if (svg) buildGraphNow(); // rebuild if already exists
+    });
+  }
 
   // First render
   renderWorkspace();
