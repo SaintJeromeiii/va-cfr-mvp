@@ -151,6 +151,41 @@ function saveWorkspaceState(st) {
   localStorage.setItem(WORKSPACE_KEY, JSON.stringify(st || { nodes: [], primaryId: "", links: [] }));
 }
 
+function buildAdjacencyFromLinks(links) {
+  const adj = new Map();
+  (links || []).forEach(l => {
+    if (!adj.has(l.from)) adj.set(l.from, []);
+    adj.get(l.from).push(l.to);
+  });
+  return adj;
+}
+
+// Returns true if there's already a path start -> target in the existing graph
+function hasPath(adj, start, target) {
+  if (start === target) return true;
+  const seen = new Set();
+  const stack = [start];
+
+  while (stack.length) {
+    const cur = stack.pop();
+    if (cur === target) return true;
+    if (seen.has(cur)) continue;
+    seen.add(cur);
+    const kids = adj.get(cur) || [];
+    for (const k of kids) stack.push(k);
+  }
+  return false;
+}
+
+// Would adding edge from -> to create a cycle?
+// A cycle happens iff there is already a path: to -> from
+function wouldCreateCycle(links, fromId, toId) {
+  if (!fromId || !toId) return false;
+  if (fromId === toId) return true;
+  const adj = buildAdjacencyFromLinks(links);
+  return hasPath(adj, toId, fromId);
+}
+
 function ensureNode(id) {
   const st = loadWorkspaceState();
   if (!st.nodes.includes(id)) st.nodes.push(id);
@@ -178,6 +213,11 @@ function addLink(fromId, toId, type = "Secondary to") {
 
   // prevent self-links
   if (fromId === toId) return st;
+
+  // Check for cycle: would adding fromId -> toId create a loop?
+  if (wouldCreateCycle(st.links, fromId, toId)) {
+    throw new Error(`Cycle blocked: linking "${fromId}" → "${toId}" would create a loop.`);
+  }
 
   // Allow multiple parents: do NOT remove other links to this child.
   // Just prevent exact duplicates (same from -> to).
@@ -540,9 +580,13 @@ function renderWorkspace() {
 
       if (!parentId) return;
 
-      addLink(parentId, childId, relType);
-      renderWorkspace();
-      renderClaimTree();
+      try {
+        addLink(parentId, childId, relType);
+        renderWorkspace();
+        renderClaimTree();
+      } catch (err) {
+        alert(err.message || "That link would create a cycle. Choose a different parent.");
+      }
     });
   });
 
@@ -1300,10 +1344,13 @@ ${strategyHTML}
       if (!Number.isNaN(n) && n >= 1 && n <= REL_TYPES.length) relType = REL_TYPES[n - 1];
 
       // link to primary by default (user can change parent in workspace UI)
-      addLink(parent, item.id, relType);
-
-      renderWorkspace();
-      alert(`Linked as: ${relType}`);
+      try {
+        addLink(parent, item.id, relType);
+        renderWorkspace();
+        alert(`Linked as: ${relType}`);
+      } catch (err) {
+        alert(err.message || "That link would create a cycle.");
+      }
     });
   }
 
