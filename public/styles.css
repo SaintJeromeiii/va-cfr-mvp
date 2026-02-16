@@ -463,6 +463,70 @@ mark.hl {
 .wsSectionTitle { margin: 10px 0 6px; }
 .wsBadge { font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.18); margin-left: 6px; }
 
+.wsRelSelect {
+  margin-top: 4px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.06);
+  color: inherit;
+}
+
+.wsLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.wsLinkRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+}
+
+.wsLinkRow .small {
+  min-width: 120px;
+}
+
+.wsLinkRow select {
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: inherit;
+  font-size: 0.9rem;
+  flex: 1;
+}
+
+.wsAddLinkRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 8px 0;
+}
+
+.wsAddLinkRow select {
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: inherit;
+  flex: 1;
+}
+
+.wsAddParentSelect {
+  min-width: 140px;
+}
+
+.wsAddTypeSelect {
+  min-width: 120px;
+}
+
 .treeBox {
   margin-top: 8px;
   padding: 10px;
@@ -498,3 +562,7 @@ mark.hl {
 .treeHint {
   padding: 8px;
 }
+
+.wsLinks { display: grid; gap: 8px; margin-top: 6px; }
+.wsLinkRow { display: grid; grid-template-columns: 1fr 220px auto; gap: 8px; align-items: center; }
+.wsAddLinkRow { display: grid; grid-template-columns: 1fr 220px auto; gap: 8px; align-items: center; margin-top: 6px; }

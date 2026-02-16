@@ -86,81 +86,131 @@ function saveNotes(conditionId, text) {
   localStorage.setItem(notesKey(conditionId), (text ?? "").toString());
 }
 
-const WORKSPACE_KEY = "vaCfrWorkspace:v2";
+const WORKSPACE_KEY = "vaCfrWorkspace:v4";
+
+const REL_TYPES = [
+  "Secondary to",
+  "Aggravated by",
+  "Due to / Caused by",
+  "Associated with",
+  "Increase (worsened)",
+  "Direct (standalone)"
+];
 
 function loadWorkspaceState() {
   try {
     const raw = localStorage.getItem(WORKSPACE_KEY);
-    if (!raw) return { ids: [], primaryId: "", secondaryIds: [] };
+    if (!raw) return { nodes: [], primaryId: "", links: [] };
 
     const parsed = JSON.parse(raw);
 
-    // Migration: if older version stored an array, convert it
-    if (Array.isArray(parsed)) {
-      return { ids: parsed, primaryId: parsed[0] || "", secondaryIds: parsed.slice(1) };
+    // ---- Migration from v3: { ids, primaryId, secondary:[{id,type}] } ----
+    if (parsed && Array.isArray(parsed.ids) && Array.isArray(parsed.secondary)) {
+      const nodes = parsed.ids;
+      const primaryId = parsed.primaryId || nodes[0] || "";
+      const links = (parsed.secondary || [])
+        .filter(x => x && typeof x.id === "string")
+        .map(x => ({ from: primaryId, to: x.id, type: x.type || "Secondary to" }));
+      return { nodes, primaryId, links };
     }
 
-    // Normal case
-    const ids = Array.isArray(parsed.ids) ? parsed.ids : [];
-    const primaryId = typeof parsed.primaryId === "string" ? parsed.primaryId : "";
-    const secondaryIds = Array.isArray(parsed.secondaryIds) ? parsed.secondaryIds : [];
+    // ---- Migration from v2: { ids, primaryId, secondaryIds } ----
+    if (parsed && Array.isArray(parsed.ids) && Array.isArray(parsed.secondaryIds)) {
+      const nodes = parsed.ids;
+      const primaryId = parsed.primaryId || nodes[0] || "";
+      const links = (parsed.secondaryIds || [])
+        .filter(Boolean)
+        .map(id => ({ from: primaryId, to: id, type: "Secondary to" }));
+      return { nodes, primaryId, links };
+    }
 
-    return { ids, primaryId, secondaryIds };
+    // ---- Migration from array: ["a","b","c"] ----
+    if (Array.isArray(parsed)) {
+      const nodes = parsed;
+      const primaryId = nodes[0] || "";
+      const links = nodes.slice(1).map(id => ({ from: primaryId, to: id, type: "Secondary to" }));
+      return { nodes, primaryId, links };
+    }
+
+    // ---- Normal v4 ----
+    const nodes = Array.isArray(parsed.nodes) ? parsed.nodes.filter(x => typeof x === "string") : [];
+    const primaryId = typeof parsed.primaryId === "string" ? parsed.primaryId : "";
+    const links = Array.isArray(parsed.links) ? parsed.links : [];
+
+    const cleanLinks = links
+      .filter(l => l && typeof l.from === "string" && typeof l.to === "string")
+      .map(l => ({ from: l.from, to: l.to, type: typeof l.type === "string" ? l.type : "Secondary to" }));
+
+    return { nodes, primaryId, links: cleanLinks };
   } catch {
-    return { ids: [], primaryId: "", secondaryIds: [] };
+    return { nodes: [], primaryId: "", links: [] };
   }
 }
 
-function saveWorkspaceState(state) {
-  const s = state || { ids: [], primaryId: "", secondaryIds: [] };
-  localStorage.setItem(WORKSPACE_KEY, JSON.stringify(s));
+function saveWorkspaceState(st) {
+  localStorage.setItem(WORKSPACE_KEY, JSON.stringify(st || { nodes: [], primaryId: "", links: [] }));
 }
 
-function addToWorkspace(id) {
+function ensureNode(id) {
   const st = loadWorkspaceState();
-  if (!st.ids.includes(id)) st.ids.push(id);
-
-  // If no primary yet, default first added as primary
+  if (!st.nodes.includes(id)) st.nodes.push(id);
   if (!st.primaryId) st.primaryId = id;
-
   saveWorkspaceState(st);
   return st;
 }
 
 function setPrimary(id) {
-  const st = loadWorkspaceState();
-  if (!st.ids.includes(id)) st.ids.push(id);
+  const st = ensureNode(id);
   st.primaryId = id;
 
-  // Ensure primary is not duplicated inside secondary list
-  st.secondaryIds = st.secondaryIds.filter(x => x !== id);
+  // optional: remove self-referential links
+  st.links = st.links.filter(l => l.from !== l.to);
 
   saveWorkspaceState(st);
   return st;
 }
 
-function addSecondary(id) {
+function addLink(fromId, toId, type = "Secondary to") {
   const st = loadWorkspaceState();
-  if (!st.ids.includes(id)) st.ids.push(id);
-  if (!st.primaryId) st.primaryId = id; // fallback
+  if (!st.nodes.includes(fromId)) st.nodes.push(fromId);
+  if (!st.nodes.includes(toId)) st.nodes.push(toId);
+  if (!st.primaryId) st.primaryId = fromId;
 
-  if (id !== st.primaryId && !st.secondaryIds.includes(id)) {
-    st.secondaryIds.push(id);
-  }
+  // prevent self-links
+  if (fromId === toId) return st;
+
+  // Allow multiple parents: do NOT remove other links to this child.
+  // Just prevent exact duplicates (same from -> to).
+  st.links = st.links.filter(l => !(l.from === fromId && l.to === toId));
+
+  st.links.push({ from: fromId, to: toId, type });
 
   saveWorkspaceState(st);
   return st;
 }
 
-function removeFromWorkspace(id) {
+function removeLink(fromId, toId) {
   const st = loadWorkspaceState();
-  st.ids = st.ids.filter(x => x !== id);
-  st.secondaryIds = st.secondaryIds.filter(x => x !== id);
+  st.links = (st.links || []).filter(l => !(l.from === fromId && l.to === toId));
+  saveWorkspaceState(st);
+  return st;
+}
 
-  // If removing primary, clear primary and secondaries (or pick new primary)
+function updateLinkType(fromId, toId, type) {
+  const st = loadWorkspaceState();
+  const link = (st.links || []).find(l => l.from === fromId && l.to === toId);
+  if (link) link.type = type || "Secondary to";
+  saveWorkspaceState(st);
+  return st;
+}
+
+function removeNode(id) {
+  const st = loadWorkspaceState();
+  st.nodes = st.nodes.filter(x => x !== id);
+  st.links = st.links.filter(l => l.from !== id && l.to !== id);
+
   if (st.primaryId === id) {
-    st.primaryId = st.ids[0] || "";
-    st.secondaryIds = st.secondaryIds.filter(x => x !== st.primaryId);
+    st.primaryId = st.nodes[0] || "";
   }
 
   saveWorkspaceState(st);
@@ -168,7 +218,7 @@ function removeFromWorkspace(id) {
 }
 
 function clearWorkspace() {
-  saveWorkspaceState({ ids: [], primaryId: "", secondaryIds: [] });
+  saveWorkspaceState({ nodes: [], primaryId: "", links: [] });
 }
 
 
@@ -277,9 +327,26 @@ function buildWorkspacePacketText(items) {
 
   items.forEach((item, i) => {
     const st = loadEvidenceState(item.id);
+    const wsState = loadWorkspaceState();
+    const linksToMe = (wsState.links || []).filter(l => l.to === item.id);
+    
     lines.push("============================================================");
     lines.push(`${i + 1}) ${item.name} (${item.id})`);
     lines.push(`Body system: ${item.body_system || "(unknown)"}`);
+    
+    if (item.id === wsState.primaryId) {
+      lines.push("Role: Primary");
+    } else if (linksToMe.length) {
+      lines.push("Role: Linked");
+      lines.push("Linked to:");
+      linksToMe.forEach(l => {
+        const pItem = CONDITIONS.find(c => c.id === l.from);
+        const pName = pItem ? pItem.name : l.from;
+        lines.push(`- ${pName} (${l.type || "Secondary to"})`);
+      });
+    } else {
+      lines.push("Role: Unlinked (in workspace)");
+    }
     lines.push("");
 
     // CFR refs
@@ -317,6 +384,19 @@ function buildWorkspacePacketText(items) {
   return lines.join("\n");
 }
 
+function parentsOf(childId, links) {
+  return (links || []).filter(l => l.to === childId);
+}
+
+function buildAdjacency(links) {
+  const childrenBy = new Map();
+  (links || []).forEach(l => {
+    if (!childrenBy.has(l.from)) childrenBy.set(l.from, []);
+    childrenBy.get(l.from).push(l);
+  });
+  return childrenBy;
+}
+
 function renderWorkspace() {
   const wsList = document.getElementById("wsList");
   const wsScore = document.getElementById("wsScore");
@@ -325,7 +405,7 @@ function renderWorkspace() {
   if (!wsList || !wsScore || !wsBarFill) return;
 
   const st = loadWorkspaceState();
-  const items = st.ids.map(id => CONDITIONS.find(c => c.id === id)).filter(Boolean);
+  const items = st.nodes.map(id => CONDITIONS.find(c => c.id === id)).filter(Boolean);
 
   wsList.innerHTML = "";
 
@@ -341,85 +421,245 @@ function renderWorkspace() {
   wsScore.textContent = `Evidence Readiness: ${done}/${total} (${pct}%)`;
   wsBarFill.style.width = `${pct}%`;
 
-  const primary = st.primaryId ? CONDITIONS.find(c => c.id === st.primaryId) : null;
-  const secondaries = st.secondaryIds
-    .map(id => CONDITIONS.find(c => c.id === id))
-    .filter(Boolean);
+  items.forEach(item => {
+    const isPrimary = item.id === st.primaryId;
+    const stNow = loadWorkspaceState();
+    const parentLinks = parentsOf(item.id, stNow.links);
+    const candidates = stNow.nodes.filter(x => x !== item.id);
 
-  // Helper to create a card
-  const makeCard = (item, badge) => {
+    const ev = evidenceCompletion(item, loadEvidenceState(item.id));
+
     const card = document.createElement("div");
     card.className = `wsCard ${systemClassName(item.body_system)}`;
 
-    const ev = evidenceCompletion(item, loadEvidenceState(item.id));
     card.innerHTML = `
       <div class="wsRow">
-        <div>
-          <div><strong>${escapeHtml(item.name)}</strong> ${badge ? `<span class="wsBadge">${badge}</span>` : ""}</div>
+        <div style="min-width:260px">
+          <div>
+            <strong>${escapeHtml(item.name)}</strong>
+            ${isPrimary ? `<span class="wsBadge">Primary</span>` : `<span class="wsBadge">Linked</span>`}
+          </div>
           <div class="small">${escapeHtml(item.body_system || "")} • ${ev.done}/${ev.total} (${ev.pct}%)</div>
+
+          ${isPrimary ? "" : `
+            <div class="small" style="margin-top:10px"><strong>Linked to (parents):</strong></div>
+
+            <div class="wsLinks">
+              ${
+                parentLinks.length
+                  ? parentLinks.map(l => {
+                      const pItem = CONDITIONS.find(c => c.id === l.from);
+                      const pName = pItem ? pItem.name : l.from;
+                      return `
+                        <div class="wsLinkRow">
+                          <div class="small">
+                            <strong>${escapeHtml(pName)}</strong>
+                          </div>
+
+                          <select class="wsRelSelect" data-from="${escapeHtml(l.from)}" data-to="${escapeHtml(item.id)}">
+                            ${REL_TYPES.map(t => `<option value="${escapeHtml(t)}" ${t === (l.type || "Secondary to") ? "selected" : ""}>${escapeHtml(t)}</option>`).join("")}
+                          </select>
+
+                          <button class="miniBtn danger" data-unlink-from="${escapeHtml(l.from)}" data-unlink-to="${escapeHtml(item.id)}" type="button">
+                            Remove link
+                          </button>
+                        </div>
+                      `;
+                    }).join("")
+                  : `<div class="small">(no parent links yet)</div>`
+              }
+            </div>
+
+            <div class="small" style="margin-top:10px">Add parent link:</div>
+            <div class="wsAddLinkRow">
+              <select class="wsAddParentSelect" data-child="${escapeHtml(item.id)}">
+                <option value="">Choose parent…</option>
+                ${candidates.map(pid => {
+                  const pItem = CONDITIONS.find(c => c.id === pid);
+                  const label = pItem ? pItem.name : pid;
+                  return `<option value="${escapeHtml(pid)}">${escapeHtml(label)}</option>`;
+                }).join("")}
+              </select>
+
+              <select class="wsAddTypeSelect" data-child="${escapeHtml(item.id)}">
+                ${REL_TYPES.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("")}
+              </select>
+
+              <button class="miniBtn" data-addlink="${escapeHtml(item.id)}" type="button">Add</button>
+            </div>
+          `}
         </div>
+
         <div class="wsRowBtns">
           <button class="miniBtn" data-open="${item.id}" type="button">Open</button>
-          ${badge !== "Primary" ? `<button class="miniBtn" data-primary="${item.id}" type="button">Set Primary</button>` : ""}
-          ${badge !== "Primary" ? "" : ""}
+          ${isPrimary ? "" : `<button class="miniBtn" data-primary="${item.id}" type="button">Set Primary</button>`}
           <button class="miniBtn danger" data-rm="${item.id}" type="button">Remove</button>
         </div>
       </div>
     `;
-    return card;
-  };
 
-  // Primary section
-  const pWrap = document.createElement("div");
-  pWrap.innerHTML = `<div class="wsSectionTitle"><strong>Primary Condition</strong></div>`;
-  wsList.appendChild(pWrap);
-
-  if (primary) {
-    wsList.appendChild(makeCard(primary, "Primary"));
-  } else {
-    wsList.innerHTML += `<div class="small">No primary set yet.</div>`;
-  }
-
-  // Secondary section
-  const sWrap = document.createElement("div");
-  sWrap.innerHTML = `
-    <div class="wsSectionTitle"><strong>Secondary Conditions</strong></div>
-    <div class="small">Tip: Open a condition and click "Add as Secondary" (or add to workspace then set primary).</div>
-  `;
-  wsList.appendChild(sWrap);
-
-  if (secondaries.length) {
-    secondaries.forEach(sec => wsList.appendChild(makeCard(sec, "Secondary")));
-  } else {
-    wsList.innerHTML += `<div class="small">(none yet)</div>`;
-  }
-
-  // Any "unassigned" items (in ids but not primary/secondary)
-  const assigned = new Set([st.primaryId, ...st.secondaryIds].filter(Boolean));
-  const unassigned = items.filter(x => !assigned.has(x.id));
-  if (unassigned.length) {
-    const uWrap = document.createElement("div");
-    uWrap.innerHTML = `<div class="wsSectionTitle"><strong>Unassigned</strong></div>`;
-    wsList.appendChild(uWrap);
-    unassigned.forEach(u => wsList.appendChild(makeCard(u, "")));
-  }
-
-  // Wire buttons
-  wsList.querySelectorAll("button[data-open]").forEach(b => {
-    b.addEventListener("click", () => showDetail(b.dataset.open));
+    wsList.appendChild(card);
   });
 
-  wsList.querySelectorAll("button[data-primary]").forEach(b => {
-    b.addEventListener("click", () => {
-      setPrimary(b.dataset.primary);
+  // wire buttons
+  wsList.querySelectorAll("button[data-open]").forEach(b => b.addEventListener("click", () => showDetail(b.dataset.open)));
+  wsList.querySelectorAll("button[data-primary]").forEach(b => b.addEventListener("click", () => { setPrimary(b.dataset.primary); renderWorkspace(); }));
+  wsList.querySelectorAll("button[data-rm]").forEach(b => b.addEventListener("click", () => { removeNode(b.dataset.rm); renderWorkspace(); }));
+
+  // wire relationship type changes
+  wsList.querySelectorAll("select.wsRelSelect").forEach(sel => {
+    sel.addEventListener("change", () => {
+      const fromId = sel.dataset.from;
+      const toId = sel.dataset.to;
+      updateLinkType(fromId, toId, sel.value);
       renderWorkspace();
+      renderClaimTree();
     });
   });
 
-  wsList.querySelectorAll("button[data-rm]").forEach(b => {
+  // wire unlink buttons
+  wsList.querySelectorAll("button[data-unlink-from]").forEach(b => {
     b.addEventListener("click", () => {
-      removeFromWorkspace(b.dataset.rm);
+      const fromId = b.dataset.unlinkFrom;
+      const toId = b.dataset.unlinkTo;
+      removeLink(fromId, toId);
       renderWorkspace();
+      renderClaimTree();
+    });
+  });
+
+  // wire "add parent link" dropdowns and button
+  wsList.querySelectorAll("button[data-addlink]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const childId = btn.dataset.addlink;
+      const parentSel = wsList.querySelector(`select.wsAddParentSelect[data-child="${CSS.escape(childId)}"]`);
+      const typeSel = wsList.querySelector(`select.wsAddTypeSelect[data-child="${CSS.escape(childId)}"]`);
+
+      const parentId = parentSel?.value || "";
+      const relType = typeSel?.value || "Secondary to";
+
+      if (!parentId) return;
+
+      addLink(parentId, childId, relType);
+      renderWorkspace();
+      renderClaimTree();
+    });
+  });
+
+  // Update tree view
+  renderClaimTree();
+}
+
+function renderClaimTree() {
+  const treeEl = document.getElementById("tree");
+  if (!treeEl) return;
+
+  const st = loadWorkspaceState();
+  const primary = st.primaryId ? CONDITIONS.find(c => c.id === st.primaryId) : null;
+
+  if (!primary) {
+    treeEl.innerHTML = `<div class="small treeHint">No Primary set yet. In the Workspace, click "Set Primary".</div>`;
+    return;
+  }
+
+  const childrenBy = buildAdjacency(st.links);
+
+  // BFS levels
+  const levels = [];
+  const seen = new Set();
+  const q = [{ id: primary.id, depth: 0 }];
+
+  while (q.length) {
+    const cur = q.shift();
+    if (seen.has(cur.id)) continue;
+    seen.add(cur.id);
+
+    if (!levels[cur.depth]) levels[cur.depth] = [];
+    levels[cur.depth].push(cur.id);
+
+    const kids = childrenBy.get(cur.id) || [];
+    kids.forEach(l => q.push({ id: l.to, depth: cur.depth + 1 }));
+  }
+
+  // Layout
+  const nodeW = 240, nodeH = 44;
+  const padX = 30, padY = 20;
+  const gapX = 90, gapY = 18;
+
+  const maxCols = levels.length || 1;
+  const maxRows = Math.max(...levels.map(a => a.length), 1);
+
+  const width = padX * 2 + maxCols * nodeW + (maxCols - 1) * gapX;
+  const height = padY * 2 + maxRows * nodeH + (maxRows - 1) * gapY;
+
+  const esc = (s) => escapeHtml(s || "");
+
+  // positions: nodeId -> {x,y}
+  const pos = new Map();
+  levels.forEach((ids, depth) => {
+    ids.forEach((id, idx) => {
+      const x = padX + depth * (nodeW + gapX);
+      const y = padY + idx * (nodeH + gapY);
+      pos.set(id, { x, y });
+    });
+  });
+
+  const node = (id, label, x, y, badge) => `
+    <g class="treeNode" data-id="${esc(id)}" transform="translate(${x},${y})">
+      <rect width="${nodeW}" height="${nodeH}"></rect>
+      <text x="12" y="18" fill="rgba(255,255,255,0.9)">${esc(label)}</text>
+      ${badge ? `<text x="12" y="36" fill="rgba(255,255,255,0.55)">${esc(badge)}</text>` : ""}
+    </g>
+  `;
+
+  const line = (x1, y1, x2, y2) => `
+    <line class="treeLine" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"></line>
+  `;
+
+  let lines = "";
+  let labels = "";
+  let nodes = "";
+
+  // draw links
+  (st.links || []).forEach(l => {
+    const p = pos.get(l.from);
+    const c = pos.get(l.to);
+    if (!p || !c) return;
+
+    const x1 = p.x + nodeW;
+    const y1 = p.y + nodeH / 2;
+    const x2 = c.x;
+    const y2 = c.y + nodeH / 2;
+
+    lines += line(x1, y1, x2, y2);
+
+    const mx = (x1 + x2) / 2;
+    const my = (y1 + y2) / 2;
+    labels += `<text x="${mx + 6}" y="${my - 6}" fill="rgba(255,255,255,0.55)">${esc(l.type || "Secondary to")}</text>`;
+  });
+
+  // draw nodes
+  pos.forEach((p, id) => {
+    const item = CONDITIONS.find(c => c.id === id);
+    if (!item) return;
+    const badge = id === st.primaryId ? `Primary • ${item.body_system || ""}` : `${item.body_system || ""}`;
+    nodes += node(id, item.name, p.x, p.y, badge);
+  });
+
+  treeEl.innerHTML = `
+    <svg class="treeSvg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+      ${lines}
+      ${labels}
+      ${nodes}
+    </svg>
+  `;
+
+  treeEl.querySelectorAll(".treeNode").forEach(g => {
+    g.addEventListener("click", () => {
+      const id = g.getAttribute("data-id");
+      if (!id) return;
+      showDetail(id);
+      document.getElementById("detail")?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   });
 }
@@ -1035,7 +1275,7 @@ ${strategyHTML}
   const wsAdd = document.getElementById("wsAdd");
   if (wsAdd) {
     wsAdd.addEventListener("click", () => {
-      addToWorkspace(item.id);
+      ensureNode(item.id);
       renderWorkspace();
       alert("Added to workspace!");
     });
@@ -1045,15 +1285,25 @@ ${strategyHTML}
   if (wsAddSecondary) {
     wsAddSecondary.addEventListener("click", () => {
       const st = loadWorkspaceState();
-      if (!st.primaryId) {
-        // If no primary yet, make current item primary
-        setPrimary(item.id);
-        alert("No primary set—set this as Primary.");
-      } else {
-        addSecondary(item.id);
-        alert("Added as Secondary to Primary.");
-      }
+      ensureNode(item.id);
+
+      const parent = st.primaryId || item.id;
+
+      const choice = prompt(
+        `Relationship type for "${item.name}"?\n` +
+        REL_TYPES.map((t, i) => `${i + 1}) ${t}`).join("\n") +
+        `\n\nType a number (1-${REL_TYPES.length}) or leave blank for "Secondary to".`
+      );
+
+      let relType = "Secondary to";
+      const n = parseInt(choice, 10);
+      if (!Number.isNaN(n) && n >= 1 && n <= REL_TYPES.length) relType = REL_TYPES[n - 1];
+
+      // link to primary by default (user can change parent in workspace UI)
+      addLink(parent, item.id, relType);
+
       renderWorkspace();
+      alert(`Linked as: ${relType}`);
     });
   }
 
@@ -1406,9 +1656,12 @@ async function init() {
     wsExport.addEventListener("click", () => {
       const st = loadWorkspaceState();
       const primary = st.primaryId ? CONDITIONS.find(c => c.id === st.primaryId) : null;
-      const secondaries = st.secondaryIds.map(id => CONDITIONS.find(c => c.id === id)).filter(Boolean);
-      const unassigned = st.ids
-        .filter(id => id !== st.primaryId && !st.secondaryIds.includes(id))
+      const secondaries = st.links
+        .filter(l => l.from === st.primaryId)
+        .map(s => CONDITIONS.find(c => c.id === s.to))
+        .filter(Boolean);
+      const unassigned = st.nodes
+        .filter(id => id !== st.primaryId && !st.links.some(l => l.from === st.primaryId && l.to === id))
         .map(id => CONDITIONS.find(c => c.id === id))
         .filter(Boolean);
 
