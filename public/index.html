@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>VA CFR Finder (MVP)</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+
+<body>
+  <main class="container">
+    <h1>VA CFR Finder (MVP)</h1>
+    <p class="sub">
+      Educational tool to map common conditions to 38 CFR rating references (not legal advice / not representation).
+    </p>
+
+    <div class="search">
+      <div class="controls">
+  <input id="q" placeholder="Search: tinnitus, 8520, 4.124a, PTSD..." />
+  <select id="systemFilter">
+    <option value="">All body systems</option>
+  </select>
+  <button id="clearBtn" class="clearBtn" type="button">Clear</button>
+</div>
+
+
+      <!-- Legend goes UNDER controls so users understand the colors -->
+      <div id="legend" class="legendRow"></div>
+
+      <!-- Results list -->
+      <div id="results" class="results"></div>
+    </div>
+
+    <!-- Workspace panel -->
+    <section id="workspace" class="workspace">
+      <div class="wsHead">
+        <h2 style="margin:0">Claim Workspace</h2>
+        <div class="wsBtns">
+          <button id="wsExport" class="miniBtn" type="button">Export Full Packet (.txt)</button>
+          <button id="wsCopyShare" class="miniBtn" type="button">Copy Share Link</button>
+          <button id="wsClear" class="miniBtn danger" type="button">Clear Workspace</button>
+        </div>
+      </div>
+
+      <div class="small" id="wsScore">Evidence Readiness: 0/0 (0%)</div>
+      <div class="small" id="wsOrphans">Orphans: 0</div>
+      <div class="evBar"><div id="wsBarFill" class="evBarFill"></div></div>
+
+      <hr/>
+      <h3 style="margin:10px 0 6px">🌳 Claim Tree View</h3>
+      <div id="tree" class="treeBox"></div>
+      <div class="small">Tip: Set a Primary, then add Secondary conditions to see the tree.</div>
+
+      <hr/>
+      <h3 style="margin:10px 0 6px">✅ Workspace Health</h3>
+
+      <div id="wsHealth" class="healthBox"></div>
+
+      <div class="healthBtns">
+        <button id="wsFixOrphans" class="miniBtn" type="button">Fix: Link all orphans to Primary</button>
+        <button id="wsFixDisconnected" class="miniBtn" type="button">Fix: Attach disconnected to Primary</button>
+        <button id="wsHealthExport" class="miniBtn" type="button">Export Health Report</button>
+      </div>
+
+      <div id="wsList" class="wsList"></div>
+      <div class="small">Tip: open a condition and click “Add to Workspace”.</div>
+      <hr/>
+      <h3 style="margin:10px 0 6px">🧠 Claim Narrative Draft</h3>
+
+      <div class="healthBtns">
+        <button id="wsNarrativeBtn" class="miniBtn" type="button">Generate Narrative</button>
+        <button id="wsNarrativeCopy" class="miniBtn" type="button">Copy Narrative</button>
+        <button id="wsNarrativeDownload" class="miniBtn" type="button">Download Narrative (.txt)</button>
+        <button id="wsNarrativeClear" class="miniBtn danger" type="button">Clear</button>
+
+        <label class="small" style="display:flex;align-items:center;gap:6px">
+          <input id="wsNarrativeLinkedOnly" type="checkbox" />
+          Only include linked items
+        </label>
+
+        <label class="small" style="display:flex;align-items:center;gap:6px">
+          Style:
+          <select id="wsNarrativeStyle">
+            <option value="concise">Concise</option>
+            <option value="detailed">Detailed</option>
+          </select>
+        </label>
+      </div>
+
+      <textarea id="wsNarrativeOut" class="wsNarrativeOut" rows="16" placeholder="Click "Generate Narrative" to create a draft..."></textarea>
+
+      <div class="small" style="margin-top:6px">
+        Educational draft only — not legal advice and not representation. Always verify current CFR language and consult an accredited rep if needed.
+      </div>
+
+      <hr/>
+      <h3 style="margin:10px 0 6px">🗓️ Workspace Timeline</h3>
+
+      <div class="healthBtns">
+        <button id="wsTimelineBtn" class="miniBtn" type="button">Generate Timeline</button>
+        <button id="wsTimelineCopy" class="miniBtn" type="button">Copy Timeline</button>
+        <button id="wsTimelineDownload" class="miniBtn" type="button">Download Timeline (.txt)</button>
+
+        <label class="small" style="display:flex;align-items:center;gap:6px">
+          <select id="wsTimelineScope">
+            <option value="all">All workspace items</option>
+            <option value="linked">Linked only</option>
+            <option value="primary">Primary only</option>
+          </select>
+        </label>
+      </div>
+
+      <textarea id="wsTimelineOut" class="wsNarrativeOut" rows="12" placeholder="Click "Generate Timeline" to merge and sort timeline entries..."></textarea>
+
+      <hr/>
+      <h3 style="margin:10px 0 6px">📎 Workspace Evidence Binder</h3>
+
+      <div class="healthBtns">
+        <button id="wsBinderBtn" class="miniBtn" type="button">Generate Binder</button>
+        <button id="wsBinderCopy" class="miniBtn" type="button">Copy Binder</button>
+        <button id="wsBinderDownload" class="miniBtn" type="button">Download Binder (.txt)</button>
+
+        <label class="small" style="display:flex;align-items:center;gap:6px">
+          <select id="wsBinderScope">
+            <option value="all">All workspace items</option>
+            <option value="linked">Linked only</option>
+            <option value="primary">Primary only</option>
+          </select>
+        </label>
+
+        <label class="small" style="display:flex;align-items:center;gap:6px">
+          Sort:
+          <select id="wsBinderSort">
+            <option value="date">Date</option>
+            <option value="type">Type</option>
+            <option value="condition">Condition</option>
+          </select>
+        </label>
+
+        <label class="small" style="display:flex;align-items:center;gap:6px">
+          View:
+          <select id="wsBinderView">
+            <option value="flat">Flat list</option>
+            <option value="cluster">Clustered</option>
+          </select>
+        </label>
+
+        <label class="small" style="display:flex;align-items:center;gap:6px">
+          <input id="wsBinderShowViewer" type="checkbox" checked />
+          Show viewer
+        </label>
+      </div>
+
+      <div id="wsBinderViewer" class="binderViewer"></div>
+
+      <textarea id="wsBinderOut" class="wsNarrativeOut" rows="12" placeholder="Click "Generate Binder" to merge evidence links across your workspace..."></textarea>
+
+      <hr/>
+      <h3 style="margin:10px 0 6px">🕸️ Evidence Relationship Graph</h3>
+
+      <div class="healthBtns">
+        <button id="wsGraphBuild" class="miniBtn" type="button">Build Graph</button>
+        <button id="wsGraphFit" class="miniBtn" type="button">Fit to Screen</button>
+
+        <label class="small" style="display:flex;align-items:center;gap:6px">
+          Scope:
+          <select id="wsGraphScope">
+            <option value="all">All workspace items</option>
+            <option value="linked">Linked only</option>
+            <option value="primary">Primary only</option>
+          </select>
+        </label>
+
+        <label class="small" style="display:flex;align-items:center;gap:6px">
+          <input id="wsGraphHideOrphans" type="checkbox" />
+          Hide orphans (no links)
+        </label>
+      </div>
+
+      <div id="wsGraph" class="graphWrap"></div>
+      <div id="wsGraphInfo" class="graphInfo small">(Click a node to open its link. Drag nodes to reposition.)</div>
+    </section>
+
+    <!-- Detail view (ONLY ONE) -->
+    <section id="detail" class="detail hidden"></section>
+
+    <footer class="footer">
+      <small>
+        Sources are linked directly to eCFR / Cornell Law CFR pages. Always verify current language.
+      </small>
+    </footer>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>
+

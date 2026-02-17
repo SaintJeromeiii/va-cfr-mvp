@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["id", "name", "body_system", "aliases", "cfr"],
+    "properties": {
+      "id": { "type": "string" },
+      "name": { "type": "string" },
+      "body_system": { "type": "string" },
+      "aliases": {
+        "type": "array",
+        "items": { "type": "string" }
+      },
+      "cfr": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["section", "diagnostic_code", "title", "url"],
+          "properties": {
+            "section": { "type": "string" },
+            "diagnostic_code": { "type": "string" },
+            "title": { "type": "string" },
+            "url": { "type": "string" }
+          }
+        }
+      },
+      "rating_logic": {
+        "type": "object"
+      },
+      "excerpts": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "label": { "type": "string" },
+            "text": { "type": "string" },
+            "source_url": { "type": "string" }
+          }
+        }
+      },
+      "evidence_checklist": {
+        "type": "array",
+        "items": { "type": "string" }
+      },
+      "disclaimer": { "type": "string" }
+    }
+  }
+}

@@ -1,0 +1,804 @@
+body {
+  font-family: system-ui, Arial, sans-serif;
+  margin: 0;
+  background: #0b0f14;
+  color: #e8eef6;
+}
+
+.container {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+h1 {
+  margin: 0 0 8px;
+}
+
+.sub {
+  margin: 0 0 18px;
+  color: #b8c4d6;
+}
+
+.search input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #253043;
+  background: #111826;
+  color: #e8eef6;
+  outline: none;
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.results {
+  margin-top: 10px;
+  display: grid;
+  gap: 10px;
+}
+
+.result {
+  padding: 12px 14px;
+  border: 1px solid #253043;
+  background: #0f1622;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.result:hover {
+  border-color: #3b82f6;
+}
+
+.detail {
+  margin-top: 18px;
+  border: 1px solid #253043;
+  background: #0f1622;
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.hidden {
+  display: none;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #111826;
+  border: 1px solid #253043;
+  margin-right: 8px;
+}
+
+ul {
+  margin: 8px 0 0 18px;
+}
+
+a {
+  color: #7ab7ff;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #253043;
+  margin: 14px 0;
+}
+
+.small {
+  color: #b8c4d6;
+  font-size: 0.95rem;
+}
+
+.wsNarrativeOut {
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.05);
+  color: inherit;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  line-height: 1.4;
+}
+
+#wsNarrativeStyle, #wsTimelineScope {
+  padding: 6px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.06);
+  color: inherit;
+}
+
+.tlForm { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+.tlForm input, .tlForm select, #tlNote {
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.06);
+  color: inherit;
+}
+.tlForm input { min-width: 220px; }
+#tlNote { width:100%; margin-top:8px; }
+
+.tlList { display:grid; gap:10px; margin-top:10px; }
+.tlRow {
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+}
+.tlMeta { display:flex; gap:8px; align-items:center; margin-bottom:6px; }
+
+.evLinksForm { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+.evLinksForm input, .evLinksForm select, #evLinksNote {
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.06);
+  color: inherit;
+}
+.evLinksForm input { min-width: 240px; flex: 1; }
+.evLinksForm select { min-width: 220px; }
+#evLinksNote { width:100%; margin-top:8px; }
+
+.evLinksList { display:grid; gap:10px; margin-top:10px; }
+.evLinksRow {
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+}
+.evLinksMeta { display:flex; gap:8px; align-items:center; margin-bottom:6px; }
+
+.evForm { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+.evForm input, .evForm select, #evNote {
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.06);
+  color: inherit;
+}
+.evForm input { min-width: 240px; flex: 1; }
+.evForm select { min-width: 220px; }
+#evNote { width:100%; margin-top:8px; }
+
+.evList { display:grid; gap:10px; margin-top:10px; }
+.evRow {
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+}
+.evMeta { display:flex; gap:8px; align-items:center; margin-bottom:6px; }
+
+.dcBadge {
+  margin-left: 10px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #111826;
+  border: 1px solid #253043;
+  font-size: 0.85rem;
+  color: #7ab7ff;
+}
+
+.metaRow {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.systemBadge {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #0f1a2b;
+  border: 1px solid #253043;
+  font-size: 0.8rem;
+  color: #9cc9ff;
+}
+
+/* ===== Body system color tokens ===== */
+:root {
+  --sys-default-bg: #111826;
+  --sys-default-bd: #253043;
+  --sys-default-fg: #e8eef6;
+
+  --sys-mental-bg: #22143a;
+  --sys-mental-bd: #4b2a7a;
+  --sys-mental-fg: #d9c7ff;
+
+  --sys-neuro-bg: #0f1a2b;
+  --sys-neuro-bd: #2a4a7a;
+  --sys-neuro-fg: #9cc9ff;
+
+  --sys-msk-bg: #10251b;
+  --sys-msk-bd: #2f6b4b;
+  --sys-msk-fg: #b7f5d1;
+
+  --sys-ear-bg: #0b2430;
+  --sys-ear-bd: #246a83;
+  --sys-ear-fg: #aeeaff;
+
+  --sys-resp-bg: #2a1c12;
+  --sys-resp-bd: #7b4a2a;
+  --sys-resp-fg: #ffd7b8;
+
+  --sys-cardio-bg: #2a1216;
+  --sys-cardio-bd: #7a2a38;
+  --sys-cardio-fg: #ffb9c5;
+}
+
+/* Container for system chips/badges */
+.metaRow {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+/* Base badge styles */
+.systemBadge,
+.dcBadge {
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--sys-default-bd);
+  background: var(--sys-default-bg);
+  color: var(--sys-default-fg);
+  font-size: 0.8rem;
+  line-height: 1.2;
+}
+
+/* System color variants */
+.systemBadge.sys-mental-health {
+  background: var(--sys-mental-bg);
+  border-color: var(--sys-mental-bd);
+  color: var(--sys-mental-fg);
+}
+
+.systemBadge.sys-neurological {
+  background: var(--sys-neuro-bg);
+  border-color: var(--sys-neuro-bd);
+  color: var(--sys-neuro-fg);
+}
+
+.systemBadge.sys-musculoskeletal {
+  background: var(--sys-msk-bg);
+  border-color: var(--sys-msk-bd);
+  color: var(--sys-msk-fg);
+}
+
+.systemBadge.sys-ear {
+  background: var(--sys-ear-bg);
+  border-color: var(--sys-ear-bd);
+  color: var(--sys-ear-fg);
+}
+
+.systemBadge.sys-respiratory {
+  background: var(--sys-resp-bg);
+  border-color: var(--sys-resp-bd);
+  color: var(--sys-resp-fg);
+}
+
+.systemBadge.sys-cardiovascular {
+  background: var(--sys-cardio-bg);
+  border-color: var(--sys-cardio-bd);
+  color: var(--sys-cardio-fg);
+}
+
+/* Optional: make result cards react to system color (subtle left bar) */
+.result {
+  position: relative;
+}
+
+.result::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  border-radius: 10px 0 0 10px;
+  background: var(--sys-default-bd);
+  opacity: 0.9;
+}
+
+.result.sys-mental-health::before {
+  background: var(--sys-mental-bd);
+}
+
+.result.sys-neurological::before {
+  background: var(--sys-neuro-bd);
+}
+
+.result.sys-musculoskeletal::before {
+  background: var(--sys-msk-bd);
+}
+
+.result.sys-ear::before {
+  background: var(--sys-ear-bd);
+}
+
+.result.sys-respiratory::before {
+  background: var(--sys-resp-bd);
+}
+
+.result.sys-cardiovascular::before {
+  background: var(--sys-cardio-bd);
+}
+
+.clearBtn {
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #253043;
+  background: #111826;
+  color: #f5f9ff;
+  cursor: pointer;
+}
+
+.clearBtn:hover {
+  border-color: #3b82f6;
+}
+
+.matchNote {
+  margin-top: 6px;
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+mark.hl {
+  padding: 0 3px;
+  border-radius: 6px;
+}
+
+
+.cfrLine {
+  margin-top: 6px;
+  font-size: 0.9rem;
+  opacity: 0.92;
+}
+
+.cfrJump {
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.cfrJump:hover {
+  opacity: 1;
+}
+
+.jumpIndicator {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 10px 0 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: rgba(255, 230, 120, 0.22);
+  font-size: 0.95rem;
+}
+
+.jumpIndicatorClose {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+
+.jumpIndicatorClose:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.evHeader {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  margin: 8px 0 10px 0;
+}
+
+.evProgress {
+  font-size: 0.95rem;
+  opacity: 0.95;
+}
+
+.evBtns {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.miniBtn {
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #f5f9ff;
+  cursor: pointer;
+}
+
+.miniBtn:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.miniBtn.danger {
+  border-color: rgba(220, 60, 60, 0.35);
+}
+
+.evList {
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.evItem {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.evItem input[type="checkbox"] {
+  margin-top: 2px;
+  transform: scale(1.1);
+}
+
+.notesWrap {
+  display: grid;
+  gap: 10px;
+}
+
+.notesBox {
+  width: 100%;
+  min-height: 140px;
+  resize: vertical;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.12);
+  background: rgba(255,255,255,0.03);
+  font: inherit;
+}
+
+.notesBtns {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Evidence readiness bar */
+.evScoreRow {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 8px 0 12px 0;
+}
+.evBar {
+  width: 220px;
+  height: 12px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 8px;
+  border: 1px solid rgba(0,0,0,0.06);
+  overflow: hidden;
+}
+.evBarFill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+  transition: width 320ms ease;
+}
+
+/* Workspace panel styles */
+.wsCard {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.08);
+  background: rgba(255,255,255,0.02);
+  margin-bottom: 8px;
+}
+.wsRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+.wsRowBtns { display: flex; gap: 8px; align-items: center; }
+.wsBarFill {
+  height: 12px;
+  width: 0%;
+  background: linear-gradient(90deg, #10b981, #34d399);
+  border-radius: 8px;
+  transition: width 320ms ease;
+}
+
+.small { font-size: 0.95rem; }
+
+.evScoreRow { display: grid; gap: 8px; margin: 8px 0 10px; }
+.evBar { height: 10px; border-radius: 999px; background: rgba(255,255,255,0.12); overflow: hidden; }
+.evBarFill { height: 100%; width: 0%; border-radius: 999px; background: rgba(255,255,255,0.55); transition: width 120ms ease; }
+
+.workspace { margin-top: 16px; padding: 12px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.12); }
+.wsHead { display:flex; gap:10px; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+.wsBtns { display:flex; gap:8px; flex-wrap: wrap; }
+.wsList { display:grid; gap:10px; margin: 10px 0; }
+.wsCard { padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.10); }
+.wsRow { display:flex; justify-content: space-between; align-items:center; gap:10px; flex-wrap: wrap; }
+.wsRowBtns { display:flex; gap:8px; }
+
+
+.wsSectionTitle { margin: 10px 0 6px; }
+.wsBadge { font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.18); margin-left: 6px; }
+
+.wsRelSelect {
+  margin-top: 4px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.06);
+  color: inherit;
+}
+
+.wsLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.wsLinkRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+}
+
+.wsLinkRow .small {
+  min-width: 120px;
+}
+
+.wsLinkRow select {
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: inherit;
+  font-size: 0.9rem;
+  flex: 1;
+}
+
+.wsAddLinkRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 8px 0;
+}
+
+.wsAddLinkRow select {
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: inherit;
+  flex: 1;
+}
+
+.wsAddParentSelect {
+  min-width: 140px;
+}
+
+.wsAddTypeSelect {
+  min-width: 120px;
+}
+
+.treeBox {
+  margin-top: 8px;
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  overflow: auto;
+}
+
+.treeSvg text {
+  font-size: 12px;
+}
+
+input[type="radio"] {
+  accent-color: #7ab7ff;
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+}
+
+input[type="radio"]:focus {
+  outline: 2px solid #7ab7ff;
+  outline-offset: 2px;
+}
+
+.relBadge {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(120, 200, 255, 0.35);
+  color: rgba(160, 220, 255, 0.95);
+}
+
+.evRelPanel {
+  margin-top: 8px;
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px dashed rgba(255,255,255,0.20);
+  background: rgba(255,255,255,0.04);
+}
+
+.evRow.activeRel {
+  outline: 2px solid rgba(160, 220, 255, 0.55);
+}
+
+.binderViewer { margin-top: 10px; display: grid; gap: 10px; }
+
+.binderCluster {
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+  padding: 10px;
+}
+
+.binderCluster summary {
+  cursor: pointer;
+  font-weight: 700;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+
+.binderCluster summary::-webkit-details-marker { display:none; }
+
+.binderCluster .clusterMeta {
+  font-weight: 500;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.binderItem {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+}
+
+.binderItem .rowTop {
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:flex-start;
+}
+
+.binderItem .title { font-weight: 700; }
+.binderItem .meta { display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; }
+.binderItem .meta .badge { font-size: 12px; }
+.binderItem a { word-break: break-all; }
+
+.graphWrap {
+  margin-top: 10px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.03);
+  overflow: hidden;
+  height: 520px;
+  position: relative;
+}
+
+.graphInfo {
+  margin-top: 8px;
+  opacity: 0.9;
+}
+
+.graphSvg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.nodeCircle {
+  cursor: grab;
+  stroke: rgba(255,255,255,0.55);
+  stroke-width: 1;
+}
+
+.nodeCircle:active { cursor: grabbing; }
+
+.edgeLine {
+  stroke: rgba(255,255,255,0.22);
+  stroke-width: 1;
+}
+
+.nodeLabel {
+  font-size: 11px;
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.treeNode {
+  cursor: pointer;
+}
+
+.treeNode rect {
+  rx: 10;
+  ry: 10;
+  stroke: rgba(255,255,255,0.25);
+  fill: rgba(255,255,255,0.07);
+}
+
+.treeNode:hover rect {
+  fill: rgba(255,255,255,0.14);
+}
+
+.treeLine {
+  stroke: rgba(255,255,255,0.25);
+  stroke-width: 2;
+}
+
+.treeHint {
+  padding: 8px;
+}
+
+.wsLinks { display: grid; gap: 8px; margin-top: 6px; }
+.wsLinkRow { display: grid; grid-template-columns: 1fr 220px auto; gap: 8px; align-items: center; }
+.wsAddLinkRow { display: grid; grid-template-columns: 1fr 220px auto; gap: 8px; align-items: center; margin-top: 6px; }
+
+.wsCard.orphan {
+  border-color: rgba(255, 196, 0, 0.35);
+  box-shadow: 0 0 0 1px rgba(255, 196, 0, 0.18) inset;
+}
+
+.orphanBadge {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 196, 0, 0.35);
+  color: rgba(255, 220, 120, 0.95);
+  margin-left: 6px;
+}
+
+.healthBox {
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  margin-top: 8px;
+}
+
+.healthRow { display:flex; justify-content: space-between; gap:10px; padding:6px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.healthRow:last-child { border-bottom: none; }
+
+.healthTag {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.18);
+  opacity: .9;
+}
+
+.healthBtns { display:flex; gap:8px; flex-wrap:wrap; margin-top: 10px; }
