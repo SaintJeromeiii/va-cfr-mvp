@@ -8,8 +8,12 @@ function taskEnsure(state) {
 }
 
 function taskSave(state) {
-  if (typeof saveAppState === "function") saveAppState(state);
-  else localStorage.setItem("vaCfrFinderState", JSON.stringify(state));
+  if (typeof saveAppState === "function") {
+    saveAppState(state);
+  } else {
+    localStorage.setItem("vaCfrFinderState", JSON.stringify(state));
+  }
+  showNotification("Workspace auto-saved!");
 }
 
 function laneWeight(lane) {
@@ -48,7 +52,9 @@ function taskAdd(state, title, meta = {}) {
     meta
   };
   const key = taskDedupKey(t);
+  console.log('Generated task key:', key); // Debugging log
   const exists = tasks.some(x => taskDedupKey(x) === key);
+  console.log('Task already exists:', exists); // Debugging log
   if (!exists) tasks.push(t);
   return !exists;
 }
@@ -72,99 +78,66 @@ function taskClearDone(state) {
 }
 
 function renderTasks() {
-  const host = document.getElementById("taskPanel");
-  const status = document.getElementById("taskStatus");
+  const host = document.getElementById("wsList");
   if (!host) return;
 
   const state = getAppState();
   const tasks = taskEnsure(state);
 
-  // Sort: undone first by score, then done
-  const sorted = [...tasks].sort((a, b) => {
-    if (!!a.done !== !!b.done) return a.done ? 1 : -1;
-    return taskScore(b) - taskScore(a);
-  });
+  console.log('Tasks to render:', tasks); // Debugging log
 
   host.innerHTML = "";
 
-  if (status) {
-    const undone = sorted.filter(t => !t.done).length;
-    const done = sorted.filter(t => t.done).length;
-    status.textContent = `Undone: ${undone} • Done: ${done} • Next Best Action is top-most undone task.`;
-  }
-
-  if (!sorted.length) {
+  if (!tasks.length) {
     host.innerHTML = `<div style="font-size:12px; opacity:.85;">No tasks yet. Click “Auto-add from Dashboard”.</div>`;
     return;
   }
 
-  const wrap = document.createElement("div");
-  wrap.style.display = "flex";
-  wrap.style.flexDirection = "column";
-  wrap.style.gap = "10px";
-
-  sorted.forEach((t, idx) => {
-    const card = document.createElement("div");
-    card.style.border = "1px solid #ddd";
-    card.style.borderRadius = "12px";
-    card.style.padding = "10px";
-    card.style.opacity = t.done ? "0.6" : "1";
-
-    const top = document.createElement("div");
-    top.style.display = "flex";
-    top.style.justifyContent = "space-between";
-    top.style.alignItems = "baseline";
-    top.innerHTML = `
-      <div style="font-size:12px;">
-        <strong>${idx === 0 && !t.done ? "⭐ Next:" : ""}</strong>
-        <strong>${t.title}</strong>
-      </div>
-      <div style="font-size:12px; opacity:.85;">
-        ${(t.meta?.lane || "general").toUpperCase()} • score ${taskScore(t)}
-      </div>
-    `;
-    card.appendChild(top);
-
-    const meta = document.createElement("div");
-    meta.style.fontSize = "12px";
-    meta.style.opacity = ".85";
-    meta.style.marginTop = "4px";
-    meta.textContent = `Created: ${t.at}${t.doneAt ? ` • Done: ${t.doneAt}` : ""}`;
-    card.appendChild(meta);
-
-    const btnRow = document.createElement("div");
-    btnRow.style.display = "flex";
-    btnRow.style.gap = "8px";
-    btnRow.style.marginTop = "8px";
-    btnRow.style.flexWrap = "wrap";
-
-    const doneBtn = document.createElement("button");
-    doneBtn.type = "button";
-    doneBtn.textContent = t.done ? "Mark Undone" : "Mark Done";
-    doneBtn.addEventListener("click", () => {
-      const s = getAppState();
-      taskMarkDone(s, t.id, !t.done);
-      taskSave(s);
-      renderTasks();
-    });
-    btnRow.appendChild(doneBtn);
-
-    const delBtn = document.createElement("button");
-    delBtn.type = "button";
-    delBtn.textContent = "Delete";
-    delBtn.addEventListener("click", () => {
-      const s = getAppState();
-      taskDelete(s, t.id);
-      taskSave(s);
-      renderTasks();
-    });
-    btnRow.appendChild(delBtn);
-
-    card.appendChild(btnRow);
-    wrap.appendChild(card);
+  tasks.forEach((task) => {
+    const div = document.createElement("div");
+    div.className = "wsCard";
+    div.textContent = task.title;
+    host.appendChild(div);
   });
+}
 
-  host.appendChild(wrap);
+// Update task progress
+function updateTaskProgress() {
+  const state = getAppState();
+  const tasks = state.tasks || [];
+  const completed = tasks.filter(task => task.done).length;
+  const progress = tasks.length ? (completed / tasks.length) * 100 : 0;
+
+  const progressBar = document.getElementById('taskProgress');
+  if (progressBar) progressBar.value = progress;
+}
+
+// Add recent activity
+function addRecentActivity(activity) {
+  const recentActivityList = document.querySelector('#recentActivity ul');
+  if (recentActivityList) {
+    const li = document.createElement('li');
+    li.textContent = activity;
+    recentActivityList.prepend(li);
+  }
+}
+
+const searchHistory = [];
+
+function addSearchToHistory(query) {
+  if (!query || searchHistory.includes(query)) return;
+
+  searchHistory.push(query);
+  const historyList = document.querySelector('#searchHistory ul');
+  if (historyList) {
+    const li = document.createElement('li');
+    li.textContent = query;
+    li.addEventListener('click', () => {
+      document.getElementById('q').value = query;
+      renderResults(query);
+    });
+    historyList.prepend(li);
+  }
 }
 
 document.getElementById("taskRefreshBtn")?.addEventListener("click", renderTasks);
@@ -174,7 +147,98 @@ document.getElementById("taskClearDoneBtn")?.addEventListener("click", () => {
   taskClearDone(s);
   taskSave(s);
   renderTasks();
+  updateTaskProgress();
 });
+
+document.getElementById("clearWorkspaceBtn")?.addEventListener("click", () => {
+  if (confirm("Are you sure you want to clear your workspace? This action cannot be undone.")) {
+    localStorage.removeItem("vaCfrFinderState");
+    const state = getAppState();
+    state.tasks = [];
+    renderTasks(state);
+    updateTaskProgress();
+    showNotification("Workspace cleared!");
+  }
+});
+
+// Example usage
+document.getElementById('addTaskBtn')?.addEventListener('click', () => {
+  const taskTitle = prompt('Enter the task title:'); // Ask the user for a task title
+  console.log('Task title entered:', taskTitle); // Debugging log
+  if (taskTitle) {
+    const state = getAppState();
+    const added = taskAdd(state, taskTitle, { lane: 'general' });
+    if (added) {
+      taskSave(state);
+      renderTasks();
+      updateTaskProgress();
+      addRecentActivity(`Added task: ${taskTitle}`);
+      showNotification('Task added successfully!');
+    } else {
+      showNotification('Task already exists!');
+    }
+  } else {
+    showNotification('No task title entered!');
+  }
+});
+
+document.getElementById('searchCfrBtn')?.addEventListener('click', () => {
+  addRecentActivity('Searched CFR');
+});
+
+document.getElementById('q')?.addEventListener('change', (e) => {
+  addSearchToHistory(e.target.value);
+});
+
+import { jsPDF } from 'jspdf';
+
+document.getElementById('exportPdfBtn')?.addEventListener('click', () => {
+  const doc = new jsPDF();
+  const workspace = document.getElementById('workspace');
+  if (workspace) {
+    doc.text('Workspace', 10, 10);
+    doc.text(workspace.innerText, 10, 20);
+    doc.save('workspace.pdf');
+  }
+});
+
+document.getElementById('darkModeToggle')?.addEventListener('click', () => {
+  document.body.classList.toggle('dark-mode');
+});
+
+function showNotification(message) {
+  const notification = document.getElementById('notification');
+  if (notification) {
+    notification.textContent = message;
+    notification.classList.remove('hidden');
+    setTimeout(() => {
+      notification.classList.add('hidden');
+    }, 3000);
+  }
+}
+
+function getAppState() {
+  const savedState = localStorage.getItem('vaCfrFinderState');
+  return savedState ? JSON.parse(savedState) : { tasks: [] };
+}
+
+function restoreWorkspace() {
+  const savedState = localStorage.getItem("vaCfrFinderState");
+  if (savedState) {
+    const state = JSON.parse(savedState);
+    renderTasks(state);
+    updateTaskProgress();
+    showNotification("Workspace restored!");
+  }
+}
+
+// Example usage
+showNotification('Task added successfully!');
 
 // Call renderTasks() once after the UI loads
 renderTasks();
+
+// Restore workspace when the page loads
+document.addEventListener("DOMContentLoaded", () => {
+  restoreWorkspace();
+});

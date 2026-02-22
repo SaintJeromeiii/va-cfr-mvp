@@ -21,8 +21,10 @@
     <option value="">All body systems</option>
   </select>
   <button id="clearBtn" class="clearBtn" type="button">Clear</button>
+  <button id="darkModeToggle">Toggle Dark Mode</button>
 </div>
 
+      <div id="notification" class="notification hidden"></div>
 
       <!-- Legend goes UNDER controls so users understand the colors -->
       <div id="legend" class="legendRow"></div>
@@ -30,6 +32,29 @@
       <!-- Results list -->
       <div id="results" class="results"></div>
     </div>
+
+    <!-- Search History panel -->
+    <section id="searchHistory" class="search-history">
+      <h2>Search History</h2>
+      <ul></ul>
+    </section>
+
+    <!-- Dashboard panel -->
+    <section id="dashboard" class="dashboard">
+      <h2>Dashboard</h2>
+      <div class="progress">
+        <label for="taskProgress">Task Completion:</label>
+        <progress id="taskProgress" value="0" max="100"></progress>
+      </div>
+      <div class="quick-links">
+        <button id="addTaskBtn">Add Task</button>
+        <button id="searchCfrBtn">Search CFR</button>
+      </div>
+      <div id="recentActivity" class="recent-activity">
+        <h3>Recent Activity</h3>
+        <ul></ul>
+      </div>
+    </section>
 
     <!-- Workspace panel -->
     <section id="workspace" class="workspace">
@@ -39,6 +64,8 @@
           <button id="wsExport" class="miniBtn" type="button">Export Full Packet (.txt)</button>
           <button id="wsCopyShare" class="miniBtn" type="button">Copy Share Link</button>
           <button id="wsClear" class="miniBtn danger" type="button">Clear Workspace</button>
+          <button id="exportPdfBtn">Export to PDF</button>
+          <button id="clearWorkspaceBtn">Clear Workspace</button>
         </div>
       </div>
 
@@ -192,6 +219,13 @@
   </main>
 
   <script src="/app.js"></script>
+  <script>
+    document.getElementById('addTaskBtn')?.addEventListener('click', () => {
+      console.log('Add Task button clicked'); // Debugging log
+      const taskTitle = prompt('Enter the task title:'); // Ask the user for a task title
+      console.log('Task title entered:', taskTitle); // Debugging log
+    });
+  </script>
 </body>
 </html>
 

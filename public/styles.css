@@ -5,6 +5,11 @@ body {
   color: #e8eef6;
 }
 
+body.dark-mode {
+  background: #121212;
+  color: #ffffff;
+}
+
 .container {
   max-width: 880px;
   margin: 0 auto;
@@ -542,6 +547,11 @@ mark.hl {
 .wsRow { display:flex; justify-content: space-between; align-items:center; gap:10px; flex-wrap: wrap; }
 .wsRowBtns { display:flex; gap:8px; }
 
+body.dark-mode .dashboard,
+body.dark-mode .search-history {
+  background: #1e1e1e;
+  border-color: #333333;
+}
 
 .wsSectionTitle { margin: 10px 0 6px; }
 .wsBadge { font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.18); margin-left: 6px; }
@@ -802,3 +812,57 @@ input[type="radio"]:focus {
 }
 
 .healthBtns { display:flex; gap:8px; flex-wrap:wrap; margin-top: 10px; }
+
+.dashboard {
+  margin-top: 20px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.progress {
+  margin-bottom: 16px;
+}
+
+.quick-links {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.recent-activity ul {
+  list-style: none;
+  padding: 0;
+}
+
+.search-history {
+  margin-top: 20px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.search-history ul {
+  list-style: none;
+  padding: 0;
+}
+
+.notification {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: #333;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  transition: opacity 0.3s ease;
+}
+
+.notification.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
