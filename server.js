@@ -1,11 +1,11 @@
+require('dotenv').config();
+
 const express = require("express");
 const path = require("path");
 const fs = require("fs");
 const livereload = require("livereload");
 const connectLiveReload = require("connect-livereload");
-
-
-
+const morgan = require('morgan');
 
 const app = express();
 // --- LIVE RELOAD (local dev only) ---
@@ -23,7 +23,7 @@ if (process.env.NODE_ENV !== "production") {
   app.use(connectLiveReload({ port: 35730 }));
 }//
 
-
+app.use(morgan('dev'));
 
 const DATA_PATH = path.join(__dirname, "data", "conditions.json");
 
@@ -94,6 +94,12 @@ app.get("/api/conditions/:id", (req, res) => {
 // Allows refreshing /condition/:id without breaking JS/CSS loading
 app.get("/condition/:id", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+// -------- Error handling middleware --------
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Something went wrong!');
 });
 
 // -------- Start server (ONLY ONCE) --------
