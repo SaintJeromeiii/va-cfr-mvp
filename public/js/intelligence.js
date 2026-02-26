@@ -95,10 +95,33 @@ function taskMarkDone(state, id, done = true) {
   t.doneAt = done ? new Date().toISOString() : null;
 }
 
+async function saveAllTasksToServer(tasks) {
+  try {
+    const res = await fetch('/api/tasks', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(tasks)
+    });
+    return res.ok;
+  } catch (e) {
+    console.warn('saveAllTasksToServer failed:', e && e.message);
+    return false;
+  }
+}
+
 function taskDelete(state, id) {
   const tasks = taskEnsure(state);
   const idx = tasks.findIndex(x => x.id === id);
   if (idx >= 0) tasks.splice(idx, 1);
+}
+
+function taskToggleDone(state, id) {
+  const tasks = taskEnsure(state);
+  const t = tasks.find(x => x.id === id);
+  if (!t) return false;
+  t.done = !t.done;
+  t.doneAt = t.done ? new Date().toISOString() : null;
+  return true;
 }
 
 function taskClearDone(state) {
@@ -122,17 +145,56 @@ function renderTasks() {
   }
 
   tasks.forEach((task) => {
-    const div = document.createElement("div");
-    div.className = "wsCard";
-    // Show linked condition if present
-    let titleHtml = escapeHtml(task.title);
-    if (task.meta && task.meta.conditionId) {
-      const cond = (typeof getConditionById === 'function') ? getConditionById(task.meta.conditionId) : null;
-      const name = cond ? cond.name : task.meta.conditionId;
-      titleHtml += ` \n\u2014 Attached to: ${escapeHtml(name)}`;
-    }
-    div.textContent = titleHtml;
-    host.appendChild(div);
+    const card = document.createElement('div');
+    card.className = 'wsCard';
+
+    const left = document.createElement('div');
+    left.style.flex = '1';
+
+    const title = document.createElement('div');
+    title.innerHTML = escapeHtml(task.title) + (task.meta && task.meta.conditionId ? ` <span style="opacity:.8; font-size:12px">— ${escapeHtml(task.meta.conditionId)}</span>` : '');
+    left.appendChild(title);
+
+    const controls = document.createElement('div');
+    controls.style.display = 'flex';
+    controls.style.gap = '8px';
+
+    const doneCb = document.createElement('input');
+    doneCb.type = 'checkbox';
+    doneCb.checked = !!task.done;
+    doneCb.addEventListener('change', async () => {
+      const s = getAppState();
+      const ok = taskToggleDone(s, task.id);
+      if (ok) {
+        taskSave(s);
+        renderTasks();
+        updateTaskProgress();
+        await saveAllTasksToServer(s.tasks || []);
+      }
+    });
+
+    const delBtn = document.createElement('button');
+    delBtn.textContent = 'Delete';
+    delBtn.addEventListener('click', async () => {
+      if (!confirm('Delete this task?')) return;
+      const s = getAppState();
+      taskDelete(s, task.id);
+      taskSave(s);
+      renderTasks();
+      updateTaskProgress();
+      await saveAllTasksToServer(s.tasks || []);
+      addRecentActivity(`Deleted task: ${task.title}`);
+    });
+
+    controls.appendChild(doneCb);
+    controls.appendChild(delBtn);
+
+    card.appendChild(left);
+    card.appendChild(controls);
+    card.style.display = 'flex';
+    card.style.alignItems = 'center';
+
+    host.appendChild(card);
   });
 }
 

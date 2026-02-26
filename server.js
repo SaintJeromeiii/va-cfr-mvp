@@ -146,6 +146,15 @@ app.post('/api/tasks', (req, res) => {
   res.json({ success: true, task: body });
 });
 
+// Overwrite entire tasks list (useful for client-side sync)
+app.put('/api/tasks', (req, res) => {
+  const body = req.body;
+  if (!Array.isArray(body)) return res.status(400).json({ error: 'Expected an array of tasks' });
+  const ok = saveTasks(body);
+  if (!ok) return res.status(500).json({ error: 'Could not persist tasks' });
+  res.json({ success: true, count: body.length });
+});
+
 app.get("/api/conditions/:id", (req, res) => {
   const conditions = loadConditions();
   const item = conditions.find((c) => c.id === req.params.id);
