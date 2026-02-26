@@ -16,6 +16,34 @@ function taskSave(state) {
   showNotification("Workspace auto-saved!");
 }
 
+// Server sync helpers
+async function fetchTasksFromServer() {
+  try {
+    const res = await fetch('/api/tasks');
+    if (!res.ok) throw new Error('Failed to fetch tasks');
+    const tasks = await res.json();
+    return Array.isArray(tasks) ? tasks : [];
+  } catch (e) {
+    console.warn('fetchTasksFromServer failed:', e && e.message);
+    return [];
+  }
+}
+
+async function postTaskToServer(task) {
+  try {
+    const res = await fetch('/api/tasks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(task)
+    });
+    const body = await res.json();
+    return res.ok ? body : null;
+  } catch (e) {
+    console.warn('postTaskToServer failed:', e && e.message);
+    return null;
+  }
+}
+
 function laneWeight(lane) {
   // Higher = more important
   switch (lane) {
@@ -200,6 +228,14 @@ document.getElementById('addTaskBtn')?.addEventListener('click', () => {
   const added = taskAdd(state, taskTitle, meta);
   if (added) {
     taskSave(state);
+    // find the task we just added (by dedup key)
+    const key = taskDedupKey({ title: taskTitle, meta });
+    const created = (state.tasks || []).find(x => taskDedupKey(x) === key);
+    if (created) {
+      postTaskToServer(created).then(r => {
+        if (r && r.success) console.log('Task persisted to server:', created.id);
+      });
+    }
     renderTasks();
     updateTaskProgress();
     addRecentActivity(`Added task: ${taskTitle}` + (attachTo ? ` (attached to ${attachTo})` : ''));
@@ -210,6 +246,42 @@ document.getElementById('addTaskBtn')?.addEventListener('click', () => {
 });
 
 document.getElementById('searchCfrBtn')?.addEventListener('click', () => {
+  // Contextual CFR search: if a condition detail is open, open its primary CFR ref;
+  // otherwise fallback to an eCFR search using the current query input.
+  let currentCondId = null;
+  try {
+    if (history && history.state && history.state.id) currentCondId = history.state.id;
+  } catch (e) {}
+
+  if (!currentCondId) {
+    const m = window.location.pathname.match(/\/condition\/([^\/\?]+)/);
+    if (m) currentCondId = decodeURIComponent(m[1]);
+  }
+
+  const openUrl = (url) => {
+    try {
+      window.open(url, '_blank');
+    } catch (e) {
+      // best-effort: if popup blocked or not available, log and notify
+      console.error('Could not open CFR URL:', e && e.message);
+      showNotification('Opening CFR in a new tab failed.');
+    }
+  };
+
+  if (currentCondId && typeof getConditionById === 'function') {
+    const cond = getConditionById(currentCondId);
+    const primary = (cond && Array.isArray(cond.cfr) && cond.cfr[0]) ? cond.cfr[0] : null;
+    if (primary && primary.url) {
+      openUrl(primary.url);
+      addRecentActivity(`Searched CFR: ${cond.name}`);
+      return;
+    }
+  }
+
+  // Fallback: open eCFR search for the query in the `#q` input
+  const q = (document.getElementById('q')?.value || '').trim();
+  const searchUrl = q ? `https://www.ecfr.gov/current/search?q=${encodeURIComponent(q)}` : 'https://www.ecfr.gov/';
+  openUrl(searchUrl);
   addRecentActivity('Searched CFR');
 });
 
@@ -217,7 +289,8 @@ document.getElementById('q')?.addEventListener('change', (e) => {
   addSearchToHistory(e.target.value);
 });
 
-import { jsPDF } from 'jspdf';
+// If using jsPDF in browser, ensure <script src="https://cdn.jsdelivr.net/npm/jspdf@latest/dist/jspdf.umd.min.js"></script> is loaded in index.html
+// Then use: const { jsPDF } = window.jspdf;
 
 document.getElementById('exportPdfBtn')?.addEventListener('click', () => {
   const doc = new jsPDF();
@@ -268,4 +341,24 @@ renderTasks();
 // Restore workspace when the page loads
 document.addEventListener("DOMContentLoaded", () => {
   restoreWorkspace();
+  // merge server tasks into local workspace
+  (async () => {
+    const serverTasks = await fetchTasksFromServer();
+    if (!serverTasks.length) return;
+    const state = getAppState();
+    let changed = false;
+    serverTasks.forEach(t => {
+      const exists = (state.tasks || []).some(x => x.id === t.id || taskDedupKey(x) === taskDedupKey(t));
+      if (!exists) {
+        taskEnsure(state).push(t);
+        changed = true;
+      }
+    });
+    if (changed) {
+      taskSave(state);
+      renderTasks();
+      updateTaskProgress();
+      showNotification('Merged tasks from server');
+    }
+  })();
 });

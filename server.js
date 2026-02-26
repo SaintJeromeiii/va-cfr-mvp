@@ -26,6 +26,42 @@ if (process.env.NODE_ENV !== "production") {
 app.use(morgan('dev'));
 
 const DATA_PATH = path.join(__dirname, "data", "conditions.json");
+const TASKS_PATH = path.join(__dirname, "data", "tasks.json");
+
+app.use(express.json());
+
+function ensureTasksFile() {
+  try {
+    if (!fs.existsSync(TASKS_PATH)) {
+      fs.writeFileSync(TASKS_PATH, JSON.stringify([], null, 2), 'utf8');
+    }
+  } catch (err) {
+    console.error('Could not create tasks file:', err.message);
+  }
+}
+
+function loadTasks() {
+  ensureTasksFile();
+  try {
+    const raw = fs.readFileSync(TASKS_PATH, 'utf8');
+    const data = JSON.parse(raw || '[]');
+    if (!Array.isArray(data)) return [];
+    return data;
+  } catch (err) {
+    console.error('Failed to load tasks:', err.message);
+    return [];
+  }
+}
+
+function saveTasks(tasks) {
+  try {
+    fs.writeFileSync(TASKS_PATH, JSON.stringify(tasks, null, 2), 'utf8');
+    return true;
+  } catch (err) {
+    console.error('Failed to save tasks:', err.message);
+    return false;
+  }
+}
 
 // Serve frontend files from /public
 app.use(express.static(path.join(__dirname, "public")));
@@ -81,6 +117,33 @@ function loadConditions() {
 app.get("/api/conditions", (req, res) => {
   const conditions = loadConditions();
   res.json(conditions);
+});
+
+// Tasks API ------------------------------------------------
+app.get('/api/tasks', (req, res) => {
+  const tasks = loadTasks();
+  res.json(tasks);
+});
+
+app.post('/api/tasks', (req, res) => {
+  const body = req.body;
+  if (!body || !body.id || !body.title) {
+    return res.status(400).json({ error: 'Task must include id and title' });
+  }
+
+  const tasks = loadTasks();
+  const exists = tasks.some(t => t.id === body.id);
+  if (exists) {
+    // update existing
+    const idx = tasks.findIndex(t => t.id === body.id);
+    tasks[idx] = Object.assign({}, tasks[idx], body);
+  } else {
+    tasks.push(body);
+  }
+
+  const ok = saveTasks(tasks);
+  if (!ok) return res.status(500).json({ error: 'Could not persist task' });
+  res.json({ success: true, task: body });
 });
 
 app.get("/api/conditions/:id", (req, res) => {

@@ -10,6 +10,74 @@ function escapeHtml(str) {
   });
 }
 
+function evidenceKey(conditionId) {
+  return `vaCfrEvidence:${conditionId}`;
+}
+
+function loadEvidenceState(conditionId) {
+  try {
+    return JSON.parse(localStorage.getItem(evidenceKey(conditionId)) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function saveEvidenceState(conditionId, stateObj) {
+  localStorage.setItem(evidenceKey(conditionId), JSON.stringify(stateObj || {}));
+}
+
+function notesKey(conditionId) {
+  return `vaCfrNotes:${conditionId}`;
+}
+
+function loadNotes(conditionId) {
+  return localStorage.getItem(notesKey(conditionId)) || "";
+}
+
+function saveNotes(conditionId, text) {
+  localStorage.setItem(notesKey(conditionId), (text ?? "").toString());
+}
+
+function timelineKey(id) {
+  return `vaCfrTimeline:${id}`;
+}
+
+function loadTimeline(id) {
+  try {
+    const raw = localStorage.getItem(timelineKey(id));
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveTimeline(id, entries) {
+  localStorage.setItem(timelineKey(id), JSON.stringify(entries || []));
+}
+
+function addTimelineEntry(id, entry) {
+  const items = loadTimeline(id);
+  items.push(entry);
+  saveTimeline(id, items);
+  return items;
+}
+
+function removeTimelineEntry(id, entryId) {
+  const items = loadTimeline(id).filter(e => e && e.id !== entryId);
+  saveTimeline(id, items);
+  return items;
+}
+
+function toSortableDateKey(dateStr) {
+  const s = (dateStr || "").trim();
+  if (!s) return "9999-99-99";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  if (/^\d{4}-\d{2}$/.test(s)) return `${s}-01`;
+  if (/^\d{4}$/.test(s)) return `${s}-01-01`;
+  return "9999-99-99";
+}
+
 function parseCommandQuery(raw) {
   const q = (raw || "").trim();
 
@@ -2088,6 +2156,10 @@ if (secBtn && secList) {
         .join("");
   }
 
+  // DOM references needed by evidence renderers
+  const evList = document.getElementById("evList");
+  const evCountEl = document.getElementById("evCount");
+
   function renderEvidenceLinksWithRelated() {
     if (!evList) return;
 
@@ -2215,8 +2287,7 @@ if (secBtn && secList) {
 
   
   // --- Evidence checklist behavior (persist per condition) ---
-  const evList = document.getElementById("evList");
-  const evCountEl = document.getElementById("evCount");
+  // (evList and evCountEl were declared earlier)
 
 
 
