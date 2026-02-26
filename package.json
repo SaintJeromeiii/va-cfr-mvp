@@ -4,7 +4,7 @@
   "description": "VA CFR Finder MVP",
   "main": "server.js",
   "scripts": {
-    "dev": "cross-env NODE_ENV=development nodemon server.js",
+    "dev": "NODE_ENV=development nodemon server.js",
     "save": "git pull --ff-only && git add . && git diff --cached --quiet || git commit -m \"auto save\" && git push",
     "start": "node server.js",
     "format": "prettier --write ."

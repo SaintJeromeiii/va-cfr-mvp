@@ -96,7 +96,14 @@ function renderTasks() {
   tasks.forEach((task) => {
     const div = document.createElement("div");
     div.className = "wsCard";
-    div.textContent = task.title;
+    // Show linked condition if present
+    let titleHtml = escapeHtml(task.title);
+    if (task.meta && task.meta.conditionId) {
+      const cond = (typeof getConditionById === 'function') ? getConditionById(task.meta.conditionId) : null;
+      const name = cond ? cond.name : task.meta.conditionId;
+      titleHtml += ` \n\u2014 Attached to: ${escapeHtml(name)}`;
+    }
+    div.textContent = titleHtml;
     host.appendChild(div);
   });
 }
@@ -165,20 +172,40 @@ document.getElementById("clearWorkspaceBtn")?.addEventListener("click", () => {
 document.getElementById('addTaskBtn')?.addEventListener('click', () => {
   const taskTitle = prompt('Enter the task title:'); // Ask the user for a task title
   console.log('Task title entered:', taskTitle); // Debugging log
-  if (taskTitle) {
-    const state = getAppState();
-    const added = taskAdd(state, taskTitle, { lane: 'general' });
-    if (added) {
-      taskSave(state);
-      renderTasks();
-      updateTaskProgress();
-      addRecentActivity(`Added task: ${taskTitle}`);
-      showNotification('Task added successfully!');
-    } else {
-      showNotification('Task already exists!');
-    }
+  if (!taskTitle) return showNotification('No task title entered!');
+
+  // Try to detect a currently-open condition (detail view)
+  let currentCondId = null;
+  try {
+    if (history && history.state && history.state.id) currentCondId = history.state.id;
+  } catch {}
+  if (!currentCondId) {
+    const m = window.location.pathname.match(/\/condition\/([^\/\?]+)/);
+    if (m) currentCondId = decodeURIComponent(m[1]);
+  }
+
+  let attachTo = null;
+  if (currentCondId) {
+    // Ask user whether to attach task to the open condition
+    const cond = (typeof getConditionById === 'function') ? getConditionById(currentCondId) : null;
+    const label = cond ? `${cond.name} (${currentCondId})` : currentCondId;
+    const attach = confirm(`Attach this task to the currently open condition: ${label}?`);
+    if (attach) attachTo = currentCondId;
+  }
+
+  const state = getAppState();
+  const meta = { lane: 'general' };
+  if (attachTo) meta.conditionId = attachTo;
+
+  const added = taskAdd(state, taskTitle, meta);
+  if (added) {
+    taskSave(state);
+    renderTasks();
+    updateTaskProgress();
+    addRecentActivity(`Added task: ${taskTitle}` + (attachTo ? ` (attached to ${attachTo})` : ''));
+    showNotification('Task added successfully!');
   } else {
-    showNotification('No task title entered!');
+    showNotification('Task already exists!');
   }
 });
 
