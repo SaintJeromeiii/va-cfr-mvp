@@ -4,130 +4,33 @@ function normalize(s) {
   return (s || "").toLowerCase().trim();
 }
 
+function escapeHtml(str) {
+  return (str == null ? "" : String(str)).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
 function parseCommandQuery(raw) {
   const q = (raw || "").trim();
-  const lower = q.toLowerCase();
 
-  // Normalize separators: "dc:8100" -> "dc 8100"
-  const normalized = lower.replace(/[:=]/g, " ").replace(/\s+/g, " ").trim();
+  // Minimal parser for now. Recognizes simple command prefixes used elsewhere
+  // and falls back to plain text. This prevents syntax/runtime errors when
+  // the full parser is not required by the UI.
+  if (!q) return { mode: "text", text: "", jump: "", system: "" };
 
-  // Quick commands (no args)
-  if (normalized === "notes" || normalized === "note") {
-    return { mode: "jump", jump: "notes", text: "" };
-  }
-  if (normalized === "evidence" || normalized === "checklist") {
-    return { mode: "jump", jump: "evidence", text: "" };
+  // jump:<token> — used to request an immediate jump inside a condition detail
+  if (q.toLowerCase().startsWith("jump:")) {
+    return { mode: "jump", text: q.slice(5).trim(), jump: q.slice(5).trim(), system: "" };
   }
 
-  // dc command
-  const dcMatch = normalized.match(/^(dc)\s+(\d{3,5})$/);
-  if (dcMatch) {
-    return { mode: "jump", jump: dcMatch[2], text: dcMatch[2] };
+  // system:<name> — quick filter by body system
+  if (q.toLowerCase().startsWith("system:")) {
+    return { mode: "system", text: "", jump: "", system: q.slice(7).trim() };
   }
 
-  // sec / section command (4.124a)
-  const secMatch = normalized.match(/^(sec|section|§)\s+([0-9]+\.[0-9]+[a-z]?)$/);
-  if (secMatch) {
-    return { mode: "jump", jump: secMatch[2], text: secMatch[2] };
-  }
+  // default: plain text search
+  return { mode: "text", text: q, jump: "", system: "" };
 
-  // Allow direct section like "§4.124a" without space
-  const directSec = normalized.match(/^§?([0-9]+\.[0-9]+[a-z]?)$/);
-  if (directSec && q.includes("§")) {
-    return { mode: "jump", jump: directSec[1], text: directSec[1] };
-  }
-
-  // system command: "system neurological" or "system:ear"
-  const sysMatch = normalized.match(/^(system|sys)\s+(.+)$/);
-  if (sysMatch) {
-    return { mode: "system", system: sysMatch[2].trim(), text: "" };
-  }
-
-  // Default: treat as normal search text
-  return { mode: "text", text: q };
-}
-
-
-function escapeHtml(str) {
-  return (str ?? "")
-    .toString()
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function evidenceKey(conditionId) {
-  return `vaCfrEvidence:${conditionId}`;
-}
-
-function loadEvidenceState(conditionId) {
-  try {
-    return JSON.parse(localStorage.getItem(evidenceKey(conditionId)) || "{}");
-  } catch {
-    return {};
-  }
-}
-
-function saveEvidenceState(conditionId, stateObj) {
-  localStorage.setItem(evidenceKey(conditionId), JSON.stringify(stateObj || {}));
-}
-
-function notesKey(conditionId) {
-  return `vaCfrNotes:${conditionId}`;
-}
-
-function loadNotes(conditionId) {
-  return localStorage.getItem(notesKey(conditionId)) || "";
-}
-
-function saveNotes(conditionId, text) {
-  localStorage.setItem(notesKey(conditionId), (text ?? "").toString());
-}
-
-function timelineKey(id) {
-  return `vaCfrTimeline:${id}`;
-}
-
-function loadTimeline(id) {
-  try {
-    const raw = localStorage.getItem(timelineKey(id));
-    const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr) ? arr : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveTimeline(id, entries) {
-  localStorage.setItem(timelineKey(id), JSON.stringify(entries || []));
-}
-
-function addTimelineEntry(id, entry) {
-  const items = loadTimeline(id);
-  items.push(entry);
-  saveTimeline(id, items);
-  return items;
-}
-
-function removeTimelineEntry(id, entryId) {
-  const items = loadTimeline(id).filter(e => e && e.id !== entryId);
-  saveTimeline(id, items);
-  return items;
-}
-
-function toSortableDateKey(dateStr) {
-  // Accept: YYYY-MM-DD or YYYY-MM or YYYY
-  const s = (dateStr || "").trim();
-  if (!s) return "9999-99-99";
-
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-  if (/^\d{4}-\d{2}$/.test(s)) return `${s}-01`;
-  if (/^\d{4}$/.test(s)) return `${s}-01-01`;
-
-  // fallback: put unknown formats last
-  return "9999-99-99";
 }
 
 function sortTimeline(entries) {
@@ -1354,7 +1257,6 @@ function renderResults(list) {
     console.error('Missing element: <div id="results"> in index.html');
     return;
   }
-
   el.innerHTML = "";
 
   if (!list || !list.length) {
@@ -1365,20 +1267,18 @@ function renderResults(list) {
   const q = document.getElementById("q")?.value || "";
 
   list.forEach(item => {
-    const div = document.createElement("div");
-    div.className = `result ${systemClassName(item.body_system)}`;
-
-    const sys = item.body_system || "";
     const dc = (item.cfr && item.cfr.length) ? item.cfr[0].diagnostic_code : "";
-
+    const sys = item.body_system || "";
     const nameHTML = highlight(item.name, q);
     const aliasesPreview = (item.aliases || []).slice(0, 3).join(", ");
     const aliasesHTML = highlight(aliasesPreview, q);
-
     const reason = matchReason(item, q);
-
     const cfrLine = cfrSummary(item);
     const cfrHTML = cfrLine ? highlight(cfrLine, q) : "";
+
+    const div = document.createElement("div");
+    div.className = `result ${systemClassName(sys)}`;
+    div.tabIndex = 0;
 
     div.innerHTML = `
       <div class="metaRow">
@@ -1390,47 +1290,60 @@ function renderResults(list) {
 
       ${cfrHTML
         ? `<div class="cfrLine">
-         <span class="cfrJump"
-           data-dc="${escapeHtml(dc)}"
-           data-sec="${escapeHtml((item.cfr?.[0]?.section || "").replace(/38\\s*cfr\\s*§/i, "").trim())}">
-           CFR: ${cfrHTML}
-         </span>
-       </div>`
+             <span class="cfrJump" data-dc="${escapeHtml(dc)}" data-sec="${escapeHtml((item.cfr?.[0]?.section || "").replace(/38\\s*cfr\\s*§/i, "").trim())}">
+               CFR: ${cfrHTML}
+             </span>
+           </div>`
         : ""
       }
 
-
-      ${(q || "").trim()
-        ? `<div class="matchNote">Matched: <strong>${escapeHtml(reason)}</strong></div>`
-        : ""
-      }
+      ${(q || "").trim() ? `<div class="matchNote">Matched: <strong>${escapeHtml(reason)}</strong></div>` : ""}
 
       <div class="small">Aliases: ${aliasesHTML}${(item.aliases || []).length > 3 ? "…" : ""}</div>
+
+      <div style="margin-top:8px">
+        <button class="miniBtn" data-add="${escapeHtml(item.id)}" type="button">+ Add to Workspace</button>
+      </div>
     `;
+
+    // CFR jump handler
     const cfrJumpEl = div.querySelector(".cfrJump");
     if (cfrJumpEl) {
       cfrJumpEl.addEventListener("click", (e) => {
         e.stopPropagation();
-
         const dcHint = (e.currentTarget.dataset.dc || "").trim();
         const secHint = (e.currentTarget.dataset.sec || "").trim();
-
-        // Prefer DC if it exists, otherwise use section
         const hint = dcHint || secHint;
         showDetail(item.id, true, hint);
       });
     }
-    
 
+    // Add to workspace button
+    const addBtn = div.querySelector("button[data-add]");
+    if (addBtn) {
+      addBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        try {
+          ensureNode(item.id);
+          renderWorkspace();
+          showNotification('Added to workspace!');
+        } catch (err) {
+          console.error(err);
+          showNotification('Could not add to workspace');
+        }
+      });
+    }
 
-
-
+    // Click to open detail (with parsed hint)
     div.addEventListener("click", () => {
       const raw = document.getElementById("q")?.value || "";
       const parsed = parseCommandQuery(raw);
       const hint = parsed.mode === "jump" ? parsed.jump : raw;
       showDetail(item.id, true, hint);
     });
+
+    // keyboard support
+    div.addEventListener("keypress", (e) => { if (e.key === 'Enter') div.click(); });
 
     el.appendChild(div);
   });
@@ -3662,8 +3575,17 @@ function binderStats(scope = "all") {
 }
 
 async function init() {
-  const res = await fetch("/api/conditions");
-  CONDITIONS = await res.json();
+  let res;
+  try {
+    res = await fetch("/api/conditions");
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    CONDITIONS = await res.json();
+  } catch (err) {
+    console.error('Could not load /api/conditions:', err);
+    showNotification('Could not load conditions. Is the dev server running? See README.');
+    CONDITIONS = [];
+    return;
+  }
 
   // Auto-import workspace from share link
   const params = new URLSearchParams(window.location.search);
@@ -4068,3 +3990,4 @@ function tryLoadFromPath() {
 document.addEventListener("DOMContentLoaded", () => {
   init();
 });
+
