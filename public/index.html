@@ -14,6 +14,20 @@
       Educational tool to map common conditions to 38 CFR rating references (not legal advice / not representation).
     </p>
 
+    <!-- Auth form (styled) -->
+    <div id="auth" class="auth">
+      <div class="auth-left">
+        <span id="auth_user_display" class="auth-user">Not signed in</span>
+      </div>
+      <form id="authForm" class="auth-form" onsubmit="return false;">
+        <input id="auth_user" placeholder="username" autocomplete="username" />
+        <input id="auth_pass" placeholder="password" type="password" autocomplete="current-password" />
+        <button id="auth_login" type="button">Login</button>
+        <button id="auth_register" type="button">Register</button>
+        <button id="auth_logout" type="button" class="hidden">Logout</button>
+      </form>
+    </div>
+
     <div class="search">
       <div class="controls">
   <input id="q" placeholder="Search: tinnitus, 8520, 4.124a, PTSD..." />
@@ -49,6 +63,37 @@
       <div class="quick-links">
         <button id="addTaskBtn">Add Task</button>
         <button id="searchCfrBtn">Search CFR</button>
+        <label style="display:inline-flex;align-items:center;gap:8px;margin-left:8px">
+          Filter:
+          <select id="taskFilter">
+            <option value="all">All</option>
+            <option value="pending">Pending</option>
+            <option value="done">Done</option>
+          </select>
+        </label>
+        <label style="display:inline-flex;align-items:center;gap:8px;margin-left:8px">
+          Sort:
+          <select id="taskSort">
+            <option value="created">Created</option>
+            <option value="due">Due date</option>
+            <option value="priority">Priority</option>
+          </select>
+        </label>
+      </div>
+
+      <!-- Inline Add Task Form (hidden by default) -->
+      <div id="addTaskForm" class="add-task-form hidden">
+        <input id="addTask_title" placeholder="Task title" />
+        <input id="addTask_due" type="date" />
+        <select id="addTask_priority">
+          <option value="">Priority (none)</option>
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+        </select>
+        <label><input id="addTask_attach" type="checkbox" /> Attach to current condition</label>
+        <button id="addTask_submit">Add</button>
+        <button id="addTask_cancel" type="button">Cancel</button>
       </div>
       <div id="recentActivity" class="recent-activity">
         <h3>Recent Activity</h3>
@@ -65,7 +110,6 @@
           <button id="wsCopyShare" class="miniBtn" type="button">Copy Share Link</button>
           <button id="wsClear" class="miniBtn danger" type="button">Clear Workspace</button>
           <button id="exportPdfBtn">Export to PDF</button>
-          <button id="clearWorkspaceBtn">Clear Workspace</button>
         </div>
       </div>
 

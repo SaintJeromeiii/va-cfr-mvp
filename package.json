@@ -7,6 +7,9 @@
     "dev": "NODE_ENV=development nodemon server.js",
     "save": "git pull --ff-only && git add . && git diff --cached --quiet || git commit -m \"auto save\" && git push",
     "start": "node server.js",
+    "smoke:auth": "node scripts/smoke-test-auth.js",
+    "smoke:add-task": "node scripts/smoke-test-add-task.js",
+    "smoke:all": "npm run smoke:auth && npm run smoke:add-task",
     "format": "prettier --write ."
   },
   "author": "",
@@ -16,7 +19,11 @@
     "express": "^5.2.1",
     "jsdom": "^28.1.0",
     "jspdf": "^4.2.0",
-    "morgan": "^1.10.1"
+    "morgan": "^1.10.1",
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.6",
+    "ajv": "^8.12.0",
+    "ajv-formats": "^2.1.1"
   },
   "devDependencies": {
     "connect-livereload": "^0.6.1",

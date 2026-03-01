@@ -8,5 +8,16 @@
       "lane": "general",
       "conditionId": "asthma"
     }
+  },
+  {
+    "id": "task_dbb3a20a25443",
+    "at": "2026-03-01T13:00:09.122Z",
+    "title": "Smoke meta task",
+    "done": false,
+    "meta": {
+      "lane": "general",
+      "dueDate": "2026-03-02T00:00:00.000Z",
+      "priority": "high"
+    }
   }
 ]

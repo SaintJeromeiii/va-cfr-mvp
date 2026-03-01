@@ -29,10 +29,15 @@ const { JSDOM, VirtualConsole } = require('jsdom');
     // ensure there is at least one task; if none, create one via existing flow
     const state = dom.window.getAppState();
     if (!state.tasks || !state.tasks.length) {
-      // add a task via existing add button flow
-      dom.window.prompt = () => 'Smoke test task';
+      // add a task via inline add form
       const addBtn = dom.window.document.getElementById('addTaskBtn');
       addBtn.click();
+      let a = 0; while(a<20){ const p = dom.window.document.getElementById('addTaskForm'); if (p && !p.classList.contains('hidden')) break; await new Promise(r=>setTimeout(r,100)); a++; }
+      const title = dom.window.document.getElementById('addTask_title');
+      const submit = dom.window.document.getElementById('addTask_submit');
+      if (!title || !submit) { console.log('No add form'); process.exit(1); }
+      title.value = 'Smoke test task';
+      submit.click();
       await new Promise(r => setTimeout(r, 500));
     }
 

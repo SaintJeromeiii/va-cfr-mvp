@@ -775,6 +775,84 @@ input[type="radio"]:focus {
   padding: 8px;
 }
 
+/* ===== Auth form styling ===== */
+.auth {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 12px 0 18px;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.04);
+  background: rgba(255,255,255,0.02);
+}
+.auth-left { flex: 1; }
+.auth-user { font-weight: 600; color: #b8c4d6; }
+.auth-form { display: flex; gap: 8px; align-items: center; }
+.auth-form input {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.03);
+  color: inherit;
+}
+.auth-form input::placeholder { color: rgba(255,255,255,0.45); }
+.auth-form button {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.04);
+  color: inherit;
+  cursor: pointer;
+}
+.auth-form button.hidden { display: none; }
+
+/* Task UX small controls */
+.task-meta { display:flex; gap:8px; align-items:center; }
+.task-badge { font-size:12px; padding:4px 8px; border-radius:8px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.04); }
+.task-btn { padding:6px 8px; border-radius:8px; border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.03); cursor:pointer; }
+.task-due { font-size:12px; opacity:0.9; }
+.priority-high { background: linear-gradient(90deg,#ff7b7b,#ffb3b3); color:#2b0b0b; }
+.priority-medium { background: linear-gradient(90deg,#ffd972,#fff1d6); color:#2b1700; }
+.priority-low { background: linear-gradient(90deg,#c7f2d6,#e8fff0); color:#06321a; }
+
+/* Inline Add Task Form */
+.add-task-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+.add-task-form input[type="text"], .add-task-form input[type="date"], .add-task-form select {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.03);
+  color: inherit;
+}
+.add-task-form button { padding: 8px 10px; border-radius: 8px; cursor: pointer; }
+.add-task-form.hidden { display: none; }
+
+.task-due-input { padding: 6px 8px; border-radius:6px; border:1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.03); color: inherit; }
+.task-meta select { padding:6px 8px; border-radius:6px; border:1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.03); color: inherit; }
+.task-meta .task-btn { padding:6px 8px; }
+
+.undo-btn { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); padding:6px 8px; border-radius:6px; color: inherit; }
+
+/* Keyboard focus styles for accessibility */
+.wsCard:focus { outline: 2px solid rgba(100,150,255,0.95); outline-offset: 2px; }
+.task-meta .task-btn:focus, .task-btn:focus { box-shadow: 0 0 0 3px rgba(100,150,255,0.12); }
+
+/* Card enter/exit animations */
+.wsCard { transition: transform 200ms cubic-bezier(.2,.8,.2,1), opacity 200ms ease, height 200ms ease, margin 200ms ease; }
+.wsCard.entering { opacity: 0; transform: translateY(-8px); }
+.wsCard.exiting { opacity: 0; transform: translateY(8px); height: 0 !important; margin: 0 !important; padding: 0 !important; overflow: hidden; }
+
+/* Undo appears/disappears smoothly */
+.undo-btn { transition: opacity 200ms ease, transform 180ms ease; opacity: 1; }
+.undo-btn.hidden { opacity: 0; transform: translateY(-4px); }
+
+
 .wsLinks { display: grid; gap: 8px; margin-top: 6px; }
 .wsLinkRow { display: grid; grid-template-columns: 1fr 220px auto; gap: 8px; align-items: center; }
 .wsAddLinkRow { display: grid; grid-template-columns: 1fr 220px auto; gap: 8px; align-items: center; margin-top: 6px; }

@@ -49,26 +49,33 @@ const { JSDOM, VirtualConsole } = require('jsdom');
       dom.window.history.pushState({ id: firstId, jump: '' }, '', `/condition/${firstId}`);
     }
 
-    // stub prompt and confirm
-    dom.window.prompt = (msg) => {
-      console.log('PROMPT_CALLED:', msg);
-      return 'Follow up: request records';
-    };
-    dom.window.confirm = (msg) => {
-      console.log('CONFIRM_CALLED:', msg);
-      return true; // attach to current condition
-    };
 
-    // wait briefly
-    await new Promise(r => setTimeout(r, 200));
-
+    // fill inline add task form
     const addBtn = dom.window.document.getElementById('addTaskBtn');
-    if (!addBtn) {
-      console.log('No addTaskBtn found');
-      process.exit(1);
+    if (!addBtn) { console.log('No addTaskBtn found'); process.exit(1); }
+    addBtn.click();
+
+    // wait for form to appear
+    attempts = 0;
+    while (attempts < 20) {
+      const panel = dom.window.document.getElementById('addTaskForm');
+      if (panel && !panel.classList.contains('hidden')) break;
+      await new Promise(r => setTimeout(r, 100));
+      attempts++;
     }
 
-    addBtn.click();
+    const titleInp = dom.window.document.getElementById('addTask_title');
+    const dueInp = dom.window.document.getElementById('addTask_due');
+    const prSel = dom.window.document.getElementById('addTask_priority');
+    const attachCb = dom.window.document.getElementById('addTask_attach');
+    const submit = dom.window.document.getElementById('addTask_submit');
+    if (!titleInp || !submit) { console.log('Add task form missing'); process.exit(1); }
+
+    titleInp.value = 'Follow up: request records';
+    dueInp.value = '';
+    prSel.value = '';
+    attachCb.checked = true;
+    submit.click();
 
     await new Promise(r => setTimeout(r, 400));
 

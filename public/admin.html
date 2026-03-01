@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin — Sessions</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <main class="container">
+    <h1>Admin — Sessions</h1>
+    <p>Enter the admin secret to list and revoke sessions.</p>
+    <div>
+      <input id="adminSecret" placeholder="Admin secret" style="width:320px" />
+      <button id="btnFetch">Fetch Sessions</button>
+    </div>
+    <div id="adminNotification" style="margin-top:8px"></div>
+    <div id="sessionsList" style="margin-top:16px"></div>
+  </main>
+  <script src="/js/admin.js"></script>
+</body>
+</html>
