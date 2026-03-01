@@ -1,8 +1,21 @@
 const fetch = global.fetch || require('node-fetch');
 
-(async () => {
-  try {
-    const base = 'http://localhost:3000';
+async function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+async function runWithRetries(fn, attempts = 3) {
+  let i = 0;
+  while (i < attempts) {
+    try { return await fn(); } catch (e) {
+      i++;
+      if (i >= attempts) throw e;
+      const backoff = Math.pow(2, i) * 250;
+      console.warn('Attempt', i, 'failed, retrying after', backoff, 'ms');
+      await sleep(backoff);
+    }
+  }
+}
+
+async function main() {
+  const base = 'http://localhost:3000';
     const uname = `smoke_${Date.now().toString(16).slice(4)}`;
     const pwd = 'smoke-pass';
 
@@ -63,8 +76,9 @@ const fetch = global.fetch || require('node-fetch');
 
     console.log('SMOKE_AUTH_PASSED');
     process.exit(0);
-  } catch (err) {
-    console.error('SMOKE_AUTH_ERROR', err && err.message);
-    process.exit(2);
-  }
-})();
+}
+
+runWithRetries(main).catch(err => {
+  console.error('SMOKE_AUTH_ERROR', err && err.message);
+  process.exit(2);
+});
