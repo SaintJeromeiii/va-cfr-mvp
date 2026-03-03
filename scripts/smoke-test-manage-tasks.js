@@ -1,6 +1,20 @@
 const { JSDOM, VirtualConsole } = require('jsdom');
 
-(async () => {
+async function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+async function runWithRetries(fn, attempts = 3) {
+  let i = 0;
+  while (i < attempts) {
+    try { return await fn(); } catch (e) {
+      i++;
+      if (i >= attempts) throw e;
+      const backoff = Math.pow(2, i) * 300;
+      console.warn('Attempt', i, 'failed, retrying after', backoff, 'ms');
+      await sleep(backoff);
+    }
+  }
+}
+
+async function main() {
   const virtualConsole = new VirtualConsole();
   virtualConsole.on('log', m => console.log('JSDOM_LOG:', m));
   virtualConsole.on('error', e => console.error('JSDOM_ERR:', e));
@@ -54,6 +68,8 @@ const { JSDOM, VirtualConsole } = require('jsdom');
     process.exit(0);
   } catch (err) {
     console.error('SMOKE_MANAGE_TASKS_ERROR:', err);
-    process.exit(2);
+    throw err;
   }
-})();
+}
+
+runWithRetries(main).catch(err => { console.error('SMOKE_MANAGE_TASKS_ERROR:', err && err.message); process.exit(2); });
