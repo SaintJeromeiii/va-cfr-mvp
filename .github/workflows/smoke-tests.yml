@@ -5,6 +5,10 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  workflow_dispatch: {}
+  schedule:
+    # daily at 02:00 UTC
+    - cron: '0 2 * * *'
 
 jobs:
   smoke-tests:
