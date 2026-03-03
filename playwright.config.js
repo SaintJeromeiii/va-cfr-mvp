@@ -4,7 +4,17 @@ module.exports = defineConfig({
   testDir: 'tests/playwright',
   timeout: 30_000,
   expect: { timeout: 5000 },
-  reporter: [['list'], ['html', { outputFolder: 'playwright-report' }]],
+  reporter: [
+    ['list'],
+    ['html', { outputFolder: 'playwright-report' }],
+    ['junit', { outputFile: 'playwright-junit.xml' }]
+  ],
+  webServer: {
+    command: 'node server.js',
+    port: 3000,
+    timeout: 120000,
+    reuseExistingServer: !process.env.CI
+  },
   use: {
     baseURL: process.env.BASE_URL || 'http://localhost:3000',
     headless: true,
