@@ -13,7 +13,7 @@ module.exports = defineConfig({
     command: 'node server.js',
     port: 3000,
     timeout: 120000,
-    reuseExistingServer: !process.env.CI
+    reuseExistingServer: true
   },
   use: {
     baseURL: process.env.BASE_URL || 'http://localhost:3000',
