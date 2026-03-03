@@ -23,8 +23,8 @@ jobs:
 
       - name: Start server
         run: |
-          node server.js > server.log 2>&1 &
-          echo $! > server.pid
+          docker build -t va-cfr-mvp:ci .
+          docker run -d --name va-cfr-mvp -p 3000:3000 va-cfr-mvp:ci || true
           for i in {1..30}; do
             if curl -sSf http://localhost:3000 >/dev/null; then
               echo "server available"
@@ -36,6 +36,8 @@ jobs:
       - name: Run smoke tests
         run: |
           npm run smoke:all > smoke-tests.log 2>&1 || true
+          echo 'collecting container logs'
+          docker logs va-cfr-mvp > server.log 2>&1 || true
         env:
           NODE_ENV: test
 
@@ -47,6 +49,11 @@ jobs:
           path: |
             server.log
             smoke-tests.log
+      - name: Cleanup container
+        if: always()
+        run: |
+          docker stop va-cfr-mvp || true
+          docker rm va-cfr-mvp || true
 name: Smoke Tests
 
 on:
