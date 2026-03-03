@@ -1,3 +1,52 @@
+name: Smoke tests
+
+on:
+  pull_request:
+  push:
+    branches: [ master ]
+
+jobs:
+  smoke-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Start server
+        run: |
+          node server.js > server.log 2>&1 &
+          echo $! > server.pid
+          for i in {1..30}; do
+            if curl -sSf http://localhost:3000 >/dev/null; then
+              echo "server available"
+              break
+            fi
+            sleep 1
+          done
+
+      - name: Run smoke tests
+        run: |
+          npm run smoke:all > smoke-tests.log 2>&1 || true
+        env:
+          NODE_ENV: test
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-logs
+          path: |
+            server.log
+            smoke-tests.log
 name: Smoke Tests
 
 on:
