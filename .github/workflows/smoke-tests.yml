@@ -50,6 +50,13 @@ jobs:
         env:
           NODE_ENV: test
 
+      - name: Run Playwright inside Docker (optional isolated run)
+        run: |
+          docker run --rm -v "${{ github.workspace }}":/work -w /work node:20-bullseye \
+            bash -lc "npm ci --prefer-offline --no-audit --progress=false && npx playwright install --with-deps && npx playwright test --output=playwright-results || true"
+        env:
+          CI: true
+
       - name: Publish Playwright JUnit annotations
         if: always()
         uses: dorny/test-reporter@v1
