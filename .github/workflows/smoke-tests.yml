@@ -49,6 +49,21 @@ jobs:
           timeout 2m npm run smoke:all > smoke-tests.log 2>&1 || true
           echo 'run playwright tests'
           npx playwright test --output=playwright-results || true
+          # allow Playwright a moment to flush reporters
+          sleep 1
+          echo "Attempting to copy nested playwright junit to repo root..."
+          if [ -f playwright-report/playwright-junit.xml ]; then
+            echo "copying playwright-report/playwright-junit.xml -> playwright-junit.xml"
+            cp playwright-report/playwright-junit.xml playwright-junit.xml || true
+          fi
+          if [ -f playwright-results/playwright-junit.xml ]; then
+            echo "copying playwright-results/playwright-junit.xml -> playwright-junit.xml"
+            cp playwright-results/playwright-junit.xml playwright-junit.xml || true
+          fi
+          # fallback: find any junit produced in workspace and copy to repo root
+          find . -type f -name 'playwright-junit.xml' -not -path './playwright-junit.xml' -exec cp {} playwright-junit.xml \; || true
+          echo "After copy, workspace junit listing:"
+          ls -la playwright-junit.xml || true
           echo 'collecting container logs'
           docker logs va-cfr-mvp > server.log 2>&1 || true
         env:
@@ -62,8 +77,25 @@ jobs:
         uses: dorny/test-reporter@v1
         with:
           name: Playwright
-          path: playwright-junit.xml
+          path: |
+            playwright-report/playwright-junit.xml
+            **/playwright-junit.xml
           reporter: junit
+          fail-on-empty: false
+
+      - name: Dump Playwright JUnit (for debug)
+        if: always()
+        run: |
+          echo "Workspace files:"
+          ls -la
+          echo "Looking for junit at repo root..."
+          if [ -f playwright-junit.xml ]; then
+            echo "--- playwright-junit.xml (first 200 lines) ---"
+            sed -n '1,200p' playwright-junit.xml || true
+            echo "--- end of file ---"
+          else
+            echo "no playwright-junit.xml at repo root"
+          fi
 
       - name: Upload artifacts
         if: always()

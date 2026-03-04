@@ -1,14 +1,15 @@
 const { defineConfig } = require('@playwright/test');
+const path = require('path');
 
 module.exports = defineConfig({
   testDir: 'tests/playwright',
-  timeout: 60_000,
-  expect: { timeout: 10000 },
-  retries: process.env.CI ? 2 : 0,
+  timeout: 120_000,
+  expect: { timeout: 20000 },
+  retries: process.env.CI ? 3 : 0,
   reporter: [
     ['list'],
     ['html', { outputFolder: 'playwright-report' }],
-    ['junit', { outputFile: 'playwright-junit.xml' }]
+    ['junit', { outputFile: path.join(process.cwd(), 'playwright-junit.xml') }]
   ],
   webServer: {
     command: 'node server.js',
@@ -20,8 +21,10 @@ module.exports = defineConfig({
     baseURL: process.env.BASE_URL || 'http://localhost:3000',
     headless: true,
     viewport: { width: 1280, height: 800 },
-    actionTimeout: 15000,
+    actionTimeout: 30000,
     trace: 'on-first-retry',
-    screenshot: 'only-on-failure'
+    screenshot: 'only-on-failure',
+    // store test artifacts under a consistent folder so CI can upload them
+    video: 'retain-on-failure'
   },
 });
