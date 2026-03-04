@@ -10,6 +10,11 @@ on:
     # daily at 02:00 UTC
     - cron: '0 2 * * *'
 
+# Allow the test-reporter action to create check-run annotations
+permissions:
+  contents: read
+  checks: write
+
 jobs:
   smoke-tests:
     runs-on: ubuntu-latest
@@ -72,18 +77,6 @@ jobs:
       # Note: Playwright already runs on the host above; the isolated Docker run
       # was removed to avoid duplicate test runs and wasted CI time.
 
-      - name: Publish Playwright JUnit annotations
-        if: always()
-        uses: dorny/test-reporter@v1
-        with:
-          name: Playwright
-          path: |
-            playwright-report/playwright-junit.xml
-            **/playwright-junit.xml
-          reporter: junit
-          fail-on-empty: false
-          fail-on-error: false
-
       - name: Dump Playwright JUnit (for debug)
         if: always()
         run: |
@@ -97,6 +90,20 @@ jobs:
           else
             echo "no playwright-junit.xml at repo root"
           fi
+
+      - name: Publish Playwright JUnit annotations
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Playwright
+          path: |
+            playwright-junit.xml
+            playwright-report/playwright-junit.xml
+            **/playwright-junit.xml
+          reporter: junit
+          fail-on-empty: false
+          fail-on-error: false
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload artifacts
         if: always()

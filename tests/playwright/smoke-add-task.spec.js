@@ -1,26 +1,42 @@
 const { test, expect } = require('@playwright/test');
 
-test('smoke: add task via UI', async ({ page }) => {
+test('smoke: add task via UI', async ({ page, request }) => {
   const base = page.context()._options.baseURL || 'http://localhost:3000';
+  // register a fresh user and set the session cookie so the UI is authenticated
+  const uname = `smoke_ui_${Date.now().toString(16).slice(6)}`;
+  const pwd = 'smoke-pass';
+  const reg = await request.post(base + '/api/register', { data: { username: uname, password: pwd } });
+  const setCookie = reg.headers()['set-cookie'] || '';
+  const sid = (setCookie.split(';')[0] || '').split('=')[1] || null;
+  if (sid) {
+    await page.context().addCookies([{ name: 'sid', value: sid, domain: 'localhost', path: '/' }]);
+  }
   await page.goto(base);
 
-  await page.waitForSelector('button[data-add]', { timeout: 10000 });
-  const firstAdd = page.locator('button[data-add]').first();
-  const firstId = await firstAdd.getAttribute('data-add');
-  await firstAdd.click();
+  // click the main "Add Task" button (more stable than condition-specific buttons)
+  const mainAddBtn = page.getByRole('button', { name: /^Add Task$/i });
+  await expect(mainAddBtn).toBeVisible({ timeout: 15000 });
+  await mainAddBtn.click();
 
   // ensure add task UI available and click add button
-  await page.waitForSelector('#addTaskBtn', { timeout: 5000 });
-  await page.click('#addTaskBtn');
-  await page.waitForSelector('#addTaskForm:not(.hidden)', { timeout: 5000 });
+  const addUiBtn = page.locator('#addTaskBtn');
+  await expect(addUiBtn).toBeVisible({ timeout: 10000 });
+  await addUiBtn.click();
+  const addForm = page.locator('#addTaskForm');
+  await expect(addForm).toBeVisible({ timeout: 10000 });
 
-  await page.fill('#addTask_title', 'Follow up: request records');
-  // submit
-  await page.click('#addTask_submit');
+  const titleInput = page.locator('#addTask_title');
+  await expect(titleInput).toBeVisible({ timeout: 10000 });
+  await titleInput.fill('Follow up: request records');
 
-  // wait a bit for localStorage update
-  await page.waitForTimeout(500);
+  // submit and wait for the POST /api/tasks response instead of a fixed timeout
+  const [response] = await Promise.all([
+    page.waitForResponse(r => r.url().includes('/api/tasks') && r.request().method() === 'POST', { timeout: 20000 }),
+    page.locator('#addTask_submit').click()
+  ]);
+  expect(response.ok()).toBeTruthy();
 
+  // read state from localStorage and assert
   const stateRaw = await page.evaluate(() => localStorage.getItem('vaCfrFinderState'));
   const state = stateRaw ? JSON.parse(stateRaw) : null;
   expect(state).not.toBeNull();
