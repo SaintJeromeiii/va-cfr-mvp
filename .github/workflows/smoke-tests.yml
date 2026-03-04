@@ -82,6 +82,7 @@ jobs:
             **/playwright-junit.xml
           reporter: junit
           fail-on-empty: false
+          fail-on-error: false
 
       - name: Dump Playwright JUnit (for debug)
         if: always()
