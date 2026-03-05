@@ -57,8 +57,9 @@ jobs:
           path: |
             playwright-report*
             playwright-report*/**
+            playwright-junit-*.xml
             playwright-run-*.log
-          retention-days: 30
+          retention-days: 14
 
       - name: Upload traces and screenshots
         if: always()
@@ -69,7 +70,7 @@ jobs:
             playwright-report-*/traces
             playwright-report-*/screenshots
             test-results/screenshots
-          retention-days: 30
+          retention-days: 14
 
       - name: Upload test-results
         if: always()
@@ -77,7 +78,7 @@ jobs:
         with:
           name: test-results-${{ env.SHARD_SAFE }}
           path: test-results
-          retention-days: 30
+          retention-days: 14
 
       - name: Publish JUnit test annotations
         if: always()
