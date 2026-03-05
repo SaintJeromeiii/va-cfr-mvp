@@ -8,14 +8,11 @@ module.exports = defineConfig({
   // Increase retries on CI to reduce flakiness; limit workers on CI for stability
   retries: process.env.CI ? 5 : 0,
   workers: process.env.CI ? 2 : undefined,
-  reporter: (() => {
-    const safeShard = process.env.SHARD_SAFE || 'default';
-    return [
-      ['list'],
-      ['html', { outputFolder: `playwright-report-${safeShard}` }],
-      ['junit', { outputFile: path.join(process.cwd(), `playwright-junit-${safeShard}.xml`) }]
-    ];
-  })(),
+  reporter: [
+    ['list'],
+    ['html', { outputFolder: 'playwright-report' }],
+    ['junit', { outputFile: path.join(process.cwd(), 'playwright-junit.xml') }]
+  ],
   webServer: {
     command: 'node server.js',
     port: 3000,
