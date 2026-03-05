@@ -10,6 +10,9 @@ jobs:
   smoke:
     name: Playwright Smoke Tests
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        shard: ["1/2", "2/2"]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,10 +36,12 @@ jobs:
       - name: Install Playwright browsers
         run: npm run test:e2e:install
 
-      - name: Run Playwright tests
+      - name: Run Playwright tests (shard ${{ matrix.shard }})
         env:
           CI: true
-        run: npm run test:e2e
+        run: |
+          # run Playwright with shard and per-shard reporters so artifacts don't collide
+          npx playwright test --shard=${{ matrix.shard }} --reporter=html=playwright-report-${{ matrix.shard }} --reporter=junit=playwright-junit-${{ matrix.shard }}
 
       - name: Upload Playwright report
         if: always()
