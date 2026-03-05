@@ -1,0 +1,6 @@
+# Require review from the repo owner for all changes
+# Owners by path for more accurate review requests
+ /tests/ @SaintJeromeiii
+ /public/ @SaintJeromeiii
+ /scripts/ @SaintJeromeiii
+ * @SaintJeromeiii
