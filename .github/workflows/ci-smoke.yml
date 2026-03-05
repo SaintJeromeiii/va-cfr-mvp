@@ -41,10 +41,14 @@ jobs:
         env:
           CI: true
         run: |
+          set -o pipefail
           # run Playwright with shard and per-shard reporters so artifacts don't collide
           shard="${{ matrix.shard }}"
           safe_shard="${shard//\//-}"
-          npx playwright test --shard="$shard" --reporter=html=playwright-report-${safe_shard} --reporter=junit=playwright-junit-${safe_shard}
+          npx playwright test --shard="$shard" \
+            --reporter=html=playwright-report-${safe_shard} \
+            --reporter=junit=playwright-junit-${safe_shard}.xml \
+            2>&1 | tee playwright-run-${safe_shard}.log
 
       - name: Upload Playwright report
         if: always()
@@ -52,8 +56,9 @@ jobs:
         with:
           name: playwright-report
           path: |
-            playwright-report
-            playwright-report/**
+            playwright-report*
+            playwright-report*/**
+            playwright-run-*.log
           retention-days: 30
 
       - name: Upload traces and screenshots
@@ -62,8 +67,8 @@ jobs:
         with:
           name: playwright-traces-screenshots
           path: |
-            playwright-report/traces
-            playwright-report/screenshots
+            playwright-report-*/traces
+            playwright-report-*/screenshots
             test-results/screenshots
           retention-days: 30
 
