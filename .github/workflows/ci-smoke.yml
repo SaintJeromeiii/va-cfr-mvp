@@ -42,13 +42,11 @@ jobs:
           CI: true
         run: |
           set -o pipefail
-          # run Playwright with shard and per-shard reporters so artifacts don't collide
+          # run Playwright with shard; configure reporters via playwright.config.js using SHARD_SAFE
           shard="${{ matrix.shard }}"
           safe_shard="${shard//\//-}"
-          npx playwright test --shard="$shard" \
-            --reporter=html=playwright-report-${safe_shard} \
-            --reporter=junit=playwright-junit-${safe_shard}.xml \
-            2>&1 | tee playwright-run-${safe_shard}.log
+          export SHARD_SAFE="${safe_shard}"
+          npx playwright test --shard="$shard" 2>&1 | tee playwright-run-${safe_shard}.log
 
       - name: Upload Playwright report
         if: always()
@@ -142,7 +140,8 @@ jobs:
           CI: true
         run: |
           # run full suite nightly; use 2 workers to parallelize across CPUs
-          npx playwright test --workers=2 --reporter=html=playwright-regression-report --reporter=junit=playwright-regression-junit.xml || true
+          export SHARD_SAFE=regression
+          npx playwright test --workers=2 || true
 
       - name: Upload regression report
         if: always()
