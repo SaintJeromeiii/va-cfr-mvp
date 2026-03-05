@@ -17,10 +17,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Use Node.js 18
+      - name: Use Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
       - name: Cache node modules
         uses: actions/cache@v4
@@ -41,7 +41,9 @@ jobs:
           CI: true
         run: |
           # run Playwright with shard and per-shard reporters so artifacts don't collide
-          npx playwright test --shard=${{ matrix.shard }} --reporter=html=playwright-report-${{ matrix.shard }} --reporter=junit=playwright-junit-${{ matrix.shard }}
+          shard="${{ matrix.shard }}"
+          safe_shard="${shard//\//-}"
+          npx playwright test --shard="$shard" --reporter=html=playwright-report-${safe_shard} --reporter=junit=playwright-junit-${safe_shard}
 
       - name: Upload Playwright report
         if: always()
@@ -118,10 +120,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Use Node.js 18
+      - name: Use Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
       - name: Install dependencies
         run: npm ci
