@@ -71,3 +71,13 @@ jobs:
           name: test-results
           path: test-results
           retention-days: 30
+
+      - name: Publish JUnit test annotations
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Playwright
+          path: "**/playwright-junit-*.xml"
+          reporter: junit
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fail-on-error: false
