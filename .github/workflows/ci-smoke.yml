@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        shard: ["1/2", "2/2"]
+        shard: ["1/4", "2/4", "3/4", "4/4"]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -78,6 +78,79 @@ jobs:
         with:
           name: Playwright
           path: "**/playwright-junit-*.xml"
+          reporter: junit
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fail-on-error: false
+
+      - name: Post comment summary to PR
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const runUrl = `https://github.com/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
+            const body = `Playwright run finished.\n\nWorkflow run: ${runUrl}\n\nArtifacts are attached to this run (see "Artifacts" on the Actions page).\n\nUploaded artifacts: playwright-report*, playwright-traces-screenshots, test-results.\n\nJUnit annotations (if any) are posted on this PR.`;
+            const pr = github.context.payload.pull_request && github.context.payload.pull_request.number;
+            if (pr) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr,
+                body
+              });
+            } else {
+              core.info('No pull request found to comment on.');
+            }
+
+  regression:
+    name: Nightly Regression
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'schedule' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npm run test:e2e:install
+
+      - name: Run full Playwright regression
+        env:
+          CI: true
+        run: |
+          # run full suite nightly; use 2 workers to parallelize across CPUs
+          npx playwright test --workers=2 --reporter=html=playwright-regression-report --reporter=junit=playwright-regression-junit.xml || true
+
+      - name: Upload regression report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-regression-report
+          path: |
+            playwright-regression-report
+            playwright-regression-report/**
+          retention-days: 30
+
+      - name: Upload regression junit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-regression-junit
+          path: playwright-regression-junit.xml
+          retention-days: 30
+
+      - name: Publish regression JUnit annotations
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Playwright Regression
+          path: "playwright-regression-junit.xml"
           reporter: junit
           token: ${{ secrets.GITHUB_TOKEN }}
           fail-on-error: false
