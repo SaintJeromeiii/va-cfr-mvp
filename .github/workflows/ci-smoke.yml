@@ -82,7 +82,7 @@ jobs:
 
       - name: Publish JUnit test annotations
         if: always()
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v2
         with:
           name: Playwright
           path: "**/playwright-junit-*.xml"
@@ -165,7 +165,7 @@ jobs:
 
       - name: Publish regression JUnit annotations
         if: always()
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v2
         with:
           name: Playwright Regression
           path: "playwright-regression-junit.xml"

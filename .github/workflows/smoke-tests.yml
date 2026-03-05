@@ -93,7 +93,7 @@ jobs:
 
       - name: Publish Playwright JUnit annotations
         if: always()
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v2
         with:
           name: Playwright
           path: |
