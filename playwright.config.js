@@ -5,7 +5,9 @@ module.exports = defineConfig({
   testDir: 'tests/playwright',
   timeout: 120_000,
   expect: { timeout: 20000 },
-  retries: process.env.CI ? 3 : 0,
+  // Increase retries on CI to reduce flakiness; limit workers on CI for stability
+  retries: process.env.CI ? 5 : 0,
+  workers: process.env.CI ? 2 : undefined,
   reporter: [
     ['list'],
     ['html', { outputFolder: 'playwright-report' }],
