@@ -1,1 +1,8 @@
-node_modules
+node_modules/
+.cache/
+test-results/
+/.idea/
+.vscode/
+playwright-report/
+playwright-results/
+*.log
