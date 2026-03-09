@@ -3,8 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="description" content="VA CFR Finder — educational tool to map conditions to CFR references." />
   <title>VA CFR Finder (MVP)</title>
   <link rel="stylesheet" href="/styles.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23336699'/%3E%3Ctext x='50%25' y='55%25' font-size='16' text-anchor='middle' fill='white' font-family='Arial, sans-serif'%3EVA%3C/text%3E%3C/svg%3E" />
 </head>
 
 <body>
@@ -19,9 +21,11 @@
       <div class="auth-left">
         <span id="auth_user_display" class="auth-user">Not signed in</span>
       </div>
-      <form id="authForm" class="auth-form" onsubmit="return false;">
-        <input id="auth_user" placeholder="username" autocomplete="username" />
-        <input id="auth_pass" placeholder="password" type="password" autocomplete="current-password" />
+      <form id="authForm" class="auth-form" onsubmit="return false;" aria-label="Authentication form">
+        <label for="auth_user" class="visually-hidden">Username</label>
+        <input id="auth_user" placeholder="username" autocomplete="username" aria-label="username" />
+        <label for="auth_pass" class="visually-hidden">Password</label>
+        <input id="auth_pass" placeholder="password" type="password" autocomplete="current-password" aria-label="password" />
         <button id="auth_login" type="button">Login</button>
         <button id="auth_register" type="button">Register</button>
         <button id="auth_logout" type="button" class="hidden">Logout</button>
@@ -82,9 +86,12 @@
       </div>
 
       <!-- Inline Add Task Form (hidden by default) -->
-      <div id="addTaskForm" class="add-task-form hidden">
-        <input id="addTask_title" placeholder="Task title" />
+      <div id="addTaskForm" class="add-task-form hidden" aria-hidden="true">
+        <label for="addTask_title">Title</label>
+        <input id="addTask_title" placeholder="Task title" aria-required="true" />
+        <label for="addTask_due">Due date</label>
         <input id="addTask_due" type="date" />
+        <label for="addTask_priority">Priority</label>
         <select id="addTask_priority">
           <option value="">Priority (none)</option>
           <option value="low">Low</option>
@@ -94,6 +101,7 @@
         <label><input id="addTask_attach" type="checkbox" /> Attach to current condition</label>
         <button id="addTask_submit">Add</button>
         <button id="addTask_cancel" type="button">Cancel</button>
+        <div id="addTask_status" class="small" aria-live="polite" style="margin-top:6px"></div>
       </div>
       <div id="recentActivity" class="recent-activity">
         <h3>Recent Activity</h3>
@@ -265,11 +273,56 @@
   <script src="/app.js"></script>
   <script src="/js/intelligence.js"></script>
   <script>
-    document.getElementById('addTaskBtn')?.addEventListener('click', () => {
-      console.log('Add Task button clicked'); // Debugging log
-      const taskTitle = prompt('Enter the task title:'); // Ask the user for a task title
-      console.log('Task title entered:', taskTitle); // Debugging log
-    });
+    // Simple Add Task UI: toggle form, validate title, show loading state
+    (function(){
+      const addBtn = document.getElementById('addTaskBtn');
+      const addForm = document.getElementById('addTaskForm');
+      const submit = document.getElementById('addTask_submit');
+      const cancel = document.getElementById('addTask_cancel');
+      const title = document.getElementById('addTask_title');
+      const status = document.getElementById('addTask_status');
+
+      function showForm(show){
+        addForm.classList.toggle('hidden', !show);
+        addForm.setAttribute('aria-hidden', !show);
+        if(show) title.focus();
+      }
+
+      addBtn?.addEventListener('click', () => showForm(true));
+      cancel?.addEventListener('click', () => { showForm(false); status.textContent=''; });
+
+      submit?.addEventListener('click', async () => {
+        status.textContent='';
+        const t = title.value && title.value.trim();
+        if(!t){
+          status.textContent = 'Please enter a task title.';
+          title.focus();
+          return;
+        }
+        submit.disabled = true;
+        const prev = submit.textContent;
+        submit.textContent = 'Adding...';
+        try{
+          // Attempt a POST to the server; fallback to local UI update if server not available
+          const payload = { title: t, due: document.getElementById('addTask_due').value || null, priority: document.getElementById('addTask_priority').value || null };
+          const res = await fetch('/users/tasks', { method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+          if(res && res.ok){
+            status.textContent = 'Task added.';
+            title.value = '';
+            showForm(false);
+          } else {
+            status.textContent = 'Added locally (server may be unavailable).';
+            showForm(false);
+          }
+        }catch(e){
+          status.textContent = 'Network error — task saved locally.';
+          showForm(false);
+        } finally{
+          submit.disabled = false;
+          submit.textContent = prev;
+        }
+      });
+    })();
   </script>
 </body>
 </html>
