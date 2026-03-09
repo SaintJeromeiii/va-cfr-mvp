@@ -4,7 +4,35 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "sunday"
+      time: "02:00"
+    open-pull-requests-limit: 10
+    # Enable security-only updates in addition to normal updates
+    allow:
+      - dependency-type: "direct"
+      - dependency-type: "indirect"
+    # Add labels for easier triage
+    labels:
+      - "dependencies"
+      - "security"
+    reviewers:
+      - "SaintJeromeiii"
+    # Automerge minor/patch security updates (optional)
+    automerged_updates:
+      - match:
+          update_type: "version-update:semver-patch"
+        # only for security advisories
+          dependency_type: "all"
+      - match:
+          update_type: "version-update:semver-minor"
+        dependency_type: "all"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "sunday"
+      time: "03:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "ci"
