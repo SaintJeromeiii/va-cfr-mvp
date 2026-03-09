@@ -1,7 +1,5 @@
 name: Playwright Smoke Tests
 
-name: Playwright Smoke Tests
-
 on:
   pull_request:
     branches: [ master ]
