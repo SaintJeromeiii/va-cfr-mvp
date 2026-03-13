@@ -5,6 +5,17 @@ const path = require('path');
 const fs = require('fs');
 const morgan = require('morgan');
 const crypto = require('crypto');
+// Optional Sentry for error monitoring; DSN must be provided via SENTRY_DSN secret
+let Sentry;
+try {
+  Sentry = require('@sentry/node');
+  if (process.env.SENTRY_DSN) {
+    Sentry.init({ dsn: process.env.SENTRY_DSN, environment: process.env.NODE_ENV || 'development' });
+    console.log('✅ Sentry initialized');
+  }
+} catch (e) {
+  // ignore if package not available or DSN not set
+}
 
 const app = express();
 
@@ -12,6 +23,10 @@ const app = express();
 
 app.use(morgan('dev'));
 app.use(express.json());
+// Sentry request handler (if initialized)
+if (Sentry && Sentry.Handlers && Sentry.getCurrentHub) {
+  try { app.use(Sentry.Handlers.requestHandler()); } catch (e) { /* ignore */ }
+}
 
 function parseCookies(req) {
   const header = req.headers && req.headers.cookie;
@@ -500,6 +515,8 @@ app.get('/condition/:id', (req, res) => {
 // Error handling
 app.use((err, req, res, next) => {
   console.error(err.stack);
+  // Capture error with Sentry if available
+  try { if (Sentry && Sentry.captureException) Sentry.captureException(err); } catch (e) { /* ignore */ }
   res.status(500).send('Something went wrong!');
 });
 

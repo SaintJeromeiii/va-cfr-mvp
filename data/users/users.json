@@ -82,5 +82,17 @@
   },
   "smoke_8b6b126": {
     "password_hash": "40f3e96fcdfc4d57599b17ff$95bc07148eaec6cbeb55b61dcb7262c8ecf66059cc9274428809c8cd570710799bd5792c3ffa0baa7eb5275ce46cce2d57cbcab92e248e2bb7a43ee948b6424d"
+  },
+  "smoke_897c771": {
+    "password_hash": "d355f99527913ef7d0cf1b9b$0fc69cb380611f7d0b4e37cd9db4ad3ed65723690110145bcf9f2b82eadb16adfbf3699f595b57cc328ae318130a0b70b634962be48b7b4a337a0f0f28aaa808"
+  },
+  "smoke_ui_7c771": {
+    "password_hash": "e4a1d751db3e732b7deafbb0$336d07eedeee175f35cec86a243d459d89fb50f393ea8f01d646d57802e1f49ccc1a908ae10a1fd3fa050564d72bcacdff2dd67e01b14e5c45d5faff8fb89a13"
+  },
+  "smoke_ui_0db2d": {
+    "password_hash": "e0dab9bec4c6709d38463ac5$3b04bdf82f3ca3cf4fbf51db517c30bc6369f5f6b4c5a7a0f352e0b21d688dbf820f155d72f51b2e64b2e8f4d0303a49d12301cb87e6243dc0ec9d47f2a75c1a"
+  },
+  "smoke_8a0db2d": {
+    "password_hash": "b0a3e359a12b27b63a9c9921$e203e1540f84c5f02e7a5fb374a4e8f2376463078f09a6dead4c2ce0f022af55e65880cf12d7a7773c3c7ea2cf742d7e49f50e568eefc97680c7bcf9d6619ab8"
   }
 }

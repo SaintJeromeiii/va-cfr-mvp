@@ -42,43 +42,43 @@ jobs:
           CI: true
         run: |
           set -o pipefail
-          # run Playwright with shard; configure reporters via playwright.config.js using SHARD_SAFE
+          # run Playwright with shard and per-shard reporters so artifacts don't collide
           shard="${{ matrix.shard }}"
           safe_shard="${shard//\//-}"
-          export SHARD_SAFE="${safe_shard}"
-          echo "SHARD_SAFE=${safe_shard}" >> $GITHUB_ENV
-          npx playwright test --shard="$shard" 2>&1 | tee playwright-run-${safe_shard}.log
+          npx playwright test --shard="$shard" \
+            --reporter=html=playwright-report-${safe_shard} \
+            --reporter=junit=playwright-junit-${safe_shard}.xml \
+            2>&1 | tee playwright-run-${safe_shard}.log
 
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report-${{ env.SHARD_SAFE }}
+          name: playwright-report
           path: |
             playwright-report*
             playwright-report*/**
-            playwright-junit-*.xml
             playwright-run-*.log
-          retention-days: 14
+          retention-days: 30
 
       - name: Upload traces and screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-traces-screenshots-${{ env.SHARD_SAFE }}
+          name: playwright-traces-screenshots
           path: |
             playwright-report-*/traces
             playwright-report-*/screenshots
             test-results/screenshots
-          retention-days: 14
+          retention-days: 30
 
       - name: Upload test-results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results-${{ env.SHARD_SAFE }}
+          name: test-results
           path: test-results
-          retention-days: 14
+          retention-days: 30
 
       - name: Publish JUnit test annotations
         if: always()
@@ -142,9 +142,7 @@ jobs:
           CI: true
         run: |
           # run full suite nightly; use 2 workers to parallelize across CPUs
-          export SHARD_SAFE=regression
-          npx playwright test --workers=2 || true
-
+          npx playwright test --workers=2 --reporter=html=playwright-regression-report --reporter=junit=playwright-regression-junit.xml || true
       - name: Upload regression report
         if: always()
         uses: actions/upload-artifact@v4
