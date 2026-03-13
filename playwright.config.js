@@ -6,8 +6,9 @@ module.exports = defineConfig({
   timeout: 120_000,
   expect: { timeout: 20000 },
   // Increase retries on CI to reduce flakiness; limit workers on CI for stability
-  retries: process.env.CI ? 5 : 0,
-  workers: process.env.CI ? 2 : undefined,
+  // Reduce flakiness: more retries on CI and single worker per runner
+  retries: process.env.CI ? 3 : 0,
+  workers: process.env.CI ? 1 : undefined,
   reporter: [
     ['list'],
     ['html', { outputFolder: 'playwright-report' }],
