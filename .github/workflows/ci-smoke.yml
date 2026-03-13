@@ -46,8 +46,7 @@ jobs:
           shard="${{ matrix.shard }}"
           safe_shard="${shard//\//-}"
           npx playwright test --shard="$shard" \
-            --reporter=html=playwright-report-${safe_shard} \
-            --reporter=junit=playwright-junit-${safe_shard}.xml \
+            --reporter="html=playwright-report-${safe_shard},junit=playwright-junit-${safe_shard}.xml" \
             2>&1 | tee playwright-run-${safe_shard}.log
 
       - name: Upload Playwright report
