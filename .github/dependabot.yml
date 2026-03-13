@@ -3,29 +3,20 @@ updates:
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "sunday"
+      interval: "daily"
+      # daily updates help keep dependencies fresh; Prefer low-volume windows
       time: "02:00"
-    open-pull-requests-limit: 10
-    # Enable security-only updates in addition to normal updates
+    open-pull-requests-limit: 5
+    # Only open non-major updates automatically; Dependabot will still create security PRs
     allow:
       - dependency-type: "direct"
-      - dependency-type: "indirect"
     # Add labels for easier triage
     labels:
       - "dependencies"
       - "security"
     reviewers:
       - "SaintJeromeiii"
-    # Automerge minor/patch security updates (optional)
-    automerged_updates:
-      - match:
-          update_type: "version-update:semver-patch"
-        # only for security advisories
-          dependency_type: "all"
-      - match:
-          update_type: "version-update:semver-minor"
-        dependency_type: "all"
+    # Do not automerge majors; allow Dependabot minor/patch PRs for review
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
