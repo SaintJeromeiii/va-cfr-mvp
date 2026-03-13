@@ -40,7 +40,9 @@ jobs:
           CI: true
         run: |
           set -o pipefail
-          npx playwright test --reporter=html=playwright-report --reporter=junit=playwright-junit.xml || true
+          npx playwright test \
+            --reporter=html=playwright-report \
+            --reporter=junit=playwright-junit.xml || true
 
       - name: Upload Playwright report
         if: always()
