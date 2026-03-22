@@ -106,7 +106,6 @@ jobs:
             playwright-junit.xml
             playwright-report/playwright-junit.xml
             **/playwright-junit.xml
-          reporter: junit
           fail-on-empty: false
           fail-on-error: false
           token: ${{ secrets.GITHUB_TOKEN }}
