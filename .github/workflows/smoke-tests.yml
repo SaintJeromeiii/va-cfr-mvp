@@ -121,6 +121,28 @@ jobs:
             playwright-results
             playwright-junit.xml
 
+      - name: Post JUnit summary to PR
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const path = 'playwright-junit.xml';
+            let body = 'Playwright JUnit summary:\n\n';
+            if (fs.existsSync(path)) {
+              const content = fs.readFileSync(path, 'utf8').split(/\r?\n/).slice(0,200).join('\n');
+              body += '```
+'+"' + content + '\n```';
+            } else {
+              body += 'No playwright-junit.xml found in workspace.';
+            }
+            const pr = github.context.payload.pull_request && github.context.payload.pull_request.number;
+            if (pr) {
+              await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: pr, body });
+            } else {
+              core.info('No pull request found to comment on.');
+            }
+
       - name: Cleanup container
         if: always()
         run: |

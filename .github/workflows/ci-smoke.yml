@@ -59,6 +59,30 @@ jobs:
             playwright-report*
             playwright-report*/**
             playwright-run-*.log
+      - name: Post JUnit summary to PR
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            // find any per-shard junit file
+            const files = require('glob').sync('**/playwright-junit-*.xml', { nodir: true });
+            let body = 'Playwright JUnit summary (sharded):\n\n';
+            if (files && files.length) {
+              for (const f of files.slice(0,8)) {
+                body += `**${f}**\n`;
+                const content = fs.readFileSync(f, 'utf8').split(/\r?\n/).slice(0,50).join('\n');
+                body += '```\n' + content + '\n```\n\n';
+              }
+            } else {
+              body += 'No junit files found.';
+            }
+            const pr = github.context.payload.pull_request && github.context.payload.pull_request.number;
+            if (pr) {
+              await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: pr, body });
+            } else {
+              core.info('No pull request found to comment on.');
+            }
           retention-days: 30
 
       - name: Upload traces and screenshots
@@ -80,15 +104,10 @@ jobs:
           path: test-results
           retention-days: 30
 
-      - name: Publish JUnit test annotations
-        if: always()
-        uses: dorny/test-reporter@v1
-        with:
-          name: Playwright
-          path: "**/playwright-junit-*.xml"
-          reporter: junit
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fail-on-error: false
+      # Publishing JUnit annotations skipped temporarily because the
+      # configured test reporter action rejects the `reporter: junit` value
+      # on the current runner. Re-add a compatible reporter in a follow-up
+      # change if PR annotations are required.
 
       - name: Post artifacts list to PR
         if: ${{ github.event_name == 'pull_request' }}

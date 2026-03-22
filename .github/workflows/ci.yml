@@ -54,12 +54,29 @@ jobs:
             playwright-junit.xml
           retention-days: 30
 
-      - name: Publish JUnit annotations
-        if: always()
-        uses: dorny/test-reporter@v1
+      - name: Post JUnit summary to PR
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v6
         with:
-          name: Playwright
-          path: playwright-junit.xml
-          reporter: junit
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fail-on-error: false
+          script: |
+            const fs = require('fs');
+            const path = 'playwright-junit.xml';
+            let body = 'Playwright JUnit summary:\n\n';
+            if (fs.existsSync(path)) {
+              const content = fs.readFileSync(path, 'utf8').split(/\r?\n/).slice(0,200).join('\n');
+              body += '```
+'+"' + content + '\n```';
+            } else {
+              body += 'No playwright-junit.xml found in workspace.';
+            }
+            const pr = github.context.payload.pull_request && github.context.payload.pull_request.number;
+            if (pr) {
+              await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: pr, body });
+            } else {
+              core.info('No pull request found to comment on.');
+            }
+
+      # Publishing JUnit annotations skipped temporarily because the
+      # configured test reporter action rejects the `reporter: junit` value
+      # on the current runner. Re-add a compatible reporter in a follow-up
+      # change if PR annotations are required.
