@@ -83,6 +83,37 @@ jobs:
             } else {
               core.info('No pull request found to comment on.');
             }
+        - name: Post concise JUnit summary to PR (sharded)
+          if: always() && github.event_name == 'pull_request'
+          uses: actions/github-script@v6
+          with:
+            script: |
+              const fs = require('fs');
+              const glob = require('glob');
+              const files = glob.sync('**/playwright-junit-*.xml', { nodir: true });
+              let body = 'Playwright JUnit summary (sharded):\n\n';
+              if (files && files.length) {
+                for (const f of files.slice(0,8)) {
+                  body += `**${f}**\n`;
+                  const xml = fs.readFileSync(f, 'utf8');
+                  const m = xml.match(/<testsuites[^>]*tests=["'](\d+)["'][^>]*failures=["'](\d+)["'][^>]*skipped=["'](\d+)["'][^>]*errors=["'](\d+)["']/) || xml.match(/<testsuite[^>]*tests=["'](\d+)["'][^>]*failures=["'](\d+)["'][^>]*skipped=["'](\d+)["'][^>]*errors=["'](\d+)["']/) || [];
+                  const tests = m[1] || 'unknown';
+                  const failures = m[2] || '0';
+                  const skipped = m[3] || '0';
+                  const errors = m[4] || '0';
+                  body += `Tests: ${tests}, Failures: ${failures}, Skipped: ${skipped}, Errors: ${errors}\n`;
+                  const snippet = xml.split(/\r?\n/).slice(0,30).join('\n');
+                  body += '```xml\n' + snippet + '\n```\n\n';
+                }
+              } else {
+                body += 'No junit files found.';
+              }
+              const pr = github.context.payload.pull_request && github.context.payload.pull_request.number;
+              if (pr) {
+                await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: pr, body });
+              } else {
+                core.info('No pull request found to comment on.');
+              }
           retention-days: 30
 
       - name: Upload traces and screenshots

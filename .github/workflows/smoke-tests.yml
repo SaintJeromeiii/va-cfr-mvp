@@ -121,7 +121,7 @@ jobs:
             playwright-results
             playwright-junit.xml
 
-      - name: Post JUnit summary to PR
+      - name: Post concise JUnit summary to PR
         if: always() && github.event_name == 'pull_request'
         uses: actions/github-script@v6
         with:
@@ -130,9 +130,15 @@ jobs:
             const path = 'playwright-junit.xml';
             let body = 'Playwright JUnit summary:\n\n';
             if (fs.existsSync(path)) {
-              const content = fs.readFileSync(path, 'utf8').split(/\r?\n/).slice(0,200).join('\n');
-              body += '```
-'+"' + content + '\n```';
+              const xml = fs.readFileSync(path, 'utf8');
+              const m = xml.match(/<testsuites[^>]*tests=["'](\d+)["'][^>]*failures=["'](\d+)["'][^>]*skipped=["'](\d+)["'][^>]*errors=["'](\d+)["']/) || xml.match(/<testsuite[^>]*tests=["'](\d+)["'][^>]*failures=["'](\d+)["'][^>]*skipped=["'](\d+)["'][^>]*errors=["'](\d+)["']/) || [];
+              const tests = m[1] || 'unknown';
+              const failures = m[2] || '0';
+              const skipped = m[3] || '0';
+              const errors = m[4] || '0';
+              body += `Tests: ${tests}, Failures: ${failures}, Skipped: ${skipped}, Errors: ${errors}\n\n`;
+              const snippet = xml.split(/\r?\n/).slice(0,50).join('\n');
+              body += '```xml\n' + snippet + '\n```';
             } else {
               body += 'No playwright-junit.xml found in workspace.';
             }
