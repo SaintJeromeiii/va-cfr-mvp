@@ -1,0 +1,10 @@
+<testsuites id="" name="" tests="2" failures="0" skipped="0" errors="0" time="1.8519329999999998">
+<testsuite name="smoke-add-task.spec.js" timestamp="2026-03-23T11:57:07.342Z" hostname="" tests="1" failures="0" skipped="0" time="0.369" errors="0">
+<testcase name="smoke: add task via UI" classname="smoke-add-task.spec.js" time="0.369">
+</testcase>
+</testsuite>
+<testsuite name="smoke-auth.spec.js" timestamp="2026-03-23T11:57:07.342Z" hostname="" tests="1" failures="0" skipped="0" time="0.233" errors="0">
+<testcase name="smoke: auth flow" classname="smoke-auth.spec.js" time="0.233">
+</testcase>
+</testsuite>
+</testsuites>
