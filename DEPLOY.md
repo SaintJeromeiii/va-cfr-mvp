@@ -71,6 +71,22 @@ Production checklist
 - Set up TLS (Let’s Encrypt via platform or use Cloudflare).
 - Configure backups for `data/` or migrate to a DB.
  
+S3 Backup instructions
+
+- To enable automated backups of the `data/` folder to S3, set these env vars on Heroku or your host:
+   - `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `S3_BUCKET` (and optional `S3_PREFIX`).
+- The repo includes `scripts/backup-data-to-s3.js` and an npm script `backup:data`.
+
+Run the backup locally:
+```bash
+S3_BUCKET=your-bucket AWS_REGION=us-east-1 npm run backup:data
+```
+
+On Heroku you can schedule backups using the Heroku Scheduler add-on and run:
+```bash
+npm run backup:data
+```
+
 CORS and proxy notes
 
 - The server enables CORS only when `CORS_ORIGIN` is set. Set `CORS_ORIGIN` to the allowed origin (e.g. `https://your-domain.com`).
