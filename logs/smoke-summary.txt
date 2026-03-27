@@ -1,0 +1,8 @@
+Smoke tests run against https://va-cfr-mvp-prod-306dc4f53d87.herokuapp.com
+
+- auth: PASSED (user registered, logged out, logged in; /api/tasks returned array)
+- add-task: exercised add-task UI flow via jsdom; returned current tasks list (no new task created because equivalent task exists)
+
+Files:
+- test-results/smoke-deployed-auth.log
+- test-results/smoke-deployed-add-task.log
