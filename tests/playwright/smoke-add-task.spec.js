@@ -52,7 +52,3 @@ test('smoke: add task via UI', async ({ page, request }) => {
   const tasks = state && state.tasks ? state.tasks : null;
   expect(Array.isArray(tasks)).toBeTruthy();
 });
-
-page.on('console', msg => console.log('PAGE LOG:', msg.text()));
-page.on('pageerror', err => console.log('PAGE ERROR:', err));
-page.on('requestfailed', req => console.log('REQ FAILED:', req.url(), req.failure()?.errorText));
