@@ -53,7 +53,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report-${{ env.SHARD_SAFE }}
+          name: playwright-report-${{ env.SHARD_SAFE }}-${{ github.run_id }}
           path: |
             playwright-report*
             playwright-report*/**
@@ -65,7 +65,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-traces-screenshots-${{ env.SHARD_SAFE }}
+          name: playwright-traces-screenshots-${{ env.SHARD_SAFE }}-${{ github.run_id }}
           path: |
             playwright-report-*/traces
             playwright-report-*/screenshots
@@ -76,17 +76,17 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results-${{ env.SHARD_SAFE }}
+          name: test-results-${{ env.SHARD_SAFE }}-${{ github.run_id }}
           path: test-results
           retention-days: 14
 
       - name: Publish JUnit test annotations
         if: always()
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v3
         with:
           name: Playwright
           path: "**/playwright-junit-*.xml"
-          reporter: junit
+          reporter: java-junit
           token: ${{ secrets.GITHUB_TOKEN }}
           fail-on-error: false
 
@@ -165,10 +165,10 @@ jobs:
 
       - name: Publish regression JUnit annotations
         if: always()
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v3
         with:
           name: Playwright Regression
           path: "playwright-regression-junit.xml"
-          reporter: junit
+          reporter: java-junit
           token: ${{ secrets.GITHUB_TOKEN }}
           fail-on-error: false
