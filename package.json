@@ -5,6 +5,7 @@
   "main": "server.js",
   "scripts": {
     "backup:data": "node scripts/backup-data-to-s3.js",
+    "import:conditions": "node scripts/import_conditions.js",
     "test:e2e:install": "npx playwright install --with-deps",
     "test:e2e": "npx playwright test"
   },

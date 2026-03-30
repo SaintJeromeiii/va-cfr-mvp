@@ -3684,6 +3684,22 @@ async function init() {
   const filter = document.getElementById("systemFilter");
   const clearBtn = document.getElementById("clearBtn");
 
+  // Prevent default submit on auth form (moved from inline HTML to satisfy CSP)
+  const authForm = document.getElementById('authForm');
+  if (authForm) {
+    authForm.addEventListener('submit', (e) => e.preventDefault());
+  }
+
+  // Wire Add Task button (moved from inline HTML to satisfy CSP)
+  const addTaskBtn = document.getElementById('addTaskBtn');
+  if (addTaskBtn) {
+    addTaskBtn.addEventListener('click', () => {
+      console.log('Add Task button clicked');
+      const taskTitle = prompt('Enter the task title:');
+      console.log('Task title entered:', taskTitle);
+    });
+  }
+
   if (!input) {
     console.error('Missing search input with id="q" in index.html');
     return;

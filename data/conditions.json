@@ -319,4 +319,77 @@
     ],
     "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
   }
+  ,
+  {
+    "id": "diabetes_mellitus",
+    "name": "Diabetes Mellitus (Diabetes)",
+    "body_system": "Endocrine/Metabolic",
+    "aliases": ["diabetes", "type 2 diabetes", "type 1 diabetes"],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B",
+        "diagnostic_code": "7913",
+        "title": "Diabetes mellitus",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B"
+      }
+    ],
+    "rating_logic": {
+      "type": "complications_based",
+      "summary": "Ratings keyed to complications (e.g., nephropathy, neuropathy, amputations) rather than a single numeric table."
+    },
+    "evidence_checklist": [
+      "Diagnosis documented in medical record",
+      "Relevant labs (A1c, glucose), treatment history",
+      "Complications (neuropathy, nephropathy, retinopathy) documentation"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "intervertebral_disc_syndrome",
+    "name": "Intervertebral Disc Syndrome (IVDS)",
+    "body_system": "Musculoskeletal/Spine",
+    "aliases": ["disc herniation", "IVDS", "herniated disc", "disc syndrome"],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.71a",
+        "diagnostic_code": "5243",
+        "title": "Intervertebral disc syndrome",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/section-4.71a"
+      }
+    ],
+    "rating_logic": {
+      "type": "formula_or_incapacitating_episodes",
+      "summary": "Evaluate under the General Rating Formula for the spine or the formula for IVDS based on incapacitating episodes; choose higher evaluation."
+    },
+    "evidence_checklist": [
+      "Imaging confirming disc herniation or nerve root compression",
+      "Documentation of incapacitating episodes (number, treatment visits)",
+      "Functional limitations (ambulatory, lifting, bending)"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "degenerative_arthritis",
+    "name": "Degenerative Arthritis / Osteoarthritis",
+    "body_system": "Musculoskeletal",
+    "aliases": ["osteoarthritis", "degenerative joint disease", "arthritis"],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.71a",
+        "diagnostic_code": "5003",
+        "title": "Degenerative arthritis, other than post-traumatic",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/section-4.71a"
+      }
+    ],
+    "rating_logic": {
+      "type": "limitation_of_motion_or_specific_code",
+      "summary": "Arthritis may be rated under 5003 or by limitation of motion/ankylosis of the affected joint as appropriate."
+    },
+    "evidence_checklist": [
+      "Imaging (X-ray, MRI) showing degenerative change",
+      "Range-of-motion measurements where applicable",
+      "Treatment history (medications, injections, surgery)"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  }
 ]
