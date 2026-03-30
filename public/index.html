@@ -19,7 +19,7 @@
       <div class="auth-left">
         <span id="auth_user_display" class="auth-user">Not signed in</span>
       </div>
-      <form id="authForm" class="auth-form" onsubmit="return false;">
+      <form id="authForm" class="auth-form">
         <input id="auth_user" placeholder="username" autocomplete="username" />
         <input id="auth_pass" placeholder="password" type="password" autocomplete="current-password" />
         <button id="auth_login" type="button">Login</button>
@@ -264,13 +264,6 @@
 
   <script src="/app.js"></script>
   <script src="/js/intelligence.js"></script>
-  <script>
-    document.getElementById('addTaskBtn')?.addEventListener('click', () => {
-      console.log('Add Task button clicked'); // Debugging log
-      const taskTitle = prompt('Enter the task title:'); // Ask the user for a task title
-      console.log('Task title entered:', taskTitle); // Debugging log
-    });
-  </script>
 </body>
 </html>
 
