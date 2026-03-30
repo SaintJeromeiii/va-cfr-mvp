@@ -1,10 +1,19 @@
-<testsuites id="" name="" tests="2" failures="0" skipped="0" errors="0" time="1.8519329999999998">
-<testsuite name="smoke-add-task.spec.js" timestamp="2026-03-23T11:57:07.342Z" hostname="" tests="1" failures="0" skipped="0" time="0.369" errors="0">
-<testcase name="smoke: add task via UI" classname="smoke-add-task.spec.js" time="0.369">
+<testsuites id="" name="" tests="2" failures="0" skipped="0" errors="0" time="2.766272">
+<testsuite name="smoke-add-task.spec.js" timestamp="2026-03-30T11:00:40.610Z" hostname="" tests="1" failures="0" skipped="0" time="0.667" errors="0">
+<testcase name="smoke: add task via UI" classname="smoke-add-task.spec.js" time="0.667">
+<system-out>
+<![CDATA[PAGE LOG: Tasks to render: []
+PAGE LOG: Executing inline script violates the following Content Security Policy directive 'script-src 'self''. Either the 'unsafe-inline' keyword, a hash ('sha256-KQbUca+8XKkCJks/LR37yAixLdM1c927vGL9P2ZytNY='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.
+PAGE LOG: Generated task key: general::::::::follow up: request records
+PAGE LOG: Task already exists: false
+PAGE LOG: Tasks to render: [Object]
+PAGE LOG: Task persisted to server: task_fa1282c2e2571
+]]>
+</system-out>
 </testcase>
 </testsuite>
-<testsuite name="smoke-auth.spec.js" timestamp="2026-03-23T11:57:07.342Z" hostname="" tests="1" failures="0" skipped="0" time="0.233" errors="0">
-<testcase name="smoke: auth flow" classname="smoke-auth.spec.js" time="0.233">
+<testsuite name="smoke-auth.spec.js" timestamp="2026-03-30T11:00:40.610Z" hostname="" tests="1" failures="0" skipped="0" time="0.39" errors="0">
+<testcase name="smoke: auth flow" classname="smoke-auth.spec.js" time="0.39">
 </testcase>
 </testsuite>
 </testsuites>
