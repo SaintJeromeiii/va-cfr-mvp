@@ -1,0 +1,35 @@
+
+Running 2 tests using 2 workers
+
+  ✓  1 tests/playwright/smoke-auth.spec.js:3:1 › smoke: auth flow (570ms)
+  ✘  2 tests/playwright/smoke-add-task.spec.js:3:1 › smoke: add task via UI (21.1s)
+
+
+  1) tests/playwright/smoke-add-task.spec.js:3:1 › smoke: add task via UI ──────────────────────────
+
+    TimeoutError: page.waitForResponse: Timeout 20000ms exceeded while waiting for event "response"
+
+      32 |   // submit and wait for the POST /api/tasks response instead of a fixed timeout
+      33 |   const [response] = await Promise.all([
+    > 34 |     page.waitForResponse(r => r.url().includes('/api/tasks') && r.request().method() === 'POST', { timeout: 20000 }),
+         |          ^
+      35 |     page.locator('#addTask_submit').click()
+      36 |   ]);
+      37 |   expect(response.ok()).toBeTruthy();
+        at /Users/jeromeanderson/va-cfr-mvp/tests/playwright/smoke-add-task.spec.js:34:10
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    playwright-results/smoke-add-task-smoke-add-task-via-UI/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    playwright-results/smoke-add-task-smoke-add-task-via-UI/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: playwright-results/smoke-add-task-smoke-add-task-via-UI/error-context.md
+
+  1 failed
+    tests/playwright/smoke-add-task.spec.js:3:1 › smoke: add task via UI ───────────────────────────
+  1 passed (23.9s)
+
+[36m  Serving HTML report at http://localhost:9323. Press Ctrl+C to quit.[39m

@@ -1,0 +1,31 @@
+{
+  "name": "va-cfr-mvp",
+  "description": "VA CFR Finder MVP",
+  "repository": "https://github.com/your-org/va-cfr-mvp",
+  "env": {
+    "ADMIN_SECRET": {
+      "description": "Admin secret for admin endpoints",
+      "required": true
+    },
+    "NODE_ENV": {
+      "description": "Set to production",
+      "value": "production"
+    },
+    "PORT": {
+      "value": "3000"
+    },
+    "CORS_ORIGIN": {
+      "description": "Optional, allowed origin for CORS (e.g. https://your-domain.com)"
+    },
+    "TRUST_PROXY": {
+      "description": "Set to 1 when running behind a reverse proxy",
+      "value": "1"
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "free"
+    }
+  }
+}

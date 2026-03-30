@@ -1,0 +1,14 @@
+Playwright trace summary for failing run (earlier attempt)
+
+- Test: smoke-add-task via UI
+- Error: Timeout waiting for POST /api/tasks (page.waitForResponse timed out)
+- Artifacts produced:
+  - Screenshot: test-results/smoke-add-task-smoke-add-task-via-UI/test-failed-1.png
+  - Video: test-results/smoke-add-task-smoke-add-task-via-UI/video.webm
+  - Trace: test-results/smoke-add-task-smoke-add-task-via-UI/trace.zip
+- Quick notes from logs:
+  - CSP blocked inline script execution (see PAGE LOG: Executing inline script violates...)
+  - Some 404 resources appeared during the run
+  - The failure occurred before the POST was observed; likely client JS blocked or selector timing issue
+
+Recommendation: use `npx playwright show-trace <trace.zip>` to interactively inspect timeline and network; trace + video show that the client JS execution was impacted by CSP which we later observed and addressed by changing cookie url and adding waits.

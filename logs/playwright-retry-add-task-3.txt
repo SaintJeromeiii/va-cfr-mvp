@@ -1,0 +1,18 @@
+
+Running 1 test using 1 worker
+
+PAGE LOG: Tasks to render: []
+PAGE LOG: Executing inline script violates the following Content Security Policy directive 'script-src 'self''. Either the 'unsafe-inline' keyword, a hash ('sha256-KQbUca+8XKkCJks/LR37yAixLdM1c927vGL9P2ZytNY='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.
+PAGE LOG: Failed to load resource: the server responded with a status of 404 (Not Found)
+PAGE LOG: Generated task key: general::::::::follow up: request records
+PAGE LOG: Task already exists: false
+PAGE LOG: Tasks to render: [Object]
+PAGE LOG: Task persisted to server: task_ceb0d948ae0198
+  ✓  1 tests/playwright/smoke-add-task.spec.js:3:1 › smoke: add task via UI (8.7s)
+
+  1 passed (10.2s)
+
+To open last HTML report run:
+[36m[39m
+[36m  npx playwright show-report playwright-report-default[39m
+[36m[39m

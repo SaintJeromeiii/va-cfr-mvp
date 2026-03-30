@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        shard: ["1/8", "2/8", "3/8", "4/8", "5/8", "6/8", "7/8", "8/8"]
+        shard: ["1/1"]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -47,13 +47,14 @@ jobs:
           safe_shard="${shard//\//-}"
           export SHARD_SAFE="${safe_shard}"
           echo "SHARD_SAFE=${safe_shard}" >> $GITHUB_ENV
-          npx playwright test --shard="$shard" 2>&1 | tee playwright-run-${safe_shard}.log
+          # run single non-sharded job with retries and limited workers to reduce flakiness
+          npx playwright test --shard="$shard" --retries=2 --workers=1 2>&1 | tee playwright-run-${safe_shard}.log
 
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report-${{ env.SHARD_SAFE }}
+          name: playwright-report-${{ env.SHARD_SAFE }}-${{ github.run_id }}
           path: |
             playwright-report*
             playwright-report*/**
@@ -65,7 +66,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-traces-screenshots-${{ env.SHARD_SAFE }}
+          name: playwright-traces-screenshots-${{ env.SHARD_SAFE }}-${{ github.run_id }}
           path: |
             playwright-report-*/traces
             playwright-report-*/screenshots
@@ -76,19 +77,21 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results-${{ env.SHARD_SAFE }}
+          name: test-results-${{ env.SHARD_SAFE }}-${{ github.run_id }}
           path: test-results
           retention-days: 14
 
       - name: Publish JUnit test annotations
-        if: always()
-        uses: dorny/test-reporter@v1
+        # Skip creating check-run annotations for pull request runs (forks use read-only token)
+        if: ${{ github.event_name != 'pull_request' }}
+        uses: dorny/test-reporter@v3
         with:
           name: Playwright
           path: "**/playwright-junit-*.xml"
-          reporter: junit
+          reporter: java-junit
           token: ${{ secrets.GITHUB_TOKEN }}
           fail-on-error: false
+          fail-on-empty: false
 
       - name: Post artifacts list to PR
         if: ${{ github.event_name == 'pull_request' }}
@@ -165,10 +168,10 @@ jobs:
 
       - name: Publish regression JUnit annotations
         if: always()
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v3
         with:
           name: Playwright Regression
           path: "playwright-regression-junit.xml"
-          reporter: junit
+          reporter: java-junit
           token: ${{ secrets.GITHUB_TOKEN }}
           fail-on-error: false

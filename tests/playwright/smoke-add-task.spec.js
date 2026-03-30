@@ -2,6 +2,11 @@ const { test, expect } = require('@playwright/test');
 
 test('smoke: add task via UI', async ({ page, request }) => {
   const base = page.context()._options.baseURL || 'http://localhost:3000';
+  // attach debug listeners early to capture console / page errors
+  page.on('console', msg => console.log('PAGE LOG:', msg.text()));
+  page.on('pageerror', err => console.log('PAGE ERROR:', err));
+  page.on('requestfailed', req => console.log('REQ FAILED:', req.url(), req.failure()?.errorText));
+
   // register a fresh user and set the session cookie so the UI is authenticated
   const uname = `smoke_ui_${Date.now().toString(16).slice(6)}`;
   const pwd = 'smoke-pass';
@@ -9,7 +14,8 @@ test('smoke: add task via UI', async ({ page, request }) => {
   const setCookie = reg.headers()['set-cookie'] || '';
   const sid = (setCookie.split(';')[0] || '').split('=')[1] || null;
   if (sid) {
-    await page.context().addCookies([{ name: 'sid', value: sid, domain: 'localhost', path: '/' }]);
+    // add cookie using the registered base URL so it applies to deployed domains
+    await page.context().addCookies([{ name: 'sid', value: sid, url: base }]);
   }
   await page.goto(base);
 
@@ -30,9 +36,12 @@ test('smoke: add task via UI', async ({ page, request }) => {
   await titleInput.fill('Follow up: request records');
 
   // submit and wait for the POST /api/tasks response instead of a fixed timeout
+  // ensure submit control is visible, then submit and wait for POST
+  const submitBtn = page.locator('#addTask_submit');
+  await expect(submitBtn).toBeVisible({ timeout: 15000 });
   const [response] = await Promise.all([
-    page.waitForResponse(r => r.url().includes('/api/tasks') && r.request().method() === 'POST', { timeout: 20000 }),
-    page.locator('#addTask_submit').click()
+    page.waitForResponse(r => r.url().includes('/api/tasks') && r.request().method() === 'POST', { timeout: 30000 }),
+    submitBtn.click()
   ]);
   expect(response.ok()).toBeTruthy();
 

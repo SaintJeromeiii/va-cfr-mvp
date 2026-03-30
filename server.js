@@ -4,6 +4,9 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const morgan = require('morgan');
+const helmet = require('helmet');
+const cors = require('cors');
+const rateLimit = require('express-rate-limit');
 const crypto = require('crypto');
 
 const app = express();
@@ -12,6 +15,28 @@ const app = express();
 
 app.use(morgan('dev'));
 app.use(express.json());
+
+// Security: enable sensible defaults in production
+// Trust proxy when running behind a reverse proxy (set TRUST_PROXY=1 or run in production)
+if (process.env.TRUST_PROXY === '1' || process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
+
+// Helmet adds many safe HTTP headers
+try { app.use(helmet()); } catch (e) { console.warn('helmet not enabled', e && e.message); }
+
+// Enable CORS only when CORS_ORIGIN is explicitly set (avoid permissive defaults)
+if (process.env.CORS_ORIGIN) {
+  try { app.use(cors({ origin: process.env.CORS_ORIGIN, credentials: true })); } catch (e) { console.warn('cors not enabled', e && e.message); }
+}
+
+// Basic rate limiting in production
+if (process.env.NODE_ENV === 'production') {
+  try {
+    const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100, standardHeaders: true, legacyHeaders: false });
+    app.use(limiter);
+  } catch (e) { console.warn('rateLimit not enabled', e && e.message); }
+}
 
 function parseCookies(req) {
   const header = req.headers && req.headers.cookie;
@@ -338,7 +363,8 @@ app.post('/api/register', (req, res) => {
   // cookie flags: HttpOnly, Path=/, Max-Age, SameSite; add Secure in production
   const maxAge = 7 * 24 * 60 * 60; // 7 days
   let cookie = `sid=${token}; HttpOnly; Path=/; Max-Age=${maxAge}; SameSite=Strict`;
-  if (process.env.NODE_ENV === 'production') cookie += '; Secure';
+  // Mark cookies Secure when running in production or when trust proxy is enabled
+  if (process.env.NODE_ENV === 'production' || app.get('trust proxy')) cookie += '; Secure';
   res.setHeader('Set-Cookie', cookie);
   res.json({ username });
 });
@@ -354,7 +380,7 @@ app.post('/api/login', (req, res) => {
   const token = createSessionForUser(username, 7, rotate2);
   const maxAge = 7 * 24 * 60 * 60; // 7 days
   let cookie = `sid=${token}; HttpOnly; Path=/; Max-Age=${maxAge}; SameSite=Strict`;
-  if (process.env.NODE_ENV === 'production') cookie += '; Secure';
+  if (process.env.NODE_ENV === 'production' || app.get('trust proxy')) cookie += '; Secure';
   res.setHeader('Set-Cookie', cookie);
   res.json({ username });
 });

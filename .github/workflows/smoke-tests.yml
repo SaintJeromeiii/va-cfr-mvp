@@ -91,19 +91,7 @@ jobs:
             echo "no playwright-junit.xml at repo root"
           fi
 
-      - name: Publish Playwright JUnit annotations
-        if: always()
-        uses: dorny/test-reporter@v1
-        with:
-          name: Playwright
-          path: |
-            playwright-junit.xml
-            playwright-report/playwright-junit.xml
-            **/playwright-junit.xml
-          reporter: junit
-          fail-on-empty: false
-          fail-on-error: false
-          token: ${{ secrets.GITHUB_TOKEN }}
+
 
       - name: Upload artifacts
         if: always()
