@@ -3,8 +3,27 @@ updates:
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "daily"
+      # daily updates help keep dependencies fresh; Prefer low-volume windows
+      time: "02:00"
+    open-pull-requests-limit: 5
+    # Only open non-major updates automatically; Dependabot will still create security PRs
+    allow:
+      - dependency-type: "direct"
+    # Add labels for easier triage
+    labels:
+      - "dependencies"
+      - "security"
+    reviewers:
+      - "SaintJeromeiii"
+    # Do not automerge majors; allow Dependabot minor/patch PRs for review
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "sunday"
+      time: "03:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "ci"

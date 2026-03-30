@@ -1,0 +1,62 @@
+name: Auto-merge and deploy on green
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+      - Playwright Smoke Tests
+      - Audit & Lockfile Check
+      - CodeQL
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+  checks: read
+
+jobs:
+  merge-and-deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Find open PR for branch
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const branch = context.payload.workflow_run.head_branch;
+            const head_sha = context.payload.workflow_run.head_sha;
+
+            const prs = await github.rest.pulls.list({ owner, repo, state: 'open', head: `${owner}:${branch}` });
+            if (!prs.data || prs.data.length === 0) {
+              core.info(`No open PR found for ${branch}. Nothing to do.`);
+              return;
+            }
+            const pr = prs.data[0];
+            core.info(`Found PR #${pr.number} for branch ${branch}. Verifying workflow runs for commit ${head_sha}.`);
+
+            const requiredWorkflows = [
+              'CI',
+              'Playwright Smoke Tests',
+              'Audit & Lockfile Check',
+              'CodeQL'
+            ];
+
+            for (const wf of requiredWorkflows) {
+              const runs = await github.rest.actions.listWorkflowRunsForRepo({ owner, repo, per_page: 100 });
+              const run = runs.data.workflow_runs.find(r => r.head_sha === head_sha && r.name === wf);
+              if (!run) {
+                core.info(`No run found for workflow ${wf} at commit ${head_sha}.`);
+                return;
+              }
+              if (run.conclusion !== 'success') {
+                core.info(`Workflow ${wf} concluded with ${run.conclusion}; skipping merge.`);
+                return;
+              }
+            }
+
+            core.info('All required workflows passed — merging PR.');
+            await github.rest.pulls.merge({ owner, repo, pull_number: pr.number, merge_method: 'merge' });
+            await github.rest.issues.createComment({ owner, repo, issue_number: pr.number, body: 'Auto-merged by workflow: all checks passed.' });

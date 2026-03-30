@@ -42,53 +42,103 @@ jobs:
           CI: true
         run: |
           set -o pipefail
-          # run Playwright with shard; configure reporters via playwright.config.js using SHARD_SAFE
+          # run Playwright with shard and per-shard reporters so artifacts don't collide
           shard="${{ matrix.shard }}"
           safe_shard="${shard//\//-}"
-          export SHARD_SAFE="${safe_shard}"
-          echo "SHARD_SAFE=${safe_shard}" >> $GITHUB_ENV
-          npx playwright test --shard="$shard" 2>&1 | tee playwright-run-${safe_shard}.log
+          npx playwright test --shard="$shard" \
+            --reporter=html=playwright-report-${safe_shard} \
+            --reporter=junit=playwright-junit-${safe_shard}.xml \
+            2>&1 | tee playwright-run-${safe_shard}.log
 
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report-${{ env.SHARD_SAFE }}
+          name: playwright-report
           path: |
             playwright-report*
             playwright-report*/**
-            playwright-junit-*.xml
             playwright-run-*.log
-          retention-days: 14
+      - name: Post JUnit summary to PR
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            // find any per-shard junit file
+            const files = require('glob').sync('**/playwright-junit-*.xml', { nodir: true });
+            let body = 'Playwright JUnit summary (sharded):\n\n';
+            if (files && files.length) {
+              for (const f of files.slice(0,8)) {
+                body += `**${f}**\n`;
+                const content = fs.readFileSync(f, 'utf8').split(/\r?\n/).slice(0,50).join('\n');
+                body += '```\n' + content + '\n```\n\n';
+              }
+            } else {
+              body += 'No junit files found.';
+            }
+            const pr = github.context.payload.pull_request && github.context.payload.pull_request.number;
+            if (pr) {
+              await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: pr, body });
+            } else {
+              core.info('No pull request found to comment on.');
+            }
+        - name: Post concise JUnit summary to PR (sharded)
+          if: always() && github.event_name == 'pull_request'
+          uses: actions/github-script@v6
+          with:
+            script: |
+              const fs = require('fs');
+              const glob = require('glob');
+              const files = glob.sync('**/playwright-junit-*.xml', { nodir: true });
+              let body = 'Playwright JUnit summary (sharded):\n\n';
+              if (files && files.length) {
+                for (const f of files.slice(0,8)) {
+                  body += `**${f}**\n`;
+                  const xml = fs.readFileSync(f, 'utf8');
+                  const m = xml.match(/<testsuites[^>]*tests=["'](\d+)["'][^>]*failures=["'](\d+)["'][^>]*skipped=["'](\d+)["'][^>]*errors=["'](\d+)["']/) || xml.match(/<testsuite[^>]*tests=["'](\d+)["'][^>]*failures=["'](\d+)["'][^>]*skipped=["'](\d+)["'][^>]*errors=["'](\d+)["']/) || [];
+                  const tests = m[1] || 'unknown';
+                  const failures = m[2] || '0';
+                  const skipped = m[3] || '0';
+                  const errors = m[4] || '0';
+                  body += `Tests: ${tests}, Failures: ${failures}, Skipped: ${skipped}, Errors: ${errors}\n`;
+                  const snippet = xml.split(/\r?\n/).slice(0,30).join('\n');
+                  body += '```xml\n' + snippet + '\n```\n\n';
+                }
+              } else {
+                body += 'No junit files found.';
+              }
+              const pr = github.context.payload.pull_request && github.context.payload.pull_request.number;
+              if (pr) {
+                await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: pr, body });
+              } else {
+                core.info('No pull request found to comment on.');
+              }
+          retention-days: 30
 
       - name: Upload traces and screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-traces-screenshots-${{ env.SHARD_SAFE }}
+          name: playwright-traces-screenshots
           path: |
             playwright-report-*/traces
             playwright-report-*/screenshots
             test-results/screenshots
-          retention-days: 14
+          retention-days: 30
 
       - name: Upload test-results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results-${{ env.SHARD_SAFE }}
+          name: test-results
           path: test-results
-          retention-days: 14
+          retention-days: 30
 
-      - name: Publish JUnit test annotations
-        if: always()
-        uses: dorny/test-reporter@v1
-        with:
-          name: Playwright
-          path: "**/playwright-junit-*.xml"
-          reporter: junit
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fail-on-error: false
+      # Publishing JUnit annotations skipped temporarily because the
+      # configured test reporter action rejects the `reporter: junit` value
+      # on the current runner. Re-add a compatible reporter in a follow-up
+      # change if PR annotations are required.
 
       - name: Post artifacts list to PR
         if: ${{ github.event_name == 'pull_request' }}
@@ -142,9 +192,7 @@ jobs:
           CI: true
         run: |
           # run full suite nightly; use 2 workers to parallelize across CPUs
-          export SHARD_SAFE=regression
-          npx playwright test --workers=2 || true
-
+          npx playwright test --workers=2 --reporter=html=playwright-regression-report --reporter=junit=playwright-regression-junit.xml || true
       - name: Upload regression report
         if: always()
         uses: actions/upload-artifact@v4

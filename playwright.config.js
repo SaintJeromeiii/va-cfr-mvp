@@ -6,16 +6,14 @@ module.exports = defineConfig({
   timeout: 120_000,
   expect: { timeout: 20000 },
   // Increase retries on CI to reduce flakiness; limit workers on CI for stability
-  retries: process.env.CI ? 5 : 0,
-  workers: process.env.CI ? 2 : undefined,
-  reporter: (() => {
-    const safeShard = process.env.SHARD_SAFE || 'default';
-    return [
-      ['list'],
-      ['html', { outputFolder: `playwright-report-${safeShard}` }],
-      ['junit', { outputFile: path.join(process.cwd(), `playwright-junit-${safeShard}.xml`) }]
-    ];
-  })(),
+  // Reduce flakiness: more retries on CI and single worker per runner
+  retries: process.env.CI ? 3 : 0,
+  workers: process.env.CI ? 1 : undefined,
+  reporter: [
+    ['list'],
+    ['html', { outputFolder: 'playwright-report' }],
+    ['junit', { outputFile: path.join(process.cwd(), 'playwright-junit.xml') }]
+  ],
   webServer: {
     command: 'node server.js',
     port: 3000,

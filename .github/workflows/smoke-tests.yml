@@ -46,27 +46,33 @@ jobs:
             fi
             sleep 1
           done
+          echo "container status:"
+          docker ps -a || true
+          echo "container logs (tail 200):"
+          docker logs va-cfr-mvp 2>&1 | tail -n 200 || true
 
-      - name: Run legacy smoke scripts and Playwright
+      - name: Run legacy smoke scripts and Playwright (fail-fast + debug)
         run: |
-          # ensure log file exists even if smoke script fails
+          set -euxo pipefail
+          # ensure log file exists
           touch smoke-tests.log
-          timeout 2m npm run smoke:all > smoke-tests.log 2>&1 || true
+          echo 'running legacy smoke scripts (timeout 2m)'
+          timeout 2m npm run smoke:all > smoke-tests.log 2>&1 || { echo 'smoke scripts failed — dumping log:'; sed -n '1,200p' smoke-tests.log || true; exit 1; }
           echo 'run playwright tests'
-          npx playwright test --output=playwright-results || true
+          npx playwright test --output=playwright-results
           # allow Playwright a moment to flush reporters
           sleep 1
           echo "Attempting to copy nested playwright junit to repo root..."
           if [ -f playwright-report/playwright-junit.xml ]; then
             echo "copying playwright-report/playwright-junit.xml -> playwright-junit.xml"
-            cp playwright-report/playwright-junit.xml playwright-junit.xml || true
+            cp playwright-report/playwright-junit.xml playwright-junit.xml
           fi
           if [ -f playwright-results/playwright-junit.xml ]; then
             echo "copying playwright-results/playwright-junit.xml -> playwright-junit.xml"
-            cp playwright-results/playwright-junit.xml playwright-junit.xml || true
+            cp playwright-results/playwright-junit.xml playwright-junit.xml
           fi
           # fallback: find any junit produced in workspace and copy to repo root
-          find . -type f -name 'playwright-junit.xml' -not -path './playwright-junit.xml' -exec cp {} playwright-junit.xml \; || true
+          find . -type f -name 'playwright-junit.xml' -not -path './playwright-junit.xml' -exec cp {} playwright-junit.xml \;
           echo "After copy, workspace junit listing:"
           ls -la playwright-junit.xml || true
           echo 'collecting container logs'
@@ -91,19 +97,10 @@ jobs:
             echo "no playwright-junit.xml at repo root"
           fi
 
-      - name: Publish Playwright JUnit annotations
-        if: always()
-        uses: dorny/test-reporter@v1
-        with:
-          name: Playwright
-          path: |
-            playwright-junit.xml
-            playwright-report/playwright-junit.xml
-            **/playwright-junit.xml
-          reporter: junit
-          fail-on-empty: false
-          fail-on-error: false
-          token: ${{ secrets.GITHUB_TOKEN }}
+      # The test-reporter action caused job failures in CI; remove it for now
+      # to allow smoke tests to complete. We can add a replacement reporter
+      # or reconfigure this step in a follow-up change if annotations are
+      # required.
 
       - name: Upload artifacts
         if: always()
@@ -123,6 +120,34 @@ jobs:
             playwright-report
             playwright-results
             playwright-junit.xml
+
+      - name: Post concise JUnit summary to PR
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const path = 'playwright-junit.xml';
+            let body = 'Playwright JUnit summary:\n\n';
+            if (fs.existsSync(path)) {
+              const xml = fs.readFileSync(path, 'utf8');
+              const m = xml.match(/<testsuites[^>]*tests=["'](\d+)["'][^>]*failures=["'](\d+)["'][^>]*skipped=["'](\d+)["'][^>]*errors=["'](\d+)["']/) || xml.match(/<testsuite[^>]*tests=["'](\d+)["'][^>]*failures=["'](\d+)["'][^>]*skipped=["'](\d+)["'][^>]*errors=["'](\d+)["']/) || [];
+              const tests = m[1] || 'unknown';
+              const failures = m[2] || '0';
+              const skipped = m[3] || '0';
+              const errors = m[4] || '0';
+              body += `Tests: ${tests}, Failures: ${failures}, Skipped: ${skipped}, Errors: ${errors}\n\n`;
+              const snippet = xml.split(/\r?\n/).slice(0,50).join('\n');
+              body += '```xml\n' + snippet + '\n```';
+            } else {
+              body += 'No playwright-junit.xml found in workspace.';
+            }
+            const pr = github.context.payload.pull_request && github.context.payload.pull_request.number;
+            if (pr) {
+              await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: pr, body });
+            } else {
+              core.info('No pull request found to comment on.');
+            }
 
       - name: Cleanup container
         if: always()

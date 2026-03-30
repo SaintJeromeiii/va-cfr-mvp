@@ -1,0 +1,23 @@
+{
+  "ajv-formats": {
+    "current": "2.1.1",
+    "wanted": "2.1.1",
+    "latest": "3.0.1",
+    "dependent": "va-cfr-mvp",
+    "location": "/Users/jeromeanderson/va-cfr-mvp/node_modules/ajv-formats"
+  },
+  "bcryptjs": {
+    "current": "2.4.3",
+    "wanted": "2.4.3",
+    "latest": "3.0.3",
+    "dependent": "va-cfr-mvp",
+    "location": "/Users/jeromeanderson/va-cfr-mvp/node_modules/bcryptjs"
+  },
+  "eslint": {
+    "current": "10.0.1",
+    "wanted": "10.0.3",
+    "latest": "10.0.3",
+    "dependent": "va-cfr-mvp",
+    "location": "/Users/jeromeanderson/va-cfr-mvp/node_modules/eslint"
+  }
+}
