@@ -30,6 +30,11 @@ jobs:
       - name: Build (optional)
         run: echo "Skipping build step; app starts with node server.js"
 
+      - name: Install Heroku CLI
+        run: |
+          set -e
+          curl https://cli-assets.heroku.com/install-ubuntu.sh | sh
+
       - name: Deploy to Heroku
         uses: akhileshns/heroku-deploy@v3.12.12
         with:
