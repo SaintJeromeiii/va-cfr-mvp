@@ -504,7 +504,7 @@
       "Functional limitations (ambulatory, lifting, bending)"
     ],
     "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
-    "diagnostic_code": "5242",
+    "diagnostic_code": "5243",
     "va_verified": true
   },
   {
@@ -774,7 +774,7 @@
     ],
     "va_verified": true,
     "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data.",
-    "diagnostic_code": "5329"
+    "diagnostic_code": "8540"
   },
   {
     "id": "al_amyloidosis",
@@ -1029,7 +1029,7 @@
       }
     ],
     "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
-    "diagnostic_code": "8045",
+    "diagnostic_code": "9304",
     "va_verified": true
   },
   {
@@ -1271,7 +1271,7 @@
       }
     ],
     "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
-    "diagnostic_code": "5017",
+    "diagnostic_code": "7537",
     "va_verified": true
   },
   {
@@ -1605,7 +1605,7 @@
       }
     ],
     "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
-    "diagnostic_code": "7354",
+    "diagnostic_code": "7544",
     "va_verified": true
   },
   {
