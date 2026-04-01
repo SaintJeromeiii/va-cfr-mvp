@@ -1,0 +1,24 @@
+{
+  "generated_at": "2026-04-01T00:00:00Z",
+  "note": "Best-effort mapping of Agent Orange presumptive conditions to CFR references or search hints. These are NOT authoritative — verify against eCFR or VA pages before relying on them.",
+  "mappings": {
+    "al_amyloidosis": { "suggested_cfr_search": "https://www.ecfr.gov/search?q=AL+amyloidosis+38+CFR", "best_effort": true },
+    "bladder_cancer": { "suggested_cfr_search": "https://www.ecfr.gov/search?q=bladder+cancer+38+CFR", "best_effort": true },
+    "chronic_b_cell_leukemia": { "suggested_cfr_search": "https://www.ecfr.gov/search?q=chronic+b-cell+leukemia+38+CFR", "best_effort": true },
+    "chloracne": { "suggested_cfr_search": "https://www.ecfr.gov/search?q=chloracne+38+CFR", "best_effort": true },
+    "diabetes_mellitus": { "suggested_cfr_search": "https://www.ecfr.gov/search?q=diabetes+38+CFR", "best_effort": true, "note": "diabetes already had diagnostic_code 7913 in the main file; verify." },
+    "hypertension": { "suggested_cfr_search": "https://www.ecfr.gov/search?q=hypertension+38+CFR", "best_effort": true },
+    "hypothyroidism": { "suggested_cfr_search": "https://www.ecfr.gov/search?q=hypothyroidism+38+CFR", "best_effort": true },
+    "ischemic_heart_disease": { "suggested_cfr_search": "https://www.ecfr.gov/search?q=ischemic+heart+disease+38+CFR", "best_effort": true },
+    "mgus": { "suggested_cfr_search": "https://www.ecfr.gov/search?q=MGUS+38+CFR", "best_effort": true },
+    "multiple_myeloma": { "suggested_cfr_search": "https://www.ecfr.gov/search?q=multiple+myeloma+38+CFR", "best_effort": true },
+    "non_hodgkins_lymphoma": { "suggested_cfr_search": "https://www.ecfr.gov/search?q=non-hodgkin%27s+lymphoma+38+CFR", "best_effort": true },
+    "parkinson_disease": { "suggested_cfr_search": "https://www.ecfr.gov/search?q=parkinson%27s+disease+38+CFR", "best_effort": true, "note": "main file includes diagnostic_code 8005 for Parkinsonism; verify exact CFR crosswalk." },
+    "peripheral_neuropathy": { "suggested_cfr_search": "https://www.ecfr.gov/search?q=peripheral+neuropathy+38+CFR", "best_effort": true },
+    "porphyria_cutanea_tarda": { "suggested_cfr_search": "https://www.ecfr.gov/search?q=porphyria+cutanea+tarda+38+CFR", "best_effort": true },
+    "prostate_cancer": { "suggested_cfr_search": "https://www.ecfr.gov/search?q=prostate+cancer+38+CFR", "best_effort": true },
+    "lung_cancer": { "suggested_cfr_search": "https://www.ecfr.gov/search?q=lung+cancer+38+CFR", "best_effort": true },
+    "soft_tissue_sarcoma": { "suggested_cfr_search": "https://www.ecfr.gov/search?q=soft+tissue+sarcoma+38+CFR", "best_effort": true },
+    "spina_bifida_offspring": { "suggested_cfr_search": "https://www.ecfr.gov/search?q=spina+bifida+38+CFR", "best_effort": true }
+  }
+}
