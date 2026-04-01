@@ -14,6 +14,12 @@
         "diagnostic_code": "6260",
         "title": "Tinnitus, recurrent",
         "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFR378242b2776122d/section-4.87"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "6260",
+        "title": "Tinnitus, recurrent.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "rating_logic": {
@@ -26,7 +32,9 @@
       "Service event/exposure history (e.g., hazardous noise) documented in records if it exists",
       "Treatment history (hearing protection, audiology visits, etc.)"
     ],
-    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
+    "diagnostic_code": "6260",
+    "va_verified": true
   },
   {
     "id": "knee_flexion",
@@ -166,10 +174,9 @@
     ],
     "rating_logic": {
       "type": "general_formula",
-      "summary": "PTSD is evaluated under the General Rating Formula (0–100%) based on occupational and social impairment and symptoms."
+      "summary": "Ratings based on symptom severity, frequency, and functional impact under the General Rating Formula for Mental Disorders."
     },
     "evidence_checklist": [
-      "Mental health diagnosis and treatment notes (therapy/medication) if present",
       "Symptom frequency/severity and functional impact (work, relationships, sleep)",
       "Stressors/events documented where possible (records or statements)",
       "Any relevant exam results (e.g., C&P mental health exam) if performed"
@@ -192,6 +199,12 @@
         "diagnostic_code": "8100",
         "title": "Migraine headaches",
         "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFR378242b2776122d/section-4.124a"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "8100",
+        "title": "Migraine",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "rating_logic": {
@@ -216,20 +229,21 @@
         }
       ]
     },
-   "strategy": [
-  "Document frequency and severity of headaches.",
-  "Describe prostrating attacks (needing to lie down).",
-  "Show functional impact (missed work, reduced productivity).",
-  "Match symptoms to DC 8100 language (severity ladder)."
-],
-
+    "strategy": [
+      "Document frequency and severity of headaches.",
+      "Describe prostrating attacks (needing to lie down).",
+      "Show functional impact (missed work, reduced productivity).",
+      "Match symptoms to DC 8100 language (severity ladder)."
+    ],
     "evidence_checklist": [
       "Frequency and severity of headaches documented in medical records or statements",
       "Notes describing prostrating attacks (needing to lie down, inability to function)",
       "Impact on work, concentration, or daily functioning",
       "Treatment history (medication, neurology visits, ER visits if applicable)"
     ],
-    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
+    "diagnostic_code": "8100",
+    "va_verified": true
   },
   {
     "id": "sleep_apnea",
@@ -247,6 +261,12 @@
         "diagnostic_code": "6847",
         "title": "Sleep Apnea Syndromes",
         "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "6847",
+        "title": "Sleep Apnea Syndromes.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "rating_logic": {
@@ -258,7 +278,9 @@
       "CPAP prescription or treatment documentation",
       "Functional impact such as daytime fatigue"
     ],
-    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
+    "diagnostic_code": "6847",
+    "va_verified": true
   },
   {
     "id": "asthma",
@@ -276,6 +298,12 @@
         "diagnostic_code": "6602",
         "title": "Asthma, bronchial",
         "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "6602",
+        "title": "Asthma, bronchial.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "rating_logic": {
@@ -287,7 +315,9 @@
       "Medication usage history",
       "Frequency of exacerbations"
     ],
-    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
+    "diagnostic_code": "6602",
+    "va_verified": true
   },
   {
     "id": "depression",
@@ -305,6 +335,12 @@
         "diagnostic_code": "9434",
         "title": "General Rating Formula for Mental Disorders (Depression)",
         "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFRfa64377db09ae97/section-4.130"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "9434",
+        "title": "Major depressive disorder.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "rating_logic": {
@@ -317,24 +353,45 @@
       "Stressors/events documented where possible (records or statements)",
       "Any relevant exam results (e.g., C&P mental health exam) if performed"
     ],
-    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-  }
-  ,
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
+    "diagnostic_code": "9434",
+    "va_verified": true
+  },
   {
     "id": "diabetes_mellitus",
     "name": "Diabetes Mellitus (Diabetes)",
     "body_system": "Endocrine/Metabolic",
-    "aliases": ["diabetes", "type 2 diabetes", "type 1 diabetes"],
+    "aliases": [
+      "diabetes",
+      "type 2 diabetes",
+      "type 1 diabetes"
+    ],
     "cfr": [
       {
         "section": "38 CFR Part 4 Subpart B",
         "diagnostic_code": "7913",
         "title": "Diabetes mellitus",
         "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "7541",
+        "title": "Renal involvement in diabetes mellitus type I or II.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "7913",
+        "title": "Diabetes mellitus.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
-    "va_presumptive": ["Agent Orange"],
-    "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
+    "va_presumptive": [
+      "Agent Orange"
+    ],
+    "va_presumptive_sources": [
+      "https://www.publichealth.va.gov/exposures/agentorange/"
+    ],
     "va_verified": true,
     "rating_logic": {
       "type": "complications_based",
@@ -345,19 +402,37 @@
       "Relevant labs (A1c, glucose), treatment history",
       "Complications (neuropathy, nephropathy, retinopathy) documentation"
     ],
-    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
+    "diagnostic_code": "7541"
   },
   {
     "id": "intervertebral_disc_syndrome",
     "name": "Intervertebral Disc Syndrome (IVDS)",
     "body_system": "Musculoskeletal/Spine",
-    "aliases": ["disc herniation", "IVDS", "herniated disc", "disc syndrome"],
+    "aliases": [
+      "disc herniation",
+      "IVDS",
+      "herniated disc",
+      "disc syndrome"
+    ],
     "cfr": [
       {
         "section": "38 CFR § 4.71a",
         "diagnostic_code": "5243",
         "title": "Intervertebral disc syndrome",
         "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/section-4.71a"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "5242",
+        "title": "Degenerative arthritis, degenerative disc disease other than intervertebral disc syndrome (also, see either DC 5003 or 5010).",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "5243",
+        "title": "Intervertebral disc syndrome.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "rating_logic": {
@@ -369,13 +444,19 @@
       "Documentation of incapacitating episodes (number, treatment visits)",
       "Functional limitations (ambulatory, lifting, bending)"
     ],
-    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
+    "diagnostic_code": "5242",
+    "va_verified": true
   },
   {
     "id": "degenerative_arthritis",
     "name": "Degenerative Arthritis / Osteoarthritis",
     "body_system": "Musculoskeletal",
-    "aliases": ["osteoarthritis", "degenerative joint disease", "arthritis"],
+    "aliases": [
+      "osteoarthritis",
+      "degenerative joint disease",
+      "arthritis"
+    ],
     "cfr": [
       {
         "section": "38 CFR § 4.71a",
@@ -395,516 +476,1432 @@
     ],
     "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
   },
-{
-  "id": "coronary_artery_disease",
-  "name": "Coronary Artery Disease (Ischemic Heart Disease)",
-  "body_system": "Cardiac",
-  "aliases": ["cad","ischemic heart disease","coronary disease"],
-  "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "7000", "title": "Heart conditions", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
-  "va_presumptive": ["Agent Orange"],
-  "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
-  "best_effort": true,
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "chloracne",
-  "name": "Chloracne / Acneform Disease",
-  "body_system": "Dermatology",
-  "aliases": ["chloracne","acneform disease","acne-like eruption"],
-  "va_presumptive": ["Agent Orange"],
-  "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
-  "cfr": [{ "section": "38 CFR Part 3/4 (see VA presumption)", "diagnostic_code": "see VA", "title": "Agent Orange presumptive condition - chloracne", "url": "https://www.publichealth.va.gov/exposures/agentorange/" }],
-  "va_verified": true,
-  "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data."
-},
-{
-  "id": "hypothyroidism",
-  "name": "Hypothyroidism",
-  "body_system": "Endocrine",
-  "aliases": ["hypothyroidism","low thyroid"],
-  "va_presumptive": ["Agent Orange"],
-  "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
-  "cfr": [{ "section": "38 CFR Part 4 Subpart B (see VA presumption)", "diagnostic_code": "see VA", "title": "Hypothyroidism (Agent Orange presumption)", "url": "https://www.publichealth.va.gov/exposures/agentorange/" }],
-  "va_verified": true,
-  "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data."
-},
-{
-  "id": "mgus",
-  "name": "Monoclonal Gammopathy of Undetermined Significance (MGUS)",
-  "body_system": "Hematologic",
-  "aliases": ["mgus","monoclonal gammopathy"],
-  "va_presumptive": ["Agent Orange"],
-  "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
-  "cfr": [{ "section": "38 CFR Part 3/4 (see VA presumption)", "diagnostic_code": "see VA", "title": "MGUS (Agent Orange presumption)", "url": "https://www.publichealth.va.gov/exposures/agentorange/" }],
-  "va_verified": true,
-  "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data."
-},
-{
-  "id": "non_hodgkins_lymphoma",
-  "name": "Non-Hodgkin's Lymphoma",
-  "body_system": "Oncology/Hematology",
-  "aliases": ["non-hodgkin's lymphoma","nhl"],
-  "va_presumptive": ["Agent Orange"],
-  "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
-  "cfr": [{ "section": "38 CFR Part 3/4 (see VA presumption)", "diagnostic_code": "see VA", "title": "Non-Hodgkin's Lymphoma (Agent Orange presumption)", "url": "https://www.publichealth.va.gov/exposures/agentorange/" }],
-  "va_verified": true,
-  "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data."
-},
-{
-  "id": "porphyria_cutanea_tarda",
-  "name": "Porphyria Cutanea Tarda",
-  "body_system": "Hepatic/Dermatology",
-  "aliases": ["porphyria cutanea tarda","PCT"],
-  "va_presumptive": ["Agent Orange"],
-  "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
-  "cfr": [{ "section": "38 CFR Part 3/4 (see VA presumption)", "diagnostic_code": "see VA", "title": "Porphyria Cutanea Tarda (Agent Orange presumption)", "url": "https://www.publichealth.va.gov/exposures/agentorange/" }],
-  "va_verified": true,
-  "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data."
-},
-{
-  "id": "soft_tissue_sarcoma",
-  "name": "Soft Tissue Sarcoma",
-  "body_system": "Oncology",
-  "aliases": ["soft tissue sarcoma","sarcoma"],
-  "va_presumptive": ["Agent Orange"],
-  "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
-  "cfr": [{ "section": "38 CFR Part 3/4 (see VA presumption)", "diagnostic_code": "see VA", "title": "Soft tissue sarcomas (Agent Orange presumption)", "url": "https://www.publichealth.va.gov/exposures/agentorange/" }],
-  "va_verified": true,
-  "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data."
-},
-{
-  "id": "al_amyloidosis",
-  "name": "AL Amyloidosis",
-  "body_system": "Hematologic/Oncology",
-  "aliases": ["amyloidosis","AL amyloidosis"],
-  "va_presumptive": ["Agent Orange"],
-  "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
-  "cfr": [{ "section": "38 CFR Part 3/4 (see VA presumption)", "diagnostic_code": "see VA", "title": "Agent Orange presumptive condition - AL amyloidosis", "url": "https://www.publichealth.va.gov/exposures/agentorange/" }],
-  "va_verified": true,
-  "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data."
-},
-{
-  "id": "bladder_cancer",
-  "name": "Bladder Cancer",
-  "body_system": "Oncology/Urology",
-  "aliases": ["bladder cancer","urothelial carcinoma"],
-  "va_presumptive": ["Agent Orange"],
-  "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
-  "cfr": [{ "section": "38 CFR Part 3/4 (see VA presumption)", "diagnostic_code": "see VA", "title": "Agent Orange presumptive condition - bladder cancer", "url": "https://www.publichealth.va.gov/exposures/agentorange/" }],
-  "va_verified": true,
-  "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data."
-},
-{
-  "id": "hodgkin_lymphoma",
-  "name": "Hodgkin's Disease / Hodgkin Lymphoma",
-  "body_system": "Oncology/Hematology",
-  "aliases": ["hodgkin's disease","hodgkin lymphoma"],
-  "va_presumptive": ["Agent Orange"],
-  "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
-  "cfr": [{ "section": "38 CFR Part 3/4 (see VA presumption)", "diagnostic_code": "see VA", "title": "Agent Orange presumptive condition - Hodgkin lymphoma", "url": "https://www.publichealth.va.gov/exposures/agentorange/" }],
-  "best_effort": true,
-  "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data."
-},
-{
-  "id": "multiple_myeloma",
-  "name": "Multiple Myeloma",
-  "body_system": "Oncology/Hematology",
-  "aliases": ["multiple myeloma","plasma cell myeloma"],
-  "va_presumptive": ["Agent Orange"],
-  "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
-  "cfr": [{ "section": "38 CFR Part 3/4 (see VA presumption)", "diagnostic_code": "see VA", "title": "Agent Orange presumptive condition - multiple myeloma", "url": "https://www.publichealth.va.gov/exposures/agentorange/" }],
-  "va_verified": true,
-  "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data."
-},
-{
-  "id": "chronic_b_cell_leukemia",
-  "name": "Chronic B-cell Leukemias",
-  "body_system": "Oncology/Hematology",
-  "aliases": ["chronic b-cell leukemia","cll","chronic lymphocytic leukemia"],
-  "va_presumptive": ["Agent Orange"],
-  "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
-  "cfr": [{ "section": "38 CFR Part 3/4 (see VA presumption)", "diagnostic_code": "see VA", "title": "Agent Orange presumptive condition - chronic B-cell leukemias", "url": "https://www.publichealth.va.gov/exposures/agentorange/" }],
-  "va_verified": true,
-  "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data."
-},
-{
-  "id": "hypertension",
-  "name": "Hypertension (High Blood Pressure)",
-  "body_system": "Cardiac/Metabolic",
-  "aliases": ["high blood pressure","htn"],
-  "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "7100", "title": "Hypertension and cardiovascular", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
-  "va_presumptive": ["Agent Orange"],
-  "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
-  "va_verified": true,
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "heart_failure",
-  "name": "Heart Failure (Congestive Heart Failure)",
-  "body_system": "Cardiac",
-  "aliases": ["heart failure","congestive heart failure","chf"],
-  "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "7101", "title": "Heart failure", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "stroke_cva",
-  "name": "Stroke / Cerebrovascular Accident (CVA)",
-  "body_system": "Neurological",
-  "aliases": ["stroke","cva","brain attack"],
-  "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "8000", "title": "Neurological conditions", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "traumatic_brain_injury",
-  "name": "Traumatic Brain Injury (TBI)",
-  "body_system": "Neurological",
-  "aliases": ["tbi","brain injury","concussion"],
-  "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "8001", "title": "Traumatic brain injury/neurology", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "spinal_cord_injury",
-  "name": "Spinal Cord Injury",
-  "body_system": "Neurological/Spine",
-  "aliases": ["spinal cord injury","paraplegia","quadriplegia"],
-  "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "8520", "title": "Paralysis and spinal cord conditions", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "chronic_low_back_pain",
-  "name": "Chronic Low Back Pain / Lumbosacral Strain",
-  "body_system": "Musculoskeletal/Spine",
-  "aliases": ["low back pain","lumbosacral strain","back pain"],
-  "cfr": [{ "section": "38 CFR § 4.71a", "diagnostic_code": "5237", "title": "Lumbosacral or cervical strain and spine", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "neck_pain_cervicalgia",
-  "name": "Neck Pain / Cervical Strain",
-  "body_system": "Musculoskeletal/Spine",
-  "aliases": ["neck pain","cervical strain","cervicalgia"],
-  "cfr": [{ "section": "38 CFR § 4.71a", "diagnostic_code": "5237", "title": "Spine conditions", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "shoulder_rotator_cuff",
-  "name": "Shoulder Conditions (Rotator Cuff, Tendinopathy)",
-  "body_system": "Musculoskeletal",
-  "aliases": ["rotator cuff","shoulder impingement","shoulder pain"],
-  "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "5200", "title": "Shoulder conditions", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "hip_osteoarthritis",
-  "name": "Hip Osteoarthritis",
-  "body_system": "Musculoskeletal",
-  "aliases": ["hip arthritis","degenerative hip","hip pain"],
-  "cfr": [{ "section": "38 CFR § 4.71a", "diagnostic_code": "5020", "title": "Hip conditions/arthritis", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "knee_osteoarthritis",
-  "name": "Knee Osteoarthritis",
-  "body_system": "Musculoskeletal",
-  "aliases": ["knee arthritis","degenerative knee","knee pain"],
-  "cfr": [{ "section": "38 CFR § 4.71a", "diagnostic_code": "5260", "title": "Knee conditions/limitation of motion", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "total_joint_replacement",
-  "name": "Total Joint Replacement (Hip/Knee/Shoulder)",
-  "body_system": "Musculoskeletal",
-  "aliases": ["joint replacement","arthroplasty","prosthetic joint"],
-  "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "5000", "title": "Joint replacements/arthroplasty", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "carpal_tunnel_syndrome",
-  "name": "Carpal Tunnel Syndrome",
-  "body_system": "Neuromuscular",
-  "aliases": ["carpal tunnel","median nerve compression","hand numbness"],
-  "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "8530", "title": "Peripheral nerve conditions", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "lateral_epicondylitis",
-  "name": "Lateral Epicondylitis (Tennis Elbow)",
-  "body_system": "Musculoskeletal",
-  "aliases": ["tennis elbow","epicondylitis","elbow pain"],
-  "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "5206", "title": "Elbow/joint conditions", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "plantar_fasciitis",
-  "name": "Plantar Fasciitis",
-  "body_system": "Musculoskeletal",
-  "aliases": ["heel pain","plantar fasciitis","arch pain"],
-  "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "5271", "title": "Foot conditions", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "gout",
-  "name": "Gout",
-  "body_system": "Musculoskeletal/Metabolic",
-  "aliases": ["gouty arthritis","podagra"],
-  "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "5001", "title": "Arthritis/gout", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "peripheral_neuropathy",
-  "name": "Peripheral Neuropathy",
-  "body_system": "Neurological",
-  "aliases": ["neuropathy","peripheral nerve damage","numbness"],
-  "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "8510", "title": "Peripheral neuropathy", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
-  "va_presumptive": ["Agent Orange"],
-  "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
-  "va_verified": true,
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "peripheral_artery_disease",
-  "name": "Peripheral Artery Disease (PAD)",
-  "body_system": "Vascular",
-  "aliases": ["pad","peripheral vascular disease","leg ischemia"],
-  "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "7120", "title": "Vascular conditions", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "copd",
-  "name": "Chronic Obstructive Pulmonary Disease (COPD)",
-  "body_system": "Respiratory",
-  "aliases": ["copd","emphysema","chronic bronchitis"],
-  "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "6604", "title": "Respiratory conditions", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "chronic_bronchitis",
-  "name": "Chronic Bronchitis",
-  "body_system": "Respiratory",
-  "aliases": ["chronic bronchitis","bronchitic COPD"],
-  "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "6603", "title": "Bronchitis/respiratory", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "chronic_pain_syndrome",
-  "name": "Chronic Pain Syndrome",
-  "body_system": "General",
-  "aliases": ["chronic pain","persistent pain"],
-  "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "5000", "title": "Chronic pain and related conditions", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "cancer_general",
-  "name": "Cancer (General)",
-  "body_system": "Oncology",
-  "aliases": ["cancer","malignancy","neoplasm"],
-  "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "7500", "title": "Oncology/cancer conditions", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "prostate_cancer",
-  "name": "Prostate Cancer",
-  "body_system": "Oncology",
-  "aliases": ["prostate cancer","prostatic neoplasm"],
-  "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "XXXX", "title": "Prostate cancer (see CFR)", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
-  "va_presumptive": ["Agent Orange"],
-  "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
-  "va_verified": true,
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "lung_cancer",
-  "name": "Lung Cancer",
-  "body_system": "Oncology/Respiratory",
-  "aliases": ["lung cancer","pulmonary carcinoma"],
-  "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "XXXX", "title": "Lung cancer (see CFR)", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
-  "va_presumptive": ["Agent Orange"],
-  "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
-  "va_verified": true,
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "skin_cancer",
-  "name": "Skin Cancer",
-  "body_system": "Dermatology/Oncology",
-  "aliases": ["skin cancer","basal cell carcinoma","squamous cell carcinoma"],
-  "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "7501", "title": "Skin cancer", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "traumatic_amputation",
-  "name": "Traumatic Amputation",
-  "body_system": "Musculoskeletal/Extremities",
-  "aliases": ["amputation","limb loss","lost limb"],
-  "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "5125", "title": "Amputation and prosthesis-related ratings", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "prosthetic_issues",
-  "name": "Prosthetic Device Issues / Residual Limb Problems",
-  "body_system": "Rehabilitation",
-  "aliases": ["prosthesis issues","residual limb","stump problems"],
-  "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "5000", "title": "Prosthetic-related conditions", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "vision_loss",
-  "name": "Vision Loss / Visual Impairment",
-  "body_system": "Ophthalmology",
-  "aliases": ["vision loss","low vision","blindness"],
-  "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "6000", "title": "Visual system conditions", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "cataracts",
-  "name": "Cataracts",
-  "body_system": "Ophthalmology",
-  "aliases": ["cataract","lens opacity"],
-  "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "6010", "title": "Cataracts and lens conditions", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "hepatitis_c",
-  "name": "Hepatitis C",
-  "body_system": "Hepatic/Infectious",
-  "aliases": ["hep c","hepatitis c virus"],
-  "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "7502", "title": "Liver diseases", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "chronic_kidney_disease",
-  "name": "Chronic Kidney Disease (CKD)",
-  "body_system": "Renal",
-  "aliases": ["ckd","chronic kidney disease","renal insufficiency"],
-  "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "7503", "title": "Kidney/renal conditions", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "liver_disease",
-  "name": "Liver Disease (Hepatic Conditions)",
-  "body_system": "Hepatic",
-  "aliases": ["liver disease","hepatic disease","cirrhosis"],
-  "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "7504", "title": "Liver conditions", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "obstructive_sleep_apnea",
-  "name": "Obstructive Sleep Apnea (OSA)",
-  "body_system": "Respiratory/Sleep",
-  "aliases": ["sleep apnea","osa","cpap"],
-  "cfr": [{ "section": "38 CFR § 4.97", "diagnostic_code": "6847", "title": "Sleep apnea syndromes", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "substance_use_disorder",
-  "name": "Substance Use Disorder",
-  "body_system": "Behavioral Health",
-  "aliases": ["substance use","sud","drug dependence"],
-  "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "9435", "title": "Substance use and dependence (see mental disorders)", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "alcohol_use_disorder",
-  "name": "Alcohol Use Disorder",
-  "body_system": "Behavioral Health",
-  "aliases": ["alcoholism","alcohol use disorder","alcohol dependence"],
-  "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "9436", "title": "Alcohol-related disorders (see mental disorders)", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "generalized_anxiety_disorder",
-  "name": "Generalized Anxiety Disorder (GAD)",
-  "body_system": "Mental Health",
-  "aliases": ["anxiety","gad","panic"],
-  "cfr": [{ "section": "38 CFR § 4.130", "diagnostic_code": "9400", "title": "Anxiety and related disorders", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "bipolar_disorder",
-  "name": "Bipolar Disorder",
-  "body_system": "Mental Health",
-  "aliases": ["bipolar","manic depression"],
-  "cfr": [{ "section": "38 CFR § 4.130", "diagnostic_code": "9431", "title": "Bipolar and related disorders", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "schizophrenia",
-  "name": "Schizophrenia and Psychotic Disorders",
-  "body_system": "Mental Health",
-  "aliases": ["schizophrenia","psychosis","schizoaffective"],
-  "cfr": [{ "section": "38 CFR § 4.130", "diagnostic_code": "9460", "title": "Schizophrenia and psychotic disorders", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "parkinson_disease",
-  "name": "Parkinson's Disease",
-  "body_system": "Neurological",
-  "aliases": ["parkinson's","parkinsonism"],
-  "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "8005", "title": "Parkinsonism and movement disorders", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
-  "va_presumptive": ["Agent Orange"],
-  "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
-  "va_verified": true,
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "als",
-  "name": "Amyotrophic Lateral Sclerosis (ALS)",
-  "body_system": "Neurological",
-  "aliases": ["als","lou gehrig disease","motor neuron disease"],
-  "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "8008", "title": "Motor neuron diseases", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "rheumatoid_arthritis",
-  "name": "Rheumatoid Arthritis",
-  "body_system": "Musculoskeletal/Autoimmune",
-  "aliases": ["ra","rheumatoid arthritis"],
-  "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "5002", "title": "Rheumatoid and inflammatory arthritis", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "fibromyalgia",
-  "name": "Fibromyalgia",
-  "body_system": "Musculoskeletal/General",
-  "aliases": ["fibromyalgia","widespread pain syndrome"],
-  "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "5000", "title": "Generalized pain syndromes", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "systemic_lupus_erythematosus",
-  "name": "Systemic Lupus Erythematosus (SLE)",
-  "body_system": "Rheumatologic/Autoimmune",
-  "aliases": ["lupus","sLE","autoimmune lupus"],
-  "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "5000", "title": "Autoimmune/rheumatologic conditions", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "chronic_fatigue_syndrome",
-  "name": "Chronic Fatigue Syndrome / Myalgic Encephalomyelitis",
-  "body_system": "General",
-  "aliases": ["cfs","me","myalgic encephalomyelitis"],
-  "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "5000", "title": "Chronic fatigue and related syndromes", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
-  "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
-},
-{
-  "id": "gulf_war_illness",
-  "name": "Gulf War Illness / Multi-symptom Illness",
-  "body_system": "General",
-  "aliases": ["gulf war illness","multi-symptom illness"],
-  "cfr": [{ "section": "38 CFR Part 3/4", "diagnostic_code": "GWI", "title": "Gulf War veteran conditions (see VA guidance)", "url": "https://www.publichealth.va.gov/exposures/gulf-war/" }],
-  "va_presumptive": ["Gulf War Illness"],
-  "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/gulf-war/"],
-  "disclaimer": "Educational mapping only. Refer to VA guidance for presumption lists and criteria."
-},
-{
-  "id": "agent_orange_exposure",
-  "name": "Agent Orange Related Conditions (Presumptive)",
-  "body_system": "Various",
-  "aliases": ["agent orange","herbicide exposure"],
-  "cfr": [{ "section": "38 CFR Part 3", "diagnostic_code": "AO", "title": "Agent Orange presumptive conditions (see VA)", "url": "https://www.publichealth.va.gov/exposures/agentorange/" }],
-  "va_presumptive": ["Agent Orange"],
-  "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
-  "disclaimer": "Educational mapping only. Refer to VA guidance for presumption lists and criteria."
-}
-
+  {
+    "id": "coronary_artery_disease",
+    "name": "Coronary Artery Disease (Ischemic Heart Disease)",
+    "body_system": "Cardiac",
+    "aliases": [
+      "cad",
+      "ischemic heart disease",
+      "coronary disease"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B",
+        "diagnostic_code": "7000",
+        "title": "Heart conditions",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      }
+    ],
+    "va_presumptive": [
+      "Agent Orange"
+    ],
+    "va_presumptive_sources": [
+      "https://www.publichealth.va.gov/exposures/agentorange/"
+    ],
+    "best_effort": true,
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "chloracne",
+    "name": "Chloracne / Acneform Disease",
+    "body_system": "Dermatology",
+    "aliases": [
+      "chloracne",
+      "acneform disease",
+      "acne-like eruption"
+    ],
+    "va_presumptive": [
+      "Agent Orange"
+    ],
+    "va_presumptive_sources": [
+      "https://www.publichealth.va.gov/exposures/agentorange/"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 3/4 (see VA presumption)",
+        "diagnostic_code": "see VA",
+        "title": "Agent Orange presumptive condition - chloracne",
+        "url": "https://www.publichealth.va.gov/exposures/agentorange/"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "7828",
+        "title": "Acne.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "7829",
+        "title": "Chloracne.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+      }
+    ],
+    "va_verified": true,
+    "cfr_best_effort_search": "https://www.ecfr.gov/search?q=chloracne+38+CFR",
+    "best_effort": true,
+    "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data.",
+    "diagnostic_code": "7828"
+  },
+  {
+    "id": "hypothyroidism",
+    "name": "Hypothyroidism",
+    "body_system": "Endocrine",
+    "aliases": [
+      "hypothyroidism",
+      "low thyroid"
+    ],
+    "va_presumptive": [
+      "Agent Orange"
+    ],
+    "va_presumptive_sources": [
+      "https://www.publichealth.va.gov/exposures/agentorange/"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B (see VA presumption)",
+        "diagnostic_code": "see VA",
+        "title": "Hypothyroidism (Agent Orange presumption)",
+        "url": "https://www.publichealth.va.gov/exposures/agentorange/"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "7903",
+        "title": "Hypothyroidism.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+      }
+    ],
+    "va_verified": true,
+    "cfr_best_effort_search": "https://www.ecfr.gov/search?q=hypothyroidism+38+CFR",
+    "best_effort": true,
+    "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data.",
+    "diagnostic_code": "7903"
+  },
+  {
+    "id": "mgus",
+    "name": "Monoclonal Gammopathy of Undetermined Significance (MGUS)",
+    "body_system": "Hematologic",
+    "aliases": [
+      "mgus",
+      "monoclonal gammopathy"
+    ],
+    "va_presumptive": [
+      "Agent Orange"
+    ],
+    "va_presumptive_sources": [
+      "https://www.publichealth.va.gov/exposures/agentorange/"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 3/4 (see VA presumption)",
+        "diagnostic_code": "see VA",
+        "title": "MGUS (Agent Orange presumption)",
+        "url": "https://www.publichealth.va.gov/exposures/agentorange/"
+      }
+    ],
+    "va_verified": true,
+    "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data."
+  },
+  {
+    "id": "non_hodgkins_lymphoma",
+    "name": "Non-Hodgkin's Lymphoma",
+    "body_system": "Oncology/Hematology",
+    "aliases": [
+      "non-hodgkin's lymphoma",
+      "nhl"
+    ],
+    "va_presumptive": [
+      "Agent Orange"
+    ],
+    "va_presumptive_sources": [
+      "https://www.publichealth.va.gov/exposures/agentorange/"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 3/4 (see VA presumption)",
+        "diagnostic_code": "see VA",
+        "title": "Non-Hodgkin's Lymphoma (Agent Orange presumption)",
+        "url": "https://www.publichealth.va.gov/exposures/agentorange/"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "7709",
+        "title": "Hodgkin's lymphoma.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "7715",
+        "title": "Non-Hodgkin's lymphoma.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+      }
+    ],
+    "va_verified": true,
+    "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data.",
+    "diagnostic_code": "7709"
+  },
+  {
+    "id": "porphyria_cutanea_tarda",
+    "name": "Porphyria Cutanea Tarda",
+    "body_system": "Hepatic/Dermatology",
+    "aliases": [
+      "porphyria cutanea tarda",
+      "PCT"
+    ],
+    "va_presumptive": [
+      "Agent Orange"
+    ],
+    "va_presumptive_sources": [
+      "https://www.publichealth.va.gov/exposures/agentorange/"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 3/4 (see VA presumption)",
+        "diagnostic_code": "see VA",
+        "title": "Porphyria Cutanea Tarda (Agent Orange presumption)",
+        "url": "https://www.publichealth.va.gov/exposures/agentorange/"
+      }
+    ],
+    "va_verified": true,
+    "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data."
+  },
+  {
+    "id": "soft_tissue_sarcoma",
+    "name": "Soft Tissue Sarcoma",
+    "body_system": "Oncology",
+    "aliases": [
+      "soft tissue sarcoma",
+      "sarcoma"
+    ],
+    "va_presumptive": [
+      "Agent Orange"
+    ],
+    "va_presumptive_sources": [
+      "https://www.publichealth.va.gov/exposures/agentorange/"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 3/4 (see VA presumption)",
+        "diagnostic_code": "see VA",
+        "title": "Soft tissue sarcomas (Agent Orange presumption)",
+        "url": "https://www.publichealth.va.gov/exposures/agentorange/"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "5329",
+        "title": "Sarcoma, soft tissue.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "7123",
+        "title": "Soft tissue sarcoma.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "8540",
+        "title": "Soft-tissue sarcoma (Neurogenic origin).",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+      }
+    ],
+    "va_verified": true,
+    "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data.",
+    "diagnostic_code": "5329"
+  },
+  {
+    "id": "al_amyloidosis",
+    "name": "AL Amyloidosis",
+    "body_system": "Hematologic/Oncology",
+    "aliases": [
+      "amyloidosis",
+      "AL amyloidosis"
+    ],
+    "va_presumptive": [
+      "Agent Orange"
+    ],
+    "va_presumptive_sources": [
+      "https://www.publichealth.va.gov/exposures/agentorange/"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 3/4 (see VA presumption)",
+        "diagnostic_code": "see VA",
+        "title": "Agent Orange presumptive condition - AL amyloidosis",
+        "url": "https://www.publichealth.va.gov/exposures/agentorange/"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "7717",
+        "title": "AL amyloidosis (primary amyloidosis).",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+      }
+    ],
+    "va_verified": true,
+    "cfr_best_effort_search": "https://www.ecfr.gov/search?q=AL+amyloidosis+38+CFR",
+    "best_effort": true,
+    "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data.",
+    "diagnostic_code": "7717"
+  },
+  {
+    "id": "bladder_cancer",
+    "name": "Bladder Cancer",
+    "body_system": "Oncology/Urology",
+    "aliases": [
+      "bladder cancer",
+      "urothelial carcinoma"
+    ],
+    "va_presumptive": [
+      "Agent Orange"
+    ],
+    "va_presumptive_sources": [
+      "https://www.publichealth.va.gov/exposures/agentorange/"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 3/4 (see VA presumption)",
+        "diagnostic_code": "see VA",
+        "title": "Agent Orange presumptive condition - bladder cancer",
+        "url": "https://www.publichealth.va.gov/exposures/agentorange/"
+      }
+    ],
+    "va_verified": true,
+    "cfr_best_effort_search": "https://www.ecfr.gov/search?q=bladder+cancer+38+CFR",
+    "best_effort": true,
+    "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data."
+  },
+  {
+    "id": "hodgkin_lymphoma",
+    "name": "Hodgkin's Disease / Hodgkin Lymphoma",
+    "body_system": "Oncology/Hematology",
+    "aliases": [
+      "hodgkin's disease",
+      "hodgkin lymphoma"
+    ],
+    "va_presumptive": [
+      "Agent Orange"
+    ],
+    "va_presumptive_sources": [
+      "https://www.publichealth.va.gov/exposures/agentorange/"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 3/4 (see VA presumption)",
+        "diagnostic_code": "see VA",
+        "title": "Agent Orange presumptive condition - Hodgkin lymphoma",
+        "url": "https://www.publichealth.va.gov/exposures/agentorange/"
+      }
+    ],
+    "best_effort": true,
+    "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data."
+  },
+  {
+    "id": "multiple_myeloma",
+    "name": "Multiple Myeloma",
+    "body_system": "Oncology/Hematology",
+    "aliases": [
+      "multiple myeloma",
+      "plasma cell myeloma"
+    ],
+    "va_presumptive": [
+      "Agent Orange"
+    ],
+    "va_presumptive_sources": [
+      "https://www.publichealth.va.gov/exposures/agentorange/"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 3/4 (see VA presumption)",
+        "diagnostic_code": "see VA",
+        "title": "Agent Orange presumptive condition - multiple myeloma",
+        "url": "https://www.publichealth.va.gov/exposures/agentorange/"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "7712",
+        "title": "Multiple myeloma",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+      }
+    ],
+    "va_verified": true,
+    "cfr_best_effort_search": "https://www.ecfr.gov/search?q=multiple+myeloma+38+CFR",
+    "best_effort": true,
+    "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data.",
+    "diagnostic_code": "7712"
+  },
+  {
+    "id": "chronic_b_cell_leukemia",
+    "name": "Chronic B-cell Leukemias",
+    "body_system": "Oncology/Hematology",
+    "aliases": [
+      "chronic b-cell leukemia",
+      "cll",
+      "chronic lymphocytic leukemia"
+    ],
+    "va_presumptive": [
+      "Agent Orange"
+    ],
+    "va_presumptive_sources": [
+      "https://www.publichealth.va.gov/exposures/agentorange/"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 3/4 (see VA presumption)",
+        "diagnostic_code": "see VA",
+        "title": "Agent Orange presumptive condition - chronic B-cell leukemias",
+        "url": "https://www.publichealth.va.gov/exposures/agentorange/"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "7703",
+        "title": "Leukemia.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+      }
+    ],
+    "va_verified": true,
+    "cfr_best_effort_search": "https://www.ecfr.gov/search?q=chronic+B-cell+leukemia+38+CFR",
+    "best_effort": true,
+    "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data.",
+    "diagnostic_code": "7703"
+  },
+  {
+    "id": "hypertension",
+    "name": "Hypertension (High Blood Pressure)",
+    "body_system": "Cardiac/Metabolic",
+    "aliases": [
+      "high blood pressure",
+      "htn"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B",
+        "diagnostic_code": "7100",
+        "title": "Hypertension and cardiovascular",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      }
+    ],
+    "va_presumptive": [
+      "Agent Orange"
+    ],
+    "va_presumptive_sources": [
+      "https://www.publichealth.va.gov/exposures/agentorange/"
+    ],
+    "va_verified": true,
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "heart_failure",
+    "name": "Heart Failure (Congestive Heart Failure)",
+    "body_system": "Cardiac",
+    "aliases": [
+      "heart failure",
+      "congestive heart failure",
+      "chf"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B",
+        "diagnostic_code": "7101",
+        "title": "Heart failure",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "stroke_cva",
+    "name": "Stroke / Cerebrovascular Accident (CVA)",
+    "body_system": "Neurological",
+    "aliases": [
+      "stroke",
+      "cva",
+      "brain attack"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B",
+        "diagnostic_code": "8000",
+        "title": "Neurological conditions",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "traumatic_brain_injury",
+    "name": "Traumatic Brain Injury (TBI)",
+    "body_system": "Neurological",
+    "aliases": [
+      "tbi",
+      "brain injury",
+      "concussion"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B",
+        "diagnostic_code": "8001",
+        "title": "Traumatic brain injury/neurology",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "8045",
+        "title": "Residuals of traumatic brain injury (TBI).",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "9304",
+        "title": "Major or mild neurocognitive disorder due to traumatic brain injury.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
+    "diagnostic_code": "8045",
+    "va_verified": true
+  },
+  {
+    "id": "spinal_cord_injury",
+    "name": "Spinal Cord Injury",
+    "body_system": "Neurological/Spine",
+    "aliases": [
+      "spinal cord injury",
+      "paraplegia",
+      "quadriplegia"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B",
+        "diagnostic_code": "8520",
+        "title": "Paralysis and spinal cord conditions",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "6841",
+        "title": "Spinal cord injury with respiratory insufficiency.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
+    "diagnostic_code": "6841",
+    "va_verified": true
+  },
+  {
+    "id": "chronic_low_back_pain",
+    "name": "Chronic Low Back Pain / Lumbosacral Strain",
+    "body_system": "Musculoskeletal/Spine",
+    "aliases": [
+      "low back pain",
+      "lumbosacral strain",
+      "back pain"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.71a",
+        "diagnostic_code": "5237",
+        "title": "Lumbosacral or cervical strain and spine",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "neck_pain_cervicalgia",
+    "name": "Neck Pain / Cervical Strain",
+    "body_system": "Musculoskeletal/Spine",
+    "aliases": [
+      "neck pain",
+      "cervical strain",
+      "cervicalgia"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.71a",
+        "diagnostic_code": "5237",
+        "title": "Spine conditions",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "shoulder_rotator_cuff",
+    "name": "Shoulder Conditions (Rotator Cuff, Tendinopathy)",
+    "body_system": "Musculoskeletal",
+    "aliases": [
+      "rotator cuff",
+      "shoulder impingement",
+      "shoulder pain"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B",
+        "diagnostic_code": "5200",
+        "title": "Shoulder conditions",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "hip_osteoarthritis",
+    "name": "Hip Osteoarthritis",
+    "body_system": "Musculoskeletal",
+    "aliases": [
+      "hip arthritis",
+      "degenerative hip",
+      "hip pain"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.71a",
+        "diagnostic_code": "5020",
+        "title": "Hip conditions/arthritis",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "knee_osteoarthritis",
+    "name": "Knee Osteoarthritis",
+    "body_system": "Musculoskeletal",
+    "aliases": [
+      "knee arthritis",
+      "degenerative knee",
+      "knee pain"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.71a",
+        "diagnostic_code": "5260",
+        "title": "Knee conditions/limitation of motion",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "total_joint_replacement",
+    "name": "Total Joint Replacement (Hip/Knee/Shoulder)",
+    "body_system": "Musculoskeletal",
+    "aliases": [
+      "joint replacement",
+      "arthroplasty",
+      "prosthetic joint"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B",
+        "diagnostic_code": "5000",
+        "title": "Joint replacements/arthroplasty",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "carpal_tunnel_syndrome",
+    "name": "Carpal Tunnel Syndrome",
+    "body_system": "Neuromuscular",
+    "aliases": [
+      "carpal tunnel",
+      "median nerve compression",
+      "hand numbness"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B",
+        "diagnostic_code": "8530",
+        "title": "Peripheral nerve conditions",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "lateral_epicondylitis",
+    "name": "Lateral Epicondylitis (Tennis Elbow)",
+    "body_system": "Musculoskeletal",
+    "aliases": [
+      "tennis elbow",
+      "epicondylitis",
+      "elbow pain"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B",
+        "diagnostic_code": "5206",
+        "title": "Elbow/joint conditions",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "plantar_fasciitis",
+    "name": "Plantar Fasciitis",
+    "body_system": "Musculoskeletal",
+    "aliases": [
+      "heel pain",
+      "plantar fasciitis",
+      "arch pain"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B",
+        "diagnostic_code": "5271",
+        "title": "Foot conditions",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "5269",
+        "title": "Plantar fasciitis.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
+    "diagnostic_code": "5269",
+    "va_verified": true
+  },
+  {
+    "id": "gout",
+    "name": "Gout",
+    "body_system": "Musculoskeletal/Metabolic",
+    "aliases": [
+      "gouty arthritis",
+      "podagra"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B",
+        "diagnostic_code": "5001",
+        "title": "Arthritis/gout",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "5017",
+        "title": "Gout.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "7537",
+        "title": "Interstitial nephritis, including gouty nephropathy, disorders of calcium metabolism.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
+    "diagnostic_code": "5017",
+    "va_verified": true
+  },
+  {
+    "id": "peripheral_neuropathy",
+    "name": "Peripheral Neuropathy",
+    "body_system": "Neurological",
+    "aliases": [
+      "neuropathy",
+      "peripheral nerve damage",
+      "numbness"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B",
+        "diagnostic_code": "8510",
+        "title": "Peripheral neuropathy",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      }
+    ],
+    "va_presumptive": [
+      "Agent Orange"
+    ],
+    "va_presumptive_sources": [
+      "https://www.publichealth.va.gov/exposures/agentorange/"
+    ],
+    "va_verified": true,
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "peripheral_artery_disease",
+    "name": "Peripheral Artery Disease (PAD)",
+    "body_system": "Vascular",
+    "aliases": [
+      "pad",
+      "peripheral vascular disease",
+      "leg ischemia"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B",
+        "diagnostic_code": "7120",
+        "title": "Vascular conditions",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "copd",
+    "name": "Chronic Obstructive Pulmonary Disease (COPD)",
+    "body_system": "Respiratory",
+    "aliases": [
+      "copd",
+      "emphysema",
+      "chronic bronchitis"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B",
+        "diagnostic_code": "6604",
+        "title": "Respiratory conditions",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "6604",
+        "title": "Chronic obstructive pulmonary disease.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
+    "diagnostic_code": "6604",
+    "va_verified": true
+  },
+  {
+    "id": "chronic_bronchitis",
+    "name": "Chronic Bronchitis",
+    "body_system": "Respiratory",
+    "aliases": [
+      "chronic bronchitis",
+      "bronchitic COPD"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B",
+        "diagnostic_code": "6603",
+        "title": "Bronchitis/respiratory",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "6600",
+        "title": "Bronchitis, chronic.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
+    "diagnostic_code": "6600",
+    "va_verified": true
+  },
+  {
+    "id": "chronic_pain_syndrome",
+    "name": "Chronic Pain Syndrome",
+    "body_system": "General",
+    "aliases": [
+      "chronic pain",
+      "persistent pain"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B",
+        "diagnostic_code": "5000",
+        "title": "Chronic pain and related conditions",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "cancer_general",
+    "name": "Cancer (General)",
+    "body_system": "Oncology",
+    "aliases": [
+      "cancer",
+      "malignancy",
+      "neoplasm"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B",
+        "diagnostic_code": "7500",
+        "title": "Oncology/cancer conditions",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "prostate_cancer",
+    "name": "Prostate Cancer",
+    "body_system": "Oncology",
+    "aliases": [
+      "prostate cancer",
+      "prostatic neoplasm"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B",
+        "diagnostic_code": "XXXX",
+        "title": "Prostate cancer (see CFR)",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      }
+    ],
+    "va_presumptive": [
+      "Agent Orange"
+    ],
+    "va_presumptive_sources": [
+      "https://www.publichealth.va.gov/exposures/agentorange/"
+    ],
+    "va_verified": true,
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "lung_cancer",
+    "name": "Lung Cancer",
+    "body_system": "Oncology/Respiratory",
+    "aliases": [
+      "lung cancer",
+      "pulmonary carcinoma"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B",
+        "diagnostic_code": "XXXX",
+        "title": "Lung cancer (see CFR)",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      }
+    ],
+    "va_presumptive": [
+      "Agent Orange"
+    ],
+    "va_presumptive_sources": [
+      "https://www.publichealth.va.gov/exposures/agentorange/"
+    ],
+    "va_verified": true,
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "skin_cancer",
+    "name": "Skin Cancer",
+    "body_system": "Dermatology/Oncology",
+    "aliases": [
+      "skin cancer",
+      "basal cell carcinoma",
+      "squamous cell carcinoma"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B",
+        "diagnostic_code": "7501",
+        "title": "Skin cancer",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "traumatic_amputation",
+    "name": "Traumatic Amputation",
+    "body_system": "Musculoskeletal/Extremities",
+    "aliases": [
+      "amputation",
+      "limb loss",
+      "lost limb"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B",
+        "diagnostic_code": "5125",
+        "title": "Amputation and prosthesis-related ratings",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "prosthetic_issues",
+    "name": "Prosthetic Device Issues / Residual Limb Problems",
+    "body_system": "Rehabilitation",
+    "aliases": [
+      "prosthesis issues",
+      "residual limb",
+      "stump problems"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B",
+        "diagnostic_code": "5000",
+        "title": "Prosthetic-related conditions",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "vision_loss",
+    "name": "Vision Loss / Visual Impairment",
+    "body_system": "Ophthalmology",
+    "aliases": [
+      "vision loss",
+      "low vision",
+      "blindness"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B",
+        "diagnostic_code": "6000",
+        "title": "Visual system conditions",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "cataracts",
+    "name": "Cataracts",
+    "body_system": "Ophthalmology",
+    "aliases": [
+      "cataract",
+      "lens opacity"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B",
+        "diagnostic_code": "6010",
+        "title": "Cataracts and lens conditions",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "6027",
+        "title": "Cataract.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
+    "diagnostic_code": "6027",
+    "va_verified": true
+  },
+  {
+    "id": "hepatitis_c",
+    "name": "Hepatitis C",
+    "body_system": "Hepatic/Infectious",
+    "aliases": [
+      "hep c",
+      "hepatitis c virus"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B",
+        "diagnostic_code": "7502",
+        "title": "Liver diseases",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "7354",
+        "title": "Hepatitis C (or non-A, non-B hepatitis).",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "7544",
+        "title": "Renal disease caused by viral infection such as HIV, Hepatitis B, and Hepatitis C.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
+    "diagnostic_code": "7354",
+    "va_verified": true
+  },
+  {
+    "id": "chronic_kidney_disease",
+    "name": "Chronic Kidney Disease (CKD)",
+    "body_system": "Renal",
+    "aliases": [
+      "ckd",
+      "chronic kidney disease",
+      "renal insufficiency"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B",
+        "diagnostic_code": "7503",
+        "title": "Kidney/renal conditions",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "liver_disease",
+    "name": "Liver Disease (Hepatic Conditions)",
+    "body_system": "Hepatic",
+    "aliases": [
+      "liver disease",
+      "hepatic disease",
+      "cirrhosis"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B",
+        "diagnostic_code": "7504",
+        "title": "Liver conditions",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "7345",
+        "title": "Chronic liver disease without cirrhosis.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
+    "diagnostic_code": "7345",
+    "va_verified": true
+  },
+  {
+    "id": "obstructive_sleep_apnea",
+    "name": "Obstructive Sleep Apnea (OSA)",
+    "body_system": "Respiratory/Sleep",
+    "aliases": [
+      "sleep apnea",
+      "osa",
+      "cpap"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.97",
+        "diagnostic_code": "6847",
+        "title": "Sleep apnea syndromes",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "substance_use_disorder",
+    "name": "Substance Use Disorder",
+    "body_system": "Behavioral Health",
+    "aliases": [
+      "substance use",
+      "sud",
+      "drug dependence"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B",
+        "diagnostic_code": "9435",
+        "title": "Substance use and dependence (see mental disorders)",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "alcohol_use_disorder",
+    "name": "Alcohol Use Disorder",
+    "body_system": "Behavioral Health",
+    "aliases": [
+      "alcoholism",
+      "alcohol use disorder",
+      "alcohol dependence"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B",
+        "diagnostic_code": "9436",
+        "title": "Alcohol-related disorders (see mental disorders)",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "generalized_anxiety_disorder",
+    "name": "Generalized Anxiety Disorder (GAD)",
+    "body_system": "Mental Health",
+    "aliases": [
+      "anxiety",
+      "gad",
+      "panic"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.130",
+        "diagnostic_code": "9400",
+        "title": "Anxiety and related disorders",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "9400",
+        "title": "Generalized anxiety disorder.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
+    "diagnostic_code": "9400",
+    "va_verified": true
+  },
+  {
+    "id": "bipolar_disorder",
+    "name": "Bipolar Disorder",
+    "body_system": "Mental Health",
+    "aliases": [
+      "bipolar",
+      "manic depression"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.130",
+        "diagnostic_code": "9431",
+        "title": "Bipolar and related disorders",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "9432",
+        "title": "Bipolar disorder.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
+    "diagnostic_code": "9432",
+    "va_verified": true
+  },
+  {
+    "id": "schizophrenia",
+    "name": "Schizophrenia and Psychotic Disorders",
+    "body_system": "Mental Health",
+    "aliases": [
+      "schizophrenia",
+      "psychosis",
+      "schizoaffective"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.130",
+        "diagnostic_code": "9460",
+        "title": "Schizophrenia and psychotic disorders",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "9201",
+        "title": "Schizophrenia.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
+    "diagnostic_code": "9201",
+    "va_verified": true
+  },
+  {
+    "id": "parkinson_disease",
+    "name": "Parkinson's Disease",
+    "body_system": "Neurological",
+    "aliases": [
+      "parkinson's",
+      "parkinsonism"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B",
+        "diagnostic_code": "8005",
+        "title": "Parkinsonism and movement disorders",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      }
+    ],
+    "va_presumptive": [
+      "Agent Orange"
+    ],
+    "va_presumptive_sources": [
+      "https://www.publichealth.va.gov/exposures/agentorange/"
+    ],
+    "va_verified": true,
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "als",
+    "name": "Amyotrophic Lateral Sclerosis (ALS)",
+    "body_system": "Neurological",
+    "aliases": [
+      "als",
+      "lou gehrig disease",
+      "motor neuron disease"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B",
+        "diagnostic_code": "8008",
+        "title": "Motor neuron diseases",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "8017",
+        "title": "Amyotrophic lateral sclerosis.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
+    "diagnostic_code": "8017",
+    "va_verified": true
+  },
+  {
+    "id": "rheumatoid_arthritis",
+    "name": "Rheumatoid Arthritis",
+    "body_system": "Musculoskeletal/Autoimmune",
+    "aliases": [
+      "ra",
+      "rheumatoid arthritis"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B",
+        "diagnostic_code": "5002",
+        "title": "Rheumatoid and inflammatory arthritis",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "fibromyalgia",
+    "name": "Fibromyalgia",
+    "body_system": "Musculoskeletal/General",
+    "aliases": [
+      "fibromyalgia",
+      "widespread pain syndrome"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B",
+        "diagnostic_code": "5000",
+        "title": "Generalized pain syndromes",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "5025",
+        "title": "Fibromyalgia.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
+    "diagnostic_code": "5025",
+    "va_verified": true
+  },
+  {
+    "id": "systemic_lupus_erythematosus",
+    "name": "Systemic Lupus Erythematosus (SLE)",
+    "body_system": "Rheumatologic/Autoimmune",
+    "aliases": [
+      "lupus",
+      "sLE",
+      "autoimmune lupus"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B",
+        "diagnostic_code": "5000",
+        "title": "Autoimmune/rheumatologic conditions",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "6350",
+        "title": "Lupus erythematosus.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
+    "diagnostic_code": "6350",
+    "va_verified": true
+  },
+  {
+    "id": "chronic_fatigue_syndrome",
+    "name": "Chronic Fatigue Syndrome / Myalgic Encephalomyelitis",
+    "body_system": "General",
+    "aliases": [
+      "cfs",
+      "me",
+      "myalgic encephalomyelitis"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 4 Subpart B",
+        "diagnostic_code": "5000",
+        "title": "Chronic fatigue and related syndromes",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "6354",
+        "title": "Chronic Fatigue Syndrome (CFS).",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+      },
+      {
+        "section": "38 CFR Appendix B (parsed)",
+        "diagnostic_code": "8010",
+        "title": "Myelitis.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+      }
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
+    "diagnostic_code": "6354",
+    "va_verified": true
+  },
+  {
+    "id": "gulf_war_illness",
+    "name": "Gulf War Illness / Multi-symptom Illness",
+    "body_system": "General",
+    "aliases": [
+      "gulf war illness",
+      "multi-symptom illness"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 3/4",
+        "diagnostic_code": "GWI",
+        "title": "Gulf War veteran conditions (see VA guidance)",
+        "url": "https://www.publichealth.va.gov/exposures/gulf-war/"
+      }
+    ],
+    "va_presumptive": [
+      "Gulf War Illness"
+    ],
+    "va_presumptive_sources": [
+      "https://www.publichealth.va.gov/exposures/gulf-war/"
+    ],
+    "disclaimer": "Educational mapping only. Refer to VA guidance for presumption lists and criteria."
+  },
+  {
+    "id": "agent_orange_exposure",
+    "name": "Agent Orange Related Conditions (Presumptive)",
+    "body_system": "Various",
+    "aliases": [
+      "agent orange",
+      "herbicide exposure"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR Part 3",
+        "diagnostic_code": "AO",
+        "title": "Agent Orange presumptive conditions (see VA)",
+        "url": "https://www.publichealth.va.gov/exposures/agentorange/"
+      }
+    ],
+    "va_presumptive": [
+      "Agent Orange"
+    ],
+    "va_presumptive_sources": [
+      "https://www.publichealth.va.gov/exposures/agentorange/"
+    ],
+    "disclaimer": "Educational mapping only. Refer to VA guidance for presumption lists and criteria."
+  }
 ]
