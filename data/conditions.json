@@ -19,7 +19,8 @@
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "6260",
         "title": "Tinnitus, recurrent.",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "rating_logic": {
@@ -51,6 +52,27 @@
         "diagnostic_code": "5260",
         "title": "Leg, limitation of flexion",
         "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFRd3005f7d828ea7b/section-4.71a"
+      },
+      {
+        "section": "38 CFR Appendix B (best-effort)",
+        "diagnostic_code": "5206",
+        "title": "Forearm, limitation of flexion.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
+      },
+      {
+        "section": "38 CFR Appendix B (best-effort)",
+        "diagnostic_code": "5252",
+        "title": "Thigh, limitation of flexion.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
+      },
+      {
+        "section": "38 CFR Appendix B (best-effort)",
+        "diagnostic_code": "5260",
+        "title": "Leg, limitation of flexion.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "rating_logic": {
@@ -81,7 +103,10 @@
       "Functional impact (stairs, standing, walking, kneeling)",
       "Imaging and treatment history (PT, injections, braces) if documented"
     ],
-    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
+    "diagnostic_code": "5206",
+    "best_effort": true,
+    "cfr_best_effort_search": "Appendix B match (5206)"
   },
   {
     "id": "sciatic_nerve",
@@ -99,6 +124,13 @@
         "diagnostic_code": "8520",
         "title": "Sciatic nerve paralysis",
         "url": "https://www.law.cornell.edu/cfr/text/38/4.124a"
+      },
+      {
+        "section": "38 CFR Appendix B (best-effort)",
+        "diagnostic_code": "8520",
+        "title": "Sciatic nerve, paralysis.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "rating_logic": {
@@ -116,7 +148,10 @@
       "Symptoms + pattern (radiating pain, numbness, weakness)",
       "Neuro findings (reflexes, strength, sensation) if documented"
     ],
-    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
+    "diagnostic_code": "8520",
+    "best_effort": true,
+    "cfr_best_effort_search": "Appendix B match (8520)"
   },
   {
     "id": "hearing_loss",
@@ -204,7 +239,8 @@
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "8100",
         "title": "Migraine",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "rating_logic": {
@@ -266,7 +302,8 @@
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "6847",
         "title": "Sleep Apnea Syndromes.",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "rating_logic": {
@@ -303,7 +340,8 @@
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "6602",
         "title": "Asthma, bronchial.",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "rating_logic": {
@@ -340,7 +378,22 @@
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "9434",
         "title": "Major depressive disorder.",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
+      },
+      {
+        "section": "38 CFR Appendix B (best-effort)",
+        "diagnostic_code": "9433",
+        "title": "Persistent depressive disorder (dysthymia).",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
+      },
+      {
+        "section": "38 CFR Appendix B (best-effort)",
+        "diagnostic_code": "9435",
+        "title": "Unspecified depressive disorder.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "rating_logic": {
@@ -355,7 +408,9 @@
     ],
     "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
     "diagnostic_code": "9434",
-    "va_verified": true
+    "va_verified": true,
+    "best_effort": true,
+    "cfr_best_effort_search": "Appendix B match (9433)"
   },
   {
     "id": "diabetes_mellitus",
@@ -377,13 +432,15 @@
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "7541",
         "title": "Renal involvement in diabetes mellitus type I or II.",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       },
       {
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "7913",
         "title": "Diabetes mellitus.",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "va_presumptive": [
@@ -426,13 +483,15 @@
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "5242",
         "title": "Degenerative arthritis, degenerative disc disease other than intervertebral disc syndrome (also, see either DC 5003 or 5010).",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       },
       {
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "5243",
         "title": "Intervertebral disc syndrome.",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "rating_logic": {
@@ -528,13 +587,15 @@
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "7828",
         "title": "Acne.",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       },
       {
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "7829",
         "title": "Chloracne.",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "va_verified": true,
@@ -568,7 +629,8 @@
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "7903",
         "title": "Hypothyroidism.",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "va_verified": true,
@@ -627,13 +689,15 @@
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "7709",
         "title": "Hodgkin's lymphoma.",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       },
       {
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "7715",
         "title": "Non-Hodgkin's lymphoma.",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "va_verified": true,
@@ -690,19 +754,22 @@
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "5329",
         "title": "Sarcoma, soft tissue.",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       },
       {
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "7123",
         "title": "Soft tissue sarcoma.",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       },
       {
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "8540",
         "title": "Soft-tissue sarcoma (Neurogenic origin).",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "va_verified": true,
@@ -734,7 +801,8 @@
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "7717",
         "title": "AL amyloidosis (primary amyloidosis).",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "va_verified": true,
@@ -820,7 +888,8 @@
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "7712",
         "title": "Multiple myeloma",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "va_verified": true,
@@ -855,7 +924,8 @@
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "7703",
         "title": "Leukemia.",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "va_verified": true,
@@ -947,13 +1017,15 @@
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "8045",
         "title": "Residuals of traumatic brain injury (TBI).",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       },
       {
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "9304",
         "title": "Major or mild neurocognitive disorder due to traumatic brain injury.",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
@@ -980,7 +1052,8 @@
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "6841",
         "title": "Spinal cord injury with respiratory insufficiency.",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
@@ -1159,7 +1232,8 @@
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "5269",
         "title": "Plantar fasciitis.",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
@@ -1185,13 +1259,15 @@
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "5017",
         "title": "Gout.",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       },
       {
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "7537",
         "title": "Interstitial nephritis, including gouty nephropathy, disorders of calcium metabolism.",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
@@ -1239,9 +1315,19 @@
         "diagnostic_code": "7120",
         "title": "Vascular conditions",
         "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      },
+      {
+        "section": "38 CFR Appendix B (best-effort)",
+        "diagnostic_code": "7114",
+        "title": "Peripheral arterial disease.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
-    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
+    "diagnostic_code": "7114",
+    "best_effort": true,
+    "cfr_best_effort_search": "Appendix B match (7114)"
   },
   {
     "id": "copd",
@@ -1263,7 +1349,8 @@
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "6604",
         "title": "Chronic obstructive pulmonary disease.",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
@@ -1289,7 +1376,8 @@
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "6600",
         "title": "Bronchitis, chronic.",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
@@ -1478,7 +1566,8 @@
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "6027",
         "title": "Cataract.",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
@@ -1504,13 +1593,15 @@
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "7354",
         "title": "Hepatitis C (or non-A, non-B hepatitis).",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       },
       {
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "7544",
         "title": "Renal disease caused by viral infection such as HIV, Hepatitis B, and Hepatitis C.",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
@@ -1532,9 +1623,19 @@
         "diagnostic_code": "7503",
         "title": "Kidney/renal conditions",
         "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      },
+      {
+        "section": "38 CFR Appendix B (best-effort)",
+        "diagnostic_code": "7530",
+        "title": "Renal disease, chronic.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
-    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
+    "diagnostic_code": "7530",
+    "best_effort": true,
+    "cfr_best_effort_search": "Appendix B match (7530)"
   },
   {
     "id": "liver_disease",
@@ -1556,7 +1657,8 @@
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "7345",
         "title": "Chronic liver disease without cirrhosis.",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
@@ -1640,12 +1742,29 @@
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "9400",
         "title": "Generalized anxiety disorder.",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
+      },
+      {
+        "section": "38 CFR Appendix B (best-effort)",
+        "diagnostic_code": "9413",
+        "title": "Unspecified anxiety disorder.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
+      },
+      {
+        "section": "38 CFR Appendix B (best-effort)",
+        "diagnostic_code": "9425",
+        "title": "Illness anxiety disorder.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
     "diagnostic_code": "9400",
-    "va_verified": true
+    "va_verified": true,
+    "best_effort": true,
+    "cfr_best_effort_search": "Appendix B match (9413)"
   },
   {
     "id": "bipolar_disorder",
@@ -1666,7 +1785,8 @@
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "9432",
         "title": "Bipolar disorder.",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
@@ -1693,12 +1813,22 @@
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "9201",
         "title": "Schizophrenia.",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
+      },
+      {
+        "section": "38 CFR Appendix B (best-effort)",
+        "diagnostic_code": "9210",
+        "title": "Other specified and unspecified schizophrenia spectrum and other psychotic disorders.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
     "diagnostic_code": "9201",
-    "va_verified": true
+    "va_verified": true,
+    "best_effort": true,
+    "cfr_best_effort_search": "Appendix B match (9210)"
   },
   {
     "id": "parkinson_disease",
@@ -1714,6 +1844,20 @@
         "diagnostic_code": "8005",
         "title": "Parkinsonism and movement disorders",
         "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4"
+      },
+      {
+        "section": "38 CFR Appendix B (best-effort)",
+        "diagnostic_code": "7124",
+        "title": "Raynaud's disease (primary Raynaud's).",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
+      },
+      {
+        "section": "38 CFR Appendix B (best-effort)",
+        "diagnostic_code": "7911",
+        "title": "Addison's disease (adrenocortical insufficiency).",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "va_presumptive": [
@@ -1723,7 +1867,10 @@
       "https://www.publichealth.va.gov/exposures/agentorange/"
     ],
     "va_verified": true,
-    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
+    "diagnostic_code": "7124",
+    "best_effort": true,
+    "cfr_best_effort_search": "Appendix B match (7124)"
   },
   {
     "id": "als",
@@ -1745,7 +1892,8 @@
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "8017",
         "title": "Amyotrophic lateral sclerosis.",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
@@ -1789,7 +1937,8 @@
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "5025",
         "title": "Fibromyalgia.",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
@@ -1816,12 +1965,22 @@
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "6350",
         "title": "Lupus erythematosus.",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
+      },
+      {
+        "section": "38 CFR Appendix B (best-effort)",
+        "diagnostic_code": "7809",
+        "title": "Discoid lupus erythematosus.",
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
     "diagnostic_code": "6350",
-    "va_verified": true
+    "va_verified": true,
+    "best_effort": true,
+    "cfr_best_effort_search": "Appendix B match (7809)"
   },
   {
     "id": "chronic_fatigue_syndrome",
@@ -1843,13 +2002,15 @@
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "6354",
         "title": "Chronic Fatigue Syndrome (CFS).",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       },
       {
         "section": "38 CFR Appendix B (parsed)",
         "diagnostic_code": "8010",
         "title": "Myelitis.",
-        "source": "/tmp/ecfr_pages/appendixB_matches.json"
+        "source": "/tmp/ecfr_pages/appendixB_matches.json",
+        "url": "file:///tmp/ecfr_pages/appendixB_matches.json"
       }
     ],
     "disclaimer": "Educational CFR mapping only. Not legal advice or representation.",
