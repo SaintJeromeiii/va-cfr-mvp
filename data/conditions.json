@@ -410,6 +410,7 @@
   "aliases": ["chloracne","acneform disease","acne-like eruption"],
   "va_presumptive": ["Agent Orange"],
   "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
+  "cfr": [{ "section": "38 CFR Part 3/4 (see VA presumption)", "diagnostic_code": "see VA", "title": "Agent Orange presumptive condition - chloracne", "url": "https://www.publichealth.va.gov/exposures/agentorange/" }],
   "best_effort": true,
   "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data."
 },
@@ -420,6 +421,7 @@
   "aliases": ["amyloidosis","AL amyloidosis"],
   "va_presumptive": ["Agent Orange"],
   "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
+  "cfr": [{ "section": "38 CFR Part 3/4 (see VA presumption)", "diagnostic_code": "see VA", "title": "Agent Orange presumptive condition - AL amyloidosis", "url": "https://www.publichealth.va.gov/exposures/agentorange/" }],
   "best_effort": true,
   "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data."
 },
@@ -430,6 +432,7 @@
   "aliases": ["bladder cancer","urothelial carcinoma"],
   "va_presumptive": ["Agent Orange"],
   "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
+  "cfr": [{ "section": "38 CFR Part 3/4 (see VA presumption)", "diagnostic_code": "see VA", "title": "Agent Orange presumptive condition - bladder cancer", "url": "https://www.publichealth.va.gov/exposures/agentorange/" }],
   "best_effort": true,
   "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data."
 },
@@ -440,6 +443,7 @@
   "aliases": ["hodgkin's disease","hodgkin lymphoma"],
   "va_presumptive": ["Agent Orange"],
   "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
+  "cfr": [{ "section": "38 CFR Part 3/4 (see VA presumption)", "diagnostic_code": "see VA", "title": "Agent Orange presumptive condition - Hodgkin lymphoma", "url": "https://www.publichealth.va.gov/exposures/agentorange/" }],
   "best_effort": true,
   "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data."
 },
@@ -450,6 +454,7 @@
   "aliases": ["multiple myeloma","plasma cell myeloma"],
   "va_presumptive": ["Agent Orange"],
   "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
+  "cfr": [{ "section": "38 CFR Part 3/4 (see VA presumption)", "diagnostic_code": "see VA", "title": "Agent Orange presumptive condition - multiple myeloma", "url": "https://www.publichealth.va.gov/exposures/agentorange/" }],
   "best_effort": true,
   "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data."
 },
@@ -460,6 +465,7 @@
   "aliases": ["chronic b-cell leukemia","cll","chronic lymphocytic leukemia"],
   "va_presumptive": ["Agent Orange"],
   "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
+  "cfr": [{ "section": "38 CFR Part 3/4 (see VA presumption)", "diagnostic_code": "see VA", "title": "Agent Orange presumptive condition - chronic B-cell leukemias", "url": "https://www.publichealth.va.gov/exposures/agentorange/" }],
   "best_effort": true,
   "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data."
 },
