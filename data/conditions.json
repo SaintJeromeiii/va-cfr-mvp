@@ -398,7 +398,70 @@
   "body_system": "Cardiac",
   "aliases": ["cad","ischemic heart disease","coronary disease"],
   "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "7000", "title": "Heart conditions", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
+  "va_presumptive": ["Agent Orange"],
+  "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
+  "best_effort": true,
   "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+},
+{
+  "id": "chloracne",
+  "name": "Chloracne / Acneform Disease",
+  "body_system": "Dermatology",
+  "aliases": ["chloracne","acneform disease","acne-like eruption"],
+  "va_presumptive": ["Agent Orange"],
+  "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
+  "best_effort": true,
+  "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data."
+},
+{
+  "id": "al_amyloidosis",
+  "name": "AL Amyloidosis",
+  "body_system": "Hematologic/Oncology",
+  "aliases": ["amyloidosis","AL amyloidosis"],
+  "va_presumptive": ["Agent Orange"],
+  "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
+  "best_effort": true,
+  "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data."
+},
+{
+  "id": "bladder_cancer",
+  "name": "Bladder Cancer",
+  "body_system": "Oncology/Urology",
+  "aliases": ["bladder cancer","urothelial carcinoma"],
+  "va_presumptive": ["Agent Orange"],
+  "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
+  "best_effort": true,
+  "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data."
+},
+{
+  "id": "hodgkin_lymphoma",
+  "name": "Hodgkin's Disease / Hodgkin Lymphoma",
+  "body_system": "Oncology/Hematology",
+  "aliases": ["hodgkin's disease","hodgkin lymphoma"],
+  "va_presumptive": ["Agent Orange"],
+  "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
+  "best_effort": true,
+  "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data."
+},
+{
+  "id": "multiple_myeloma",
+  "name": "Multiple Myeloma",
+  "body_system": "Oncology/Hematology",
+  "aliases": ["multiple myeloma","plasma cell myeloma"],
+  "va_presumptive": ["Agent Orange"],
+  "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
+  "best_effort": true,
+  "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data."
+},
+{
+  "id": "chronic_b_cell_leukemia",
+  "name": "Chronic B-cell Leukemias",
+  "body_system": "Oncology/Hematology",
+  "aliases": ["chronic b-cell leukemia","cll","chronic lymphocytic leukemia"],
+  "va_presumptive": ["Agent Orange"],
+  "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
+  "best_effort": true,
+  "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data."
 },
 {
   "id": "hypertension",
