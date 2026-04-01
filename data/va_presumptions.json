@@ -1,0 +1,16 @@
+{
+  "sources": {
+    "Agent Orange": {
+      "title": "Agent Orange Exposure - VA",
+      "url": "https://www.publichealth.va.gov/exposures/agentorange/",
+      "notes": "VA maintains an official list of Agent Orange presumptive conditions. Use this page as the authoritative source for building exact condition mappings."
+    },
+    "Gulf War": {
+      "title": "Gulf War Veterans' Illnesses / Exposures - VA",
+      "url": "https://www.publichealth.va.gov/exposures/gulf-war/",
+      "notes": "VA guidance for Gulf War-era veterans and presumptive conditions."
+    }
+  },
+  "imported_at": "2026-04-01T00:00:00Z",
+  "notes": "This file records authoritative VA presumption sources. To import specific condition lists, fetch and validate the VA pages and map each condition to `data/conditions.json` entries."
+}
