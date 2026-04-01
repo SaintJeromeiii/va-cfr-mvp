@@ -333,6 +333,9 @@
         "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B"
       }
     ],
+    "va_presumptive": ["Agent Orange"],
+    "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
+    "va_verified": true,
     "rating_logic": {
       "type": "complications_based",
       "summary": "Ratings keyed to complications (e.g., nephropathy, neuropathy, amputations) rather than a single numeric table."
@@ -411,7 +414,62 @@
   "va_presumptive": ["Agent Orange"],
   "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
   "cfr": [{ "section": "38 CFR Part 3/4 (see VA presumption)", "diagnostic_code": "see VA", "title": "Agent Orange presumptive condition - chloracne", "url": "https://www.publichealth.va.gov/exposures/agentorange/" }],
-  "best_effort": true,
+  "va_verified": true,
+  "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data."
+},
+{
+  "id": "hypothyroidism",
+  "name": "Hypothyroidism",
+  "body_system": "Endocrine",
+  "aliases": ["hypothyroidism","low thyroid"],
+  "va_presumptive": ["Agent Orange"],
+  "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
+  "cfr": [{ "section": "38 CFR Part 4 Subpart B (see VA presumption)", "diagnostic_code": "see VA", "title": "Hypothyroidism (Agent Orange presumption)", "url": "https://www.publichealth.va.gov/exposures/agentorange/" }],
+  "va_verified": true,
+  "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data."
+},
+{
+  "id": "mgus",
+  "name": "Monoclonal Gammopathy of Undetermined Significance (MGUS)",
+  "body_system": "Hematologic",
+  "aliases": ["mgus","monoclonal gammopathy"],
+  "va_presumptive": ["Agent Orange"],
+  "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
+  "cfr": [{ "section": "38 CFR Part 3/4 (see VA presumption)", "diagnostic_code": "see VA", "title": "MGUS (Agent Orange presumption)", "url": "https://www.publichealth.va.gov/exposures/agentorange/" }],
+  "va_verified": true,
+  "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data."
+},
+{
+  "id": "non_hodgkins_lymphoma",
+  "name": "Non-Hodgkin's Lymphoma",
+  "body_system": "Oncology/Hematology",
+  "aliases": ["non-hodgkin's lymphoma","nhl"],
+  "va_presumptive": ["Agent Orange"],
+  "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
+  "cfr": [{ "section": "38 CFR Part 3/4 (see VA presumption)", "diagnostic_code": "see VA", "title": "Non-Hodgkin's Lymphoma (Agent Orange presumption)", "url": "https://www.publichealth.va.gov/exposures/agentorange/" }],
+  "va_verified": true,
+  "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data."
+},
+{
+  "id": "porphyria_cutanea_tarda",
+  "name": "Porphyria Cutanea Tarda",
+  "body_system": "Hepatic/Dermatology",
+  "aliases": ["porphyria cutanea tarda","PCT"],
+  "va_presumptive": ["Agent Orange"],
+  "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
+  "cfr": [{ "section": "38 CFR Part 3/4 (see VA presumption)", "diagnostic_code": "see VA", "title": "Porphyria Cutanea Tarda (Agent Orange presumption)", "url": "https://www.publichealth.va.gov/exposures/agentorange/" }],
+  "va_verified": true,
+  "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data."
+},
+{
+  "id": "soft_tissue_sarcoma",
+  "name": "Soft Tissue Sarcoma",
+  "body_system": "Oncology",
+  "aliases": ["soft tissue sarcoma","sarcoma"],
+  "va_presumptive": ["Agent Orange"],
+  "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
+  "cfr": [{ "section": "38 CFR Part 3/4 (see VA presumption)", "diagnostic_code": "see VA", "title": "Soft tissue sarcomas (Agent Orange presumption)", "url": "https://www.publichealth.va.gov/exposures/agentorange/" }],
+  "va_verified": true,
   "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data."
 },
 {
@@ -422,7 +480,7 @@
   "va_presumptive": ["Agent Orange"],
   "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
   "cfr": [{ "section": "38 CFR Part 3/4 (see VA presumption)", "diagnostic_code": "see VA", "title": "Agent Orange presumptive condition - AL amyloidosis", "url": "https://www.publichealth.va.gov/exposures/agentorange/" }],
-  "best_effort": true,
+  "va_verified": true,
   "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data."
 },
 {
@@ -433,7 +491,7 @@
   "va_presumptive": ["Agent Orange"],
   "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
   "cfr": [{ "section": "38 CFR Part 3/4 (see VA presumption)", "diagnostic_code": "see VA", "title": "Agent Orange presumptive condition - bladder cancer", "url": "https://www.publichealth.va.gov/exposures/agentorange/" }],
-  "best_effort": true,
+  "va_verified": true,
   "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data."
 },
 {
@@ -455,7 +513,7 @@
   "va_presumptive": ["Agent Orange"],
   "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
   "cfr": [{ "section": "38 CFR Part 3/4 (see VA presumption)", "diagnostic_code": "see VA", "title": "Agent Orange presumptive condition - multiple myeloma", "url": "https://www.publichealth.va.gov/exposures/agentorange/" }],
-  "best_effort": true,
+  "va_verified": true,
   "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data."
 },
 {
@@ -466,7 +524,7 @@
   "va_presumptive": ["Agent Orange"],
   "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
   "cfr": [{ "section": "38 CFR Part 3/4 (see VA presumption)", "diagnostic_code": "see VA", "title": "Agent Orange presumptive condition - chronic B-cell leukemias", "url": "https://www.publichealth.va.gov/exposures/agentorange/" }],
-  "best_effort": true,
+  "va_verified": true,
   "disclaimer": "Educational mapping only. Confirm with VA presumption lists before relying on this data."
 },
 {
@@ -475,6 +533,9 @@
   "body_system": "Cardiac/Metabolic",
   "aliases": ["high blood pressure","htn"],
   "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "7100", "title": "Hypertension and cardiovascular", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
+  "va_presumptive": ["Agent Orange"],
+  "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
+  "va_verified": true,
   "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
 },
 {
@@ -595,6 +656,9 @@
   "body_system": "Neurological",
   "aliases": ["neuropathy","peripheral nerve damage","numbness"],
   "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "8510", "title": "Peripheral neuropathy", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
+  "va_presumptive": ["Agent Orange"],
+  "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
+  "va_verified": true,
   "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
 },
 {
@@ -643,6 +707,9 @@
   "body_system": "Oncology",
   "aliases": ["prostate cancer","prostatic neoplasm"],
   "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "XXXX", "title": "Prostate cancer (see CFR)", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
+  "va_presumptive": ["Agent Orange"],
+  "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
+  "va_verified": true,
   "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
 },
 {
@@ -651,6 +718,9 @@
   "body_system": "Oncology/Respiratory",
   "aliases": ["lung cancer","pulmonary carcinoma"],
   "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "XXXX", "title": "Lung cancer (see CFR)", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
+  "va_presumptive": ["Agent Orange"],
+  "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
+  "va_verified": true,
   "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
 },
 {
@@ -771,6 +841,9 @@
   "body_system": "Neurological",
   "aliases": ["parkinson's","parkinsonism"],
   "cfr": [{ "section": "38 CFR Part 4 Subpart B", "diagnostic_code": "8005", "title": "Parkinsonism and movement disorders", "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4" }],
+  "va_presumptive": ["Agent Orange"],
+  "va_presumptive_sources": ["https://www.publichealth.va.gov/exposures/agentorange/"],
+  "va_verified": true,
   "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
 },
 {
