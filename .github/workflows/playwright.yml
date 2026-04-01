@@ -1,0 +1,44 @@
+name: Playwright E2E Tests
+
+on:
+  pull_request:
+    paths:
+      - 'tests/**'
+      - 'public/**'
+      - 'server.js'
+      - 'package.json'
+  push:
+    branches:
+      - master
+      - 'apply-*'
+
+jobs:
+  playwright:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Start server
+        run: |
+          nohup node server.js > server.log 2>&1 &
+          for i in {1..20}; do
+            if curl -sSf http://127.0.0.1:3000/ >/dev/null 2>&1; then
+              echo "server up"; break;
+            fi
+            sleep 1
+          done
+
+      - name: Run Playwright tests
+        run: npm run test:e2e
