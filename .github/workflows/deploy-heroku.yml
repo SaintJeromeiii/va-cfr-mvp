@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -43,22 +44,20 @@ jobs:
           set -e
           git config --global user.email "actions@github.com"
           git config --global user.name "github-actions"
-          # Add Heroku remote using API key for authentication and push to target branch (default: master)
-          git remote add heroku https://heroku:${HEROKU_API_KEY}@git.heroku.com/${HEROKU_APP_NAME}.git || true
+          git remote remove heroku || true
+          git remote add heroku https://heroku:${HEROKU_API_KEY}@git.heroku.com/${HEROKU_APP_NAME}.git
           TARGET_BRANCH=${HEROKU_TARGET_BRANCH:-master}
           echo "Pushing to Heroku remote branch: ${TARGET_BRANCH}"
-          # Ensure we have full history so Heroku accepts the push (avoid shallow clone rejection)
-          git fetch --all --unshallow || true
           git push --force heroku HEAD:${TARGET_BRANCH}
 
       - name: Verify deploy (healthcheck)
         env:
-          HEROKU_APP_NAME: ${{ secrets.HEROKU_APP_NAME }}
+          HEROKU_APP_URL: ${{ secrets.HEROKU_APP_URL }}
           HEROKU_HEALTH_PATH: ${{ secrets.HEROKU_HEALTH_PATH }}
         run: |
           set -e
           HEALTH_PATH=${HEROKU_HEALTH_PATH:-/}
-          APP_URL="https://${HEROKU_APP_NAME}.herokuapp.com${HEALTH_PATH}"
+          APP_URL="${HEROKU_APP_URL}${HEALTH_PATH}"
           echo "Checking app URL: ${APP_URL}"
           for i in 1 2 3 4 5; do
             status=$(curl -s -o /dev/null -w "%{http_code}" "${APP_URL}" || echo "000")
