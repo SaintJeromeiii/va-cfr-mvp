@@ -50,14 +50,10 @@ jobs:
           echo "Pushing to Heroku remote branch: ${TARGET_BRANCH}"
           git push --force heroku HEAD:${TARGET_BRANCH}
 
-            - name: Verify deploy (healthcheck)
-        env:
-          HEROKU_APP_URL: ${{ secrets.HEROKU_APP_URL }}
-          HEROKU_HEALTH_PATH: ${{ secrets.HEROKU_HEALTH_PATH }}
+      - name: Verify deploy (healthcheck)
         run: |
           set -e
-          HEALTH_PATH=${HEROKU_HEALTH_PATH:-/}
-          APP_URL="${HEROKU_APP_URL}${HEALTH_PATH}"
+          APP_URL="https://va-cfr-mvp-prod-306dc4f53d87.herokuapp.com/"
           echo "Checking app URL: ${APP_URL}"
           for i in 1 2 3 4 5; do
             status=$(curl -s -o /dev/null -w "%{http_code}" "${APP_URL}" || echo "000")
