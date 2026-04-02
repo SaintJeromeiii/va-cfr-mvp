@@ -1,5 +1,9 @@
 name: Playwright Smoke Tests
-
+permissions:
+  contents: read
+  actions: read
+  pull-requests: write
+  issues: write
 on:
   pull_request:
     branches: [ master ]
@@ -94,29 +98,23 @@ jobs:
           fail-on-empty: false
 
       - name: Post artifacts list to PR
-        if: ${{ github.event_name == 'pull_request' }}
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
         uses: actions/github-script@v6
         with:
           script: |
-            const runId = parseInt(process.env.GITHUB_RUN_ID, 10);
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const runUrl = `https://github.com/${owner}/${repo}/actions/runs/${runId}`;
-            // list artifacts for this run
-            const artifacts = await github.rest.actions.listWorkflowRunArtifacts({ owner, repo, run_id: runId });
-            let body = `Playwright run finished.\n\nWorkflow run: ${runUrl}\n\nArtifacts for this run:\n\n`;
-            if (artifacts.data && artifacts.data.artifacts && artifacts.data.artifacts.length) {
-              for (const a of artifacts.data.artifacts) {
-                // archive_download_url requires auth but is accessible to repo members
-                body += `- **${a.name}** — [download](${a.archive_download_url})\n`;
-              }
-            } else {
-              body += 'No artifacts found.\n';
-            }
-            body += '\nJUnit annotations (if any) are posted on this PR.';
-            const pr = github.context.payload.pull_request && github.context.payload.pull_request.number;
+            const pr = context.payload.pull_request?.number;
+
+            const body = `Artifacts were generated for this run.`;
+
             if (pr) {
-              await github.rest.issues.createComment({ owner, repo, issue_number: pr, body });
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: pr,
+                body
+              });
             } else {
               core.info('No pull request found to comment on.');
             }
