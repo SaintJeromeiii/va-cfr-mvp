@@ -50,7 +50,7 @@ jobs:
           echo "Pushing to Heroku remote branch: ${TARGET_BRANCH}"
           git push --force heroku HEAD:${TARGET_BRANCH}
 
-      - name: Verify deploy (healthcheck)
+            - name: Verify deploy (healthcheck)
         env:
           HEROKU_APP_URL: ${{ secrets.HEROKU_APP_URL }}
           HEROKU_HEALTH_PATH: ${{ secrets.HEROKU_HEALTH_PATH }}
