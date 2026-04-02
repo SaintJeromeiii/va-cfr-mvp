@@ -22,8 +22,20 @@ if (process.env.TRUST_PROXY === '1' || process.env.NODE_ENV === 'production') {
   app.set('trust proxy', 1);
 }
 
-// Helmet adds many safe HTTP headers
-try { app.use(helmet()); } catch (e) { console.warn('helmet not enabled', e && e.message); }
+// Helmet adds many safe HTTP headers. Enable fully in production,
+// but disable HSTS and CSP upgrade-insecure-requests in development
+try {
+  if (process.env.NODE_ENV === 'production') {
+    app.use(helmet());
+  } else {
+    app.use(
+      helmet({
+        contentSecurityPolicy: false,
+        hsts: false,
+      })
+    );
+  }
+} catch (e) { console.warn('helmet not enabled', e && e.message); }
 
 // Enable CORS only when CORS_ORIGIN is explicitly set (avoid permissive defaults)
 if (process.env.CORS_ORIGIN) {

@@ -28,5 +28,14 @@
     "meta": {
       "lane": "general"
     }
+  },
+  {
+    "id": "task_a758975d9babb",
+    "at": "2026-04-01T11:51:33.734Z",
+    "title": "Playwright smoke task",
+    "done": false,
+    "meta": {
+      "lane": "general"
+    }
   }
 ]
