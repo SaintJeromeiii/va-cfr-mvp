@@ -212,9 +212,12 @@
       "summary": "Ratings based on symptom severity, frequency, and functional impact under the General Rating Formula for Mental Disorders."
     },
     "evidence_checklist": [
-      "Symptom frequency/severity and functional impact (work, relationships, sleep)",
-      "Stressors/events documented where possible (records or statements)",
-      "Any relevant exam results (e.g., C&P mental health exam) if performed"
+      "Current PTSD diagnosis or mental health treatment records",
+      "In-service stressor, event, or other qualifying service evidence",
+      "Nexus evidence connecting PTSD to military service",
+      "Mental health symptoms documented in treatment notes, DBQ, or C&P exam",
+      "Evidence of occupational and social impairment",
+      "Lay statements describing symptom history and daily impact"
     ],
     "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
   },
