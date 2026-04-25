@@ -3,6 +3,7 @@ body {
   margin: 0;
   background: #0b0f14;
   color: #e8eef6;
+  transition: background-color 200ms ease, color 200ms ease;
 }
 
 body.dark-mode {
@@ -43,17 +44,46 @@ h1 {
 
 .results {
   margin-top: 10px;
+  min-width: 0;
   display: grid;
   gap: 10px;
 }
 
 .result {
   padding: 12px 14px;
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* layout fixes: make the input grow and keep selects/buttons usable */
+.controls input { flex: 1; min-width: 0; }
+.controls select, .controls button { min-width: 120px; }
+
+/* Accessible focus outlines */
+button:focus, input:focus, select:focus, textarea:focus {
+  outline: 3px solid rgba(59,130,246,0.22);
+  outline-offset: 2px;
+}
+
+/* Button system */
+.btn {
+  padding: 10px 12px;
+  border-radius: 10px;
   border: 1px solid #253043;
-  background: #0f1622;
-  border-radius: 12px;
+  background: #111826;
+  color: #f5f9ff;
   cursor: pointer;
 }
+.btn--mini { padding: 8px 10px; font-size: 0.9rem; }
+.btn--danger { background: #2b0f12; border-color: #5a1f24; color: #ffd7d7; }
+
+/* keep existing helper class names compatible */
+.miniBtn { display: inline-block; }
+.clearBtn { display: inline-block; }
 
 .result:hover {
   border-color: #3b82f6;
@@ -71,6 +101,18 @@ h1 {
   display: none;
 }
 
+/* visually-hidden for screen-reader-only labels */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
 .badge {
   display: inline-block;
   padding: 4px 8px;
@@ -538,19 +580,68 @@ mark.hl {
 .evScoreRow { display: grid; gap: 8px; margin: 8px 0 10px; }
 .evBar { height: 10px; border-radius: 999px; background: rgba(255,255,255,0.12); overflow: hidden; }
 .evBarFill { height: 100%; width: 0%; border-radius: 999px; background: rgba(255,255,255,0.55); transition: width 120ms ease; }
+.wsRiskSummary {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.wsRiskChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+  color: #d8e2f0;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.wsRiskChip[data-level="warn"] {
+  border-color: rgba(245, 158, 11, 0.35);
+  color: #fde68a;
+}
+.wsRiskChip[data-level="ok"] {
+  border-color: rgba(16, 185, 129, 0.35);
+  color: #a7f3d0;
+}
 
 .workspace { margin-top: 16px; padding: 12px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.12); }
 .wsHead { display:flex; gap:10px; justify-content: space-between; align-items: center; flex-wrap: wrap; }
 .wsBtns { display:flex; gap:8px; flex-wrap: wrap; }
+.workspacePanel {
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.025));
+}
+.workspaceIntro {
+  margin: 0 0 12px;
+  color: #b8c4d6;
+  line-height: 1.45;
+}
 .wsList { display:grid; gap:10px; margin: 10px 0; }
 .wsCard { padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.10); }
+.wsCard.highlighted {
+  border-color: rgba(250, 204, 21, 0.75);
+  box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.18);
+}
 .wsRow { display:flex; justify-content: space-between; align-items:center; gap:10px; flex-wrap: wrap; }
 .wsRowBtns { display:flex; gap:8px; }
-
-body.dark-mode .dashboard,
-body.dark-mode .search-history {
-  background: #1e1e1e;
-  border-color: #333333;
+.wsSummaryRow {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.wsSummaryLabel {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.55);
 }
 
 .wsSectionTitle { margin: 10px 0 6px; }
@@ -740,6 +831,19 @@ input[type="radio"]:focus {
 
 .nodeCircle:active { cursor: grabbing; }
 
+/* Visual styling for label-only / synthetic evidence nodes */
+.nodeCircle.synthetic {
+  stroke-dasharray: 2 4;
+  stroke: rgba(255,200,80,0.95);
+  stroke-width: 1.5;
+  fill: rgba(255,200,80,0.28) !important;
+  opacity: 0.95;
+}
+.nodeLabel.synthetic {
+  font-style: italic;
+  opacity: 0.85;
+}
+
 .edgeLine {
   stroke: rgba(255,255,255,0.22);
   stroke-width: 1;
@@ -813,56 +917,121 @@ input[type="radio"]:focus {
 
 .healthBtns { display:flex; gap:8px; flex-wrap:wrap; margin-top: 10px; }
 
-.dashboard {
-  margin-top: 20px;
-  padding: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.progress {
-  margin-bottom: 16px;
-}
-
-.quick-links {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 16px;
-}
-
-.recent-activity ul {
-  list-style: none;
-  padding: 0;
-}
-
-.search-history {
-  margin-top: 20px;
-  padding: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.search-history ul {
-  list-style: none;
-  padding: 0;
-}
-
 .notification {
   position: fixed;
   top: 10px;
   right: 10px;
-  background: #333;
-  color: #fff;
+  background: #1f2937;
+  color: #f9fafb;
   padding: 10px 20px;
-  border-radius: 5px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
   z-index: 1000;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  transform: translateY(0);
+  max-width: min(420px, calc(100vw - 24px));
 }
 
 .notification.hidden {
   opacity: 0;
   pointer-events: none;
+  transform: translateY(-8px);
 }
+
+.notification[data-type="success"] {
+  background: #14532d;
+}
+
+.notification[data-type="error"] {
+  background: #7f1d1d;
+}
+
+.notification[data-type="info"] {
+  background: #1e3a8a;
+}
+
+.confirmModal {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(3, 7, 18, 0.68);
+  backdrop-filter: blur(3px);
+}
+
+.confirmCard {
+  width: min(460px, 100%);
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: #0f172a;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.35);
+  padding: 18px;
+}
+
+.confirmCard h3 {
+  margin: 0 0 8px;
+}
+
+/* small helper for inline tips */
+.helpTip {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.04);
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+
+.tipClose {
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 4px 8px;
+  cursor: pointer;
+  float: right;
+}
+.tipClose:hover { opacity: 0.9; }
+
+.helpIcon {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:20px;height:20px;
+  border-radius:50%;
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.85);
+  font-weight:700;
+  font-size:12px;
+  cursor:default;
+  margin-left:8px;
+}
+
+/* Two-column responsive layout: main + sidebar */
+.container {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 20px;
+  align-items: start;
+}
+
+.search, #detail { grid-column: 1; }
+#workspace { grid-column: 2; }
+
+@media (max-width: 980px) {
+  .container { display: block; }
+}
+
+/* Skeleton specific */
+.result.skeleton {
+  pointer-events: none;
+  opacity: 0.85;
+  background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02));
+}
+
+.result.skeleton div { background: linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0.06), rgba(255,255,255,0.03)); height: 12px; border-radius: 6px; }
+
+.result.skeleton div + div { margin-top: 8px; }

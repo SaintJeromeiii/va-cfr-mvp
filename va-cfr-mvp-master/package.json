@@ -5,9 +5,19 @@
   "main": "server.js",
   "scripts": {
     "dev": "cross-env NODE_ENV=development nodemon server.js",
+    "test": "jest --runInBand",
     "save": "git pull --ff-only && git add . && git diff --cached --quiet || git commit -m \"auto save\" && git push",
     "start": "node server.js",
     "format": "prettier --write ."
+  },
+  "jest": {
+    "roots": [
+      "<rootDir>/tests"
+    ],
+    "testEnvironment": "node",
+    "modulePathIgnorePatterns": [
+      "<rootDir>/va-cfr-mvp"
+    ]
   },
   "author": "",
   "license": "MIT",
@@ -19,6 +29,7 @@
   },
   "devDependencies": {
     "connect-livereload": "^0.6.1",
+    "cross-env": "^10.1.0",
     "eslint": "^10.0.1",
     "husky": "^9.1.7",
     "jest": "^30.2.0",

@@ -16,15 +16,25 @@
 
     <div class="search">
       <div class="controls">
+  <label for="q" class="sr-only">Search</label>
   <input id="q" placeholder="Search: tinnitus, 8520, 4.124a, PTSD..." />
   <select id="systemFilter">
     <option value="">All body systems</option>
   </select>
-  <button id="clearBtn" class="clearBtn" type="button">Clear</button>
-  <button id="darkModeToggle">Toggle Dark Mode</button>
+  <button id="clearBtn" class="clearBtn btn" type="button">Clear</button>
 </div>
 
       <div id="notification" class="notification hidden"></div>
+      <div id="confirmModal" class="confirmModal hidden" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle">
+        <div class="confirmCard">
+          <h3 id="confirmModalTitle">Confirm action</h3>
+          <p id="confirmModalBody" class="small"></p>
+          <div class="healthBtns">
+            <button id="confirmModalConfirm" class="miniBtn danger" type="button">Confirm</button>
+            <button id="confirmModalCancel" class="miniBtn" type="button">Cancel</button>
+          </div>
+        </div>
+      </div>
 
       <!-- Legend goes UNDER controls so users understand the colors -->
       <div id="legend" class="legendRow"></div>
@@ -32,29 +42,6 @@
       <!-- Results list -->
       <div id="results" class="results"></div>
     </div>
-
-    <!-- Search History panel -->
-    <section id="searchHistory" class="search-history">
-      <h2>Search History</h2>
-      <ul></ul>
-    </section>
-
-    <!-- Dashboard panel -->
-    <section id="dashboard" class="dashboard">
-      <h2>Dashboard</h2>
-      <div class="progress">
-        <label for="taskProgress">Task Completion:</label>
-        <progress id="taskProgress" value="0" max="100"></progress>
-      </div>
-      <div class="quick-links">
-        <button id="addTaskBtn">Add Task</button>
-        <button id="searchCfrBtn">Search CFR</button>
-      </div>
-      <div id="recentActivity" class="recent-activity">
-        <h3>Recent Activity</h3>
-        <ul></ul>
-      </div>
-    </section>
 
     <!-- Workspace panel -->
     <section id="workspace" class="workspace">
@@ -64,35 +51,44 @@
           <button id="wsExport" class="miniBtn" type="button">Export Full Packet (.txt)</button>
           <button id="wsCopyShare" class="miniBtn" type="button">Copy Share Link</button>
           <button id="wsClear" class="miniBtn danger" type="button">Clear Workspace</button>
-          <button id="exportPdfBtn">Export to PDF</button>
-          <button id="clearWorkspaceBtn">Clear Workspace</button>
+          <button id="wsShowTips" class="miniBtn" type="button">Show Tips</button>
         </div>
       </div>
 
       <div class="small" id="wsScore">Evidence Readiness: 0/0 (0%)</div>
       <div class="small" id="wsOrphans">Orphans: 0</div>
       <div class="evBar"><div id="wsBarFill" class="evBarFill"></div></div>
+      <div id="wsRiskSummary" class="wsRiskSummary"></div>
 
-      <hr/>
-      <h3 style="margin:10px 0 6px">🌳 Claim Tree View</h3>
-      <div id="tree" class="treeBox"></div>
-      <div class="small">Tip: Set a Primary, then add Secondary conditions to see the tree.</div>
-
-      <hr/>
-      <h3 style="margin:10px 0 6px">✅ Workspace Health</h3>
-
-      <div id="wsHealth" class="healthBox"></div>
-
-      <div class="healthBtns">
-        <button id="wsFixOrphans" class="miniBtn" type="button">Fix: Link all orphans to Primary</button>
-        <button id="wsFixDisconnected" class="miniBtn" type="button">Fix: Attach disconnected to Primary</button>
-        <button id="wsHealthExport" class="miniBtn" type="button">Export Health Report</button>
+      <div class="workspacePanel">
+        <h3 style="margin:0 0 6px">🌳 Claim Tree View</h3>
+        <p class="workspaceIntro">Use the tree to sanity-check your primary condition, linked secondaries, and overall claim structure at a glance.</p>
+        <div id="tree" class="treeBox"></div>
+        <div class="small">Tip: Set a Primary, then add Secondary conditions to see the tree.</div>
       </div>
 
-      <div id="wsList" class="wsList"></div>
-      <div class="small">Tip: open a condition and click “Add to Workspace”.</div>
-      <hr/>
-      <h3 style="margin:10px 0 6px">🧠 Claim Narrative Draft</h3>
+      <div class="workspacePanel">
+        <h3 style="margin:0 0 6px">✅ Workspace Health</h3>
+        <p class="workspaceIntro">This panel flags disconnected nodes, missing notes, and CFR/reference issues so you can fix weak spots before exporting.</p>
+        <div id="wsHealth" class="healthBox"></div>
+
+        <div class="healthBtns">
+          <button id="wsFixOrphans" class="miniBtn" type="button">Fix: Link all orphans to Primary</button>
+          <button id="wsFixDisconnected" class="miniBtn" type="button">Fix: Attach disconnected to Primary</button>
+          <button id="wsHealthExport" class="miniBtn" type="button">Export Health Report</button>
+        </div>
+      </div>
+
+      <div class="workspacePanel">
+        <h3 style="margin:0 0 6px">📂 Workspace Conditions</h3>
+        <p class="workspaceIntro">Open any condition in your workspace to update notes, evidence readiness, related links, and timeline details.</p>
+        <div id="wsList" class="wsList"></div>
+        <div class="small">Tip: open a condition and click “Add to Workspace”.</div>
+      </div>
+
+      <div class="workspacePanel">
+        <h3 style="margin:0 0 6px">🧠 Claim Narrative Draft</h3>
+        <p class="workspaceIntro">Generate a structured educational draft from your saved notes, links, and evidence readiness to spot missing detail fast.</p>
 
       <div class="healthBtns">
         <button id="wsNarrativeBtn" class="miniBtn" type="button">Generate Narrative</button>
@@ -114,19 +110,22 @@
         </label>
       </div>
 
-      <textarea id="wsNarrativeOut" class="wsNarrativeOut" rows="16" placeholder="Click "Generate Narrative" to create a draft..."></textarea>
+      <textarea id="wsNarrativeOut" class="wsNarrativeOut" rows="16" placeholder='Click "Generate Narrative" to create a draft...'></textarea>
 
       <div class="small" style="margin-top:6px">
         Educational draft only — not legal advice and not representation. Always verify current CFR language and consult an accredited rep if needed.
       </div>
+      </div>
 
-      <hr/>
-      <h3 style="margin:10px 0 6px">🗓️ Workspace Timeline</h3>
+      <div class="workspacePanel">
+      <h3 style="margin:0 0 6px">🗓️ Workspace Timeline <span class="helpIcon" title="Timeline merges per-condition dated events into one chronological list">?</span></h3>
+      <p class="workspaceIntro">Merge dated condition events into one chronological view so you can review onset, treatment, exams, and impact in sequence.</p>
 
       <div class="healthBtns">
         <button id="wsTimelineBtn" class="miniBtn" type="button">Generate Timeline</button>
         <button id="wsTimelineCopy" class="miniBtn" type="button">Copy Timeline</button>
         <button id="wsTimelineDownload" class="miniBtn" type="button">Download Timeline (.txt)</button>
+        <button id="wsTimelineInclude" class="miniBtn" type="button">Add all with timeline to Workspace</button>
 
         <label class="small" style="display:flex;align-items:center;gap:6px">
           <select id="wsTimelineScope">
@@ -137,10 +136,18 @@
         </label>
       </div>
 
-      <textarea id="wsTimelineOut" class="wsNarrativeOut" rows="12" placeholder="Click "Generate Timeline" to merge and sort timeline entries..."></textarea>
+      <div id="wsTimelineContrib" class="small" style="margin-top:8px"></div>
+      <div class="helpTip" data-tip-id="timeline">
+        <div class="small">Tip: The Workspace Timeline merges dated events you add per-condition. Use the "Add all with timeline to Workspace" button to quickly include items that already have dated entries. Choose a scope to limit results (Primary / Linked / All). Export or copy the timeline to include it in claim drafts.</div>
+        <button class="tipClose" data-tip-id="timeline" aria-label="Dismiss tip">×</button>
+      </div>
 
-      <hr/>
-      <h3 style="margin:10px 0 6px">📎 Workspace Evidence Binder</h3>
+      <textarea id="wsTimelineOut" class="wsNarrativeOut" rows="12" placeholder='Click "Generate Timeline" to merge and sort timeline entries...'></textarea>
+      </div>
+
+      <div class="workspacePanel">
+      <h3 style="margin:0 0 6px">📎 Workspace Evidence Binder <span class="helpIcon" title="Binder consolidates and deduplicates evidence links across your workspace">?</span></h3>
+      <p class="workspaceIntro">Combine saved evidence across the workspace into one consolidated list, then sort or cluster it for easier review.</p>
 
       <div class="healthBtns">
         <button id="wsBinderBtn" class="miniBtn" type="button">Generate Binder</button>
@@ -177,13 +184,19 @@
           Show viewer
         </label>
       </div>
+      <div class="helpTip" data-tip-id="binder">
+        <div class="small">Tip: The Binder consolidates evidence links from your workspace and de-duplicates by URL. Use the Sort and View controls to organize results (by date, type, or condition). Toggle the viewer to open a readable list; clustered view groups related items. Label-only entries (no URL) are included — use the "Show label-only nodes" graph toggle to locate them visually.</div>
+        <button class="tipClose" data-tip-id="binder" aria-label="Dismiss tip">×</button>
+      </div>
 
       <div id="wsBinderViewer" class="binderViewer"></div>
 
-      <textarea id="wsBinderOut" class="wsNarrativeOut" rows="12" placeholder="Click "Generate Binder" to merge evidence links across your workspace..."></textarea>
+      <textarea id="wsBinderOut" class="wsNarrativeOut" rows="12" placeholder='Click "Generate Binder" to merge evidence links across your workspace...'></textarea>
+      </div>
 
-      <hr/>
-      <h3 style="margin:10px 0 6px">🕸️ Evidence Relationship Graph</h3>
+      <div class="workspacePanel">
+      <h3 style="margin:0 0 6px">🕸️ Evidence Relationship Graph <span class="helpIcon" title="Graph shows connections between evidence items; drag to reposition, scroll to zoom">?</span></h3>
+      <p class="workspaceIntro">Visualize how records, notes, and statements connect so you can spot isolated evidence and stronger clusters quickly.</p>
 
       <div class="healthBtns">
         <button id="wsGraphBuild" class="miniBtn" type="button">Build Graph</button>
@@ -205,7 +218,18 @@
       </div>
 
       <div id="wsGraph" class="graphWrap"></div>
+        <div class="helpTip" data-tip-id="graph">
+          <div class="small">Tip: The Evidence Relationship Graph shows how evidence items relate to each other. Nodes represent unique evidence items (grouped by URL or label-only entries). Use "Hide orphans" to focus on connected clusters. Drag nodes to reposition and scroll to zoom. Toggle "Show label-only nodes" to include or hide items that have only labels (no URL).</div>
+          <button class="tipClose" data-tip-id="graph" aria-label="Dismiss tip">×</button>
+        </div>
+
+        <label class="small" style="display:flex;align-items:center;gap:6px">
+          <input id="wsGraphShowLabelOnly" type="checkbox" checked />
+          Show label-only nodes
+        </label>
+
       <div id="wsGraphInfo" class="graphInfo small">(Click a node to open its link. Drag nodes to reposition.)</div>
+      </div>
     </section>
 
     <!-- Detail view (ONLY ONE) -->
@@ -218,14 +242,21 @@
     </footer>
   </main>
 
+  <script src="/js/command-query.js"></script>
+  <script src="/js/notifier.js"></script>
+  <script src="/js/confirm-modal.js"></script>
+  <script src="/js/search-ui.js"></script>
+  <script src="/js/timeline-utils.js"></script>
+  <script src="/js/storage.js"></script>
+  <script src="/js/workspace-export.js"></script>
+  <script src="/js/evidence-binder.js"></script>
+  <script src="/js/evidence-graph.js"></script>
+  <script src="/js/workspace-ui.js"></script>
+  <script src="/js/detail-view.js"></script>
+  <script src="/js/detail-interactions.js"></script>
+  <script src="/js/workspace-drafts.js"></script>
+  <script src="/js/secondary-conditions.js"></script>
+  <script src="/js/workspace-tools.js"></script>
   <script src="/app.js"></script>
-  <script>
-    document.getElementById('addTaskBtn')?.addEventListener('click', () => {
-      console.log('Add Task button clicked'); // Debugging log
-      const taskTitle = prompt('Enter the task title:'); // Ask the user for a task title
-      console.log('Task title entered:', taskTitle); // Debugging log
-    });
-  </script>
 </body>
 </html>
-
