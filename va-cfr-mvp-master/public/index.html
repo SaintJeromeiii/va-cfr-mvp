@@ -9,10 +9,58 @@
 
 <body>
   <main class="container">
+    <div class="main-col">
     <h1>VA CFR Finder (MVP)</h1>
     <p class="sub">
       Educational tool to map common conditions to 38 CFR rating references (not legal advice / not representation).
     </p>
+
+    <section class="quickStartPanel">
+      <div class="quickStartHead">
+        <div>
+          <h2 style="margin:0 0 4px">Quick Start Claim Plans</h2>
+          <p class="workspaceIntro" style="margin:0">Load a starter claim chain to scaffold the workspace faster, then edit the relationships and evidence to match the veteran's actual record.</p>
+        </div>
+        <div class="small">Starter plans are educational shortcuts, not claim advice.</div>
+      </div>
+      <div id="quickStartPlans" class="quickStartGrid"></div>
+    </section>
+
+    <section class="quickStartPanel">
+      <div class="quickStartHead">
+        <div>
+          <h2 style="margin:0 0 4px">Guided Claim Builder</h2>
+          <p class="workspaceIntro" style="margin:0">Choose a primary condition, stage related issues, and add them to the workspace in one guided pass.</p>
+        </div>
+        <div class="small">Use this when you want structure without manually searching and linking each item.</div>
+      </div>
+      <div class="builderGrid">
+        <label class="builderField">
+          <span class="small">Primary condition</span>
+          <select id="builderPrimary"></select>
+        </label>
+        <label class="builderField">
+          <span class="small">Relationship type for related conditions</span>
+          <select id="builderRelType"></select>
+        </label>
+      </div>
+      <div id="builderSuggestions" class="builderSuggestions"></div>
+      <div class="healthBtns" style="margin-top:12px">
+        <button id="builderApply" class="miniBtn" type="button">Add Guided Plan to Workspace</button>
+        <button id="builderOpenPrimary" class="miniBtn" type="button">Open Primary Details</button>
+      </div>
+    </section>
+
+    <section class="quickStartPanel">
+      <div class="quickStartHead">
+        <div>
+          <h2 style="margin:0 0 4px">Start Here</h2>
+          <p class="workspaceIntro" style="margin:0">Use this checklist when you want the fastest path from a blank workspace to a usable claim packet.</p>
+        </div>
+        <div class="small">Best for first-time users or when you are rebuilding a theory from scratch.</div>
+      </div>
+      <div id="startHereSteps" class="builderSuggestions"></div>
+    </section>
 
     <div class="search">
       <div class="controls">
@@ -22,6 +70,7 @@
     <option value="">All body systems</option>
   </select>
   <button id="clearBtn" class="clearBtn btn" type="button">Clear</button>
+      <button id="darkModeToggle" class="btn btn--mini" aria-pressed="false" aria-label="Toggle theme">Toggle theme</button>
 </div>
 
       <div id="notification" class="notification hidden"></div>
@@ -43,12 +92,19 @@
       <div id="results" class="results"></div>
     </div>
 
+    </div>
+
     <!-- Workspace panel -->
-    <section id="workspace" class="workspace">
+    <section id="workspace" class="workspace sidebar-col">
       <div class="wsHead">
         <h2 style="margin:0">Claim Workspace</h2>
         <div class="wsBtns">
           <button id="wsExport" class="miniBtn" type="button">Export Full Packet (.txt)</button>
+          <select id="wsExportAudience" class="miniBtn" aria-label="Export audience">
+            <option value="review">Quick Review</option>
+            <option value="veteran">Veteran Packet</option>
+            <option value="representative">Representative Packet</option>
+          </select>
           <button id="wsCopyShare" class="miniBtn" type="button">Copy Share Link</button>
           <button id="wsClear" class="miniBtn danger" type="button">Clear Workspace</button>
           <button id="wsShowTips" class="miniBtn" type="button">Show Tips</button>
@@ -58,7 +114,12 @@
       <div class="small" id="wsScore">Evidence Readiness: 0/0 (0%)</div>
       <div class="small" id="wsOrphans">Orphans: 0</div>
       <div class="evBar"><div id="wsBarFill" class="evBarFill"></div></div>
+      <div id="wsStickySummary" class="stickySummary"></div>
       <div id="wsRiskSummary" class="wsRiskSummary"></div>
+      <div id="wsRiskFilterBar" class="wsRiskFilterBar hidden">
+        <span id="wsRiskFilterText" class="small"></span>
+        <button id="wsRiskFilterClear" class="miniBtn" type="button">Clear focus</button>
+      </div>
 
       <div class="workspacePanel">
         <h3 style="margin:0 0 6px">🌳 Claim Tree View</h3>
@@ -84,6 +145,111 @@
         <p class="workspaceIntro">Open any condition in your workspace to update notes, evidence readiness, related links, and timeline details.</p>
         <div id="wsList" class="wsList"></div>
         <div class="small">Tip: open a condition and click “Add to Workspace”.</div>
+      </div>
+
+      <div class="workspacePanel">
+        <h3 style="margin:0 0 6px">💾 Workspace Snapshots</h3>
+        <p class="workspaceIntro">Save a named checkpoint before you try a different theory, relationship structure, or evidence strategy.</p>
+        <div class="snapshotBar">
+          <input id="wsSnapshotName" type="text" placeholder="Optional snapshot name" />
+          <button id="wsSnapshotSave" class="miniBtn" type="button">Save Snapshot</button>
+        </div>
+        <div id="wsSnapshotList" class="snapshotList"></div>
+        <div id="wsSnapshotCompare" class="snapshotCompare hidden"></div>
+      </div>
+
+      <div class="workspacePanel">
+        <h3 style="margin:0 0 6px">🗃️ Full Backup</h3>
+        <p class="workspaceIntro">Export or restore the full local workspace, including snapshots, activity, notes, timelines, evidence links, and relationships.</p>
+        <div class="healthBtns" style="margin-top:0">
+          <button id="wsBackupExport" class="miniBtn" type="button">Export Backup (.json)</button>
+          <button id="wsBackupImport" class="miniBtn" type="button">Import Backup</button>
+        </div>
+        <input id="wsBackupImportFile" type="file" accept="application/json,.json" class="hidden" />
+      </div>
+
+      <div class="workspacePanel">
+        <h3 style="margin:0 0 6px">🕒 Workspace Activity</h3>
+        <p class="workspaceIntro">Review the recent claim-building steps you took so it’s easier to trace how the current workspace came together.</p>
+        <div class="healthBtns" style="margin-top:0">
+          <button id="wsActivityClear" class="miniBtn" type="button">Clear Activity</button>
+        </div>
+        <div id="wsActivityLog" class="activityLog"></div>
+      </div>
+
+      <div class="workspacePanel">
+        <h3 style="margin:0 0 6px">📥 Document Intake</h3>
+        <p class="workspaceIntro">Paste note text, lay statements, DBQ text, or medical summaries to detect likely conditions, dates, and workspace candidates.</p>
+        <textarea id="docIntakeInput" class="wsNarrativeOut" rows="8" placeholder="Paste source text here..."></textarea>
+        <div class="healthBtns">
+          <button id="docIntakeAnalyze" class="miniBtn" type="button">Analyze Intake</button>
+          <button id="docIntakeAdd" class="miniBtn" type="button">Add Selected to Workspace</button>
+        </div>
+        <div id="docIntakeSummary" class="small" style="margin-top:8px"></div>
+        <div id="docIntakeResults" class="builderSuggestions"></div>
+      </div>
+
+      <div class="workspacePanel">
+        <h3 style="margin:0 0 6px">🧭 Claim Strategy Coach</h3>
+        <p class="workspaceIntro">Turn the current workspace into a plain-English theory summary with strengths, weak points, and next actions.</p>
+        <div class="healthBtns" style="margin-top:0">
+          <button id="wsCoachGenerate" class="miniBtn" type="button">Generate Strategy Coach</button>
+          <button id="wsCoachCopy" class="miniBtn" type="button">Copy Coach Summary</button>
+        </div>
+        <textarea id="wsCoachOut" class="wsNarrativeOut" rows="12" placeholder='Click "Generate Strategy Coach" to build a coaching summary...'></textarea>
+      </div>
+
+      <div class="workspacePanel">
+        <h3 style="margin:0 0 6px">🧩 Claim Theory Builder</h3>
+        <p class="workspaceIntro">Capture the actual theory of the claim in a structured way so the coach, packet exports, and review tools all work from the same logic.</p>
+        <div class="builderGrid">
+          <label class="builderField">
+            <span class="small">Theory type</span>
+            <select id="theoryType">
+              <option value="Direct service connection">Direct service connection</option>
+              <option value="Secondary service connection">Secondary service connection</option>
+              <option value="Aggravation theory">Aggravation theory</option>
+              <option value="Increase / worsening theory">Increase / worsening theory</option>
+            </select>
+          </label>
+          <label class="builderField">
+            <span class="small">Condition</span>
+            <select id="theorySubject"></select>
+          </label>
+          <label class="builderField">
+            <span class="small">Related / parent condition</span>
+            <select id="theoryParent">
+              <option value="">None / not needed</option>
+            </select>
+          </label>
+          <label class="builderField">
+            <span class="small">Plain-language summary</span>
+            <input id="theorySummary" placeholder="Why should this condition be granted or increased?" />
+          </label>
+        </div>
+        <div class="healthBtns">
+          <button id="theoryAdd" class="miniBtn" type="button">Add Theory</button>
+        </div>
+        <div id="theoryList" class="builderSuggestions"></div>
+      </div>
+
+      <div class="workspacePanel">
+        <h3 style="margin:0 0 6px">🧮 VA Rating Estimator</h3>
+        <p class="workspaceIntro">Estimate how new or increased workspace conditions could affect the current combined VA rating using standard VA combined-rating math.</p>
+        <div class="builderGrid">
+          <label class="builderField">
+            <span class="small">Current combined rating</span>
+            <input id="wsCurrentRating" type="number" min="0" max="100" step="10" placeholder="e.g. 70" />
+          </label>
+          <div class="small" style="align-self:end">Model only the new or increased ratings you want to test in the workspace rows below.</div>
+        </div>
+        <div id="wsRatingRows" class="builderSuggestions"></div>
+        <div class="healthBtns">
+          <button id="wsRatingCalculate" class="miniBtn" type="button">Calculate Projection</button>
+          <button id="wsRatingCompare" class="miniBtn" type="button">Compare Scenarios</button>
+        </div>
+        <div id="wsRatingSummary" class="small" style="margin-top:8px"></div>
+        <textarea id="wsRatingOut" class="wsNarrativeOut" rows="10" placeholder='Click "Calculate Projection" to estimate the combined rating impact...'></textarea>
       </div>
 
       <div class="workspacePanel">
@@ -126,6 +292,7 @@
         <button id="wsTimelineCopy" class="miniBtn" type="button">Copy Timeline</button>
         <button id="wsTimelineDownload" class="miniBtn" type="button">Download Timeline (.txt)</button>
         <button id="wsTimelineInclude" class="miniBtn" type="button">Add all with timeline to Workspace</button>
+        <button id="wsTimelineNarrative" class="miniBtn" type="button">Timeline to Narrative</button>
 
         <label class="small" style="display:flex;align-items:center;gap:6px">
           <select id="wsTimelineScope">
@@ -143,6 +310,49 @@
       </div>
 
       <textarea id="wsTimelineOut" class="wsNarrativeOut" rows="12" placeholder='Click "Generate Timeline" to merge and sort timeline entries...'></textarea>
+      <textarea id="wsTimelineNarrativeOut" class="wsNarrativeOut" rows="8" placeholder='Click "Timeline to Narrative" to turn dated entries into a paragraph...'></textarea>
+      </div>
+
+      <div class="workspacePanel">
+      <h3 style="margin:0 0 6px">🧾 Evidence Hub</h3>
+      <p class="workspaceIntro">Review all workspace evidence in one searchable place, then jump straight to the linked conditions that use each item.</p>
+
+      <div class="builderGrid">
+        <label class="builderField">
+          <span class="small">Search evidence</span>
+          <input id="wsHubSearch" placeholder="Search labels, notes, dates, or condition names..." />
+        </label>
+        <label class="builderField">
+          <span class="small">Scope</span>
+          <select id="wsHubScope">
+            <option value="all">All workspace items</option>
+            <option value="linked">Linked only</option>
+            <option value="primary">Primary only</option>
+          </select>
+        </label>
+        <label class="builderField">
+          <span class="small">Evidence type</span>
+          <select id="wsHubType">
+            <option value="">All types</option>
+          </select>
+        </label>
+        <label class="builderField">
+          <span class="small">Condition</span>
+          <select id="wsHubCondition">
+            <option value="">All conditions</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="healthBtns">
+        <label class="small" style="display:flex;align-items:center;gap:6px">
+          <input id="wsHubIncludeLabelOnly" type="checkbox" checked />
+          Include label-only evidence
+        </label>
+      </div>
+
+      <div id="wsHubSummary" class="small" style="margin-top:8px"></div>
+      <div id="wsHubList" class="builderSuggestions"></div>
       </div>
 
       <div class="workspacePanel">

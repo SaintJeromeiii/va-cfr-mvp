@@ -14,6 +14,32 @@
       fallbackConfirm = (message) => Promise.resolve(confirm(message)),
     } = deps || {};
 
+    let activeDialog = null;
+
+    function closeActiveDialog(result) {
+      if (!activeDialog) return;
+
+      const {
+        rootEl,
+        confirmBtn,
+        cancelBtn,
+        onConfirm,
+        onCancel,
+        onBackdrop,
+        onKeydown,
+        resolve,
+      } = activeDialog;
+
+      rootEl.classList.add("hidden");
+      rootEl.setAttribute("aria-hidden", "true");
+      confirmBtn.removeEventListener("click", onConfirm);
+      cancelBtn.removeEventListener("click", onCancel);
+      rootEl.removeEventListener("click", onBackdrop);
+      documentRef.removeEventListener("keydown", onKeydown);
+      activeDialog = null;
+      resolve(result);
+    }
+
     function confirmAction(options) {
       const config = typeof options === "string" ? { message: options } : (options || {});
       const rootEl = documentRef.getElementById("confirmModal");
@@ -35,25 +61,40 @@
       confirmBtn.textContent = config.confirmLabel || "Confirm";
       cancelBtn.textContent = config.cancelLabel || "Cancel";
 
+      if (activeDialog) {
+        closeActiveDialog(false);
+      }
+
       rootEl.classList.remove("hidden");
+      rootEl.setAttribute("aria-hidden", "false");
 
       return new Promise((resolve) => {
-        const cleanup = (result) => {
-          rootEl.classList.add("hidden");
-          confirmBtn.removeEventListener("click", onConfirm);
-          cancelBtn.removeEventListener("click", onCancel);
-          rootEl.removeEventListener("click", onBackdrop);
-          documentRef.removeEventListener("keydown", onKeydown);
-          resolve(result);
+        const onConfirm = (event) => {
+          event?.preventDefault?.();
+          event?.stopPropagation?.();
+          closeActiveDialog(true);
         };
-
-        const onConfirm = () => cleanup(true);
-        const onCancel = () => cleanup(false);
+        const onCancel = (event) => {
+          event?.preventDefault?.();
+          event?.stopPropagation?.();
+          closeActiveDialog(false);
+        };
         const onBackdrop = (event) => {
-          if (event.target === rootEl) cleanup(false);
+          if (event.target === rootEl) closeActiveDialog(false);
         };
         const onKeydown = (event) => {
-          if (event.key === "Escape") cleanup(false);
+          if (event.key === "Escape") closeActiveDialog(false);
+        };
+
+        activeDialog = {
+          rootEl,
+          confirmBtn,
+          cancelBtn,
+          onConfirm,
+          onCancel,
+          onBackdrop,
+          onKeydown,
+          resolve,
         };
 
         confirmBtn.addEventListener("click", onConfirm);

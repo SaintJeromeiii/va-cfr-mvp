@@ -67,4 +67,91 @@ describe("search ui helpers", () => {
 
     expect(reason).toBe("CFR Section");
   });
+
+  test("renders all conditions when there is no search query", () => {
+    const results = {
+      innerHTML: "",
+      children: [],
+      appendChild(node) {
+        this.children.push(node);
+      },
+    };
+    const input = {
+      value: "",
+      addEventListener() {},
+    };
+    const filter = {
+      value: "",
+      options: [],
+      innerHTML: "",
+      appendChild(option) {
+        this.options.push(option);
+      },
+      addEventListener() {},
+    };
+    const clearBtn = { addEventListener() {} };
+    const legend = { innerHTML: "", appendChild() {} };
+    const conditions = [
+      {
+        id: "tinnitus",
+        name: "Tinnitus",
+        body_system: "Ear",
+        aliases: [],
+        cfr: [{ diagnostic_code: "6260", section: "38 CFR § 4.87", title: "Tinnitus" }],
+      },
+      {
+        id: "sciatica",
+        name: "Sciatica",
+        body_system: "Neurological",
+        aliases: [],
+        cfr: [{ diagnostic_code: "8520", section: "38 CFR § 4.124a", title: "Sciatic nerve" }],
+      },
+    ];
+
+    const makeElement = (tag) => ({
+      tagName: tag,
+      className: "",
+      type: "",
+      dataset: {},
+      textContent: "",
+      innerHTML: "",
+      listeners: {},
+      querySelector() { return null; },
+      appendChild() {},
+      addEventListener(type, handler) {
+        this.listeners[type] = handler;
+      },
+    });
+
+    const mountedApi = createSearchUiApi({
+      getConditions: () => conditions,
+      parseCommandQuery: (value) => ({ mode: "text", text: value }),
+      normalize: (value) => (value || "").toLowerCase().trim(),
+      escapeHtml: (value) => String(value),
+      systemClassName: (value) => String(value || ""),
+      debounce: (fn) => fn,
+      showDetail: () => {},
+      ensureNode: () => {},
+      renderWorkspace: () => {},
+      documentRef: {
+        getElementById(id) {
+          return {
+            q: input,
+            systemFilter: filter,
+            clearBtn,
+            legend,
+            results,
+          }[id] || null;
+        },
+        createElement: makeElement,
+        querySelectorAll() {
+          return [];
+        },
+      },
+    });
+
+    mountedApi.mountSearchUi();
+
+    expect(results.children).toHaveLength(2);
+  });
 });

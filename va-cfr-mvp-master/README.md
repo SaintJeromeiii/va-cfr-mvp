@@ -32,6 +32,21 @@ The nested [va-cfr-mvp/](/Users/jeromeanderson/va-cfr-mvp/va-cfr-mvp-master/va-c
 - Workspace guidance now flags likely missing support for linked secondary conditions, including missing evidence links and missing nexus/timeline notes
 - A claim-wide workspace risk strip now surfaces top gaps like missing support, missing notes, disconnected items, and checklist coverage at a glance
 - Workspace risk chips are now clickable and jump attention to the affected condition cards
+- Quick Start Claim Plans now let users scaffold common workspace setups from the homepage instead of building every relationship by hand
+- Guided Claim Builder now lets users choose a primary condition and stage suggested related issues in one structured workflow
+- Document Intake now lets users paste source text to detect likely conditions, dates, and candidate notes/timeline entries for the workspace
+- Evidence Strength scoring now distinguishes weak, moderate, and strong support on each workspace condition instead of only checklist completion
+- VA Rating Estimator now lets users enter a current combined rating, model projected workspace percentages, and estimate a potential combined-rating increase
+- Claim Strategy Coach now turns the current workspace into a plain-English theory summary with strengths, weak spots, and next actions
+- Evidence Hub now provides a searchable workspace-wide view of saved evidence items with filters by scope, type, condition, and label-only status
+- Workspace packet export now supports audience-specific output modes for quick review, veteran-facing summaries, and representative-facing review packets
+- Guided onboarding now adds a Start Here flow plus a sticky workspace summary with primary-condition, snapshot, rating, and blocker context
+- Claim Theory Builder now stores structured direct, secondary, aggravation, and increase theories and carries them through strategy summaries, packet exports, snapshots, and backups
+- Granular evidence gap detection now surfaces diagnosis, severity/impact, timeline, relationship, and checklist weaknesses across workspace cards and health summaries
+- VA Rating Estimator now supports scenario comparison so users can compare conservative, moderate, and aggressive projection paths from the same workspace
+- Timeline-to-narrative synthesis now converts dated workspace events into a draft paragraph that can feed claim-writing and review workflows
+- Workspace Snapshots now let users save and restore named claim checkpoints, including notes, timeline entries, evidence links, checklist state, and workspace relationships
+- Full Backup export/import now lets users archive or restore the entire local workspace state, including snapshots, activity history, relationships, notes, timelines, and evidence links
 - Removal of the unused `public/js/intelligence.js` experimental script
 - Jest coverage for parsing, validation, storage migrations, workspace export/share logic, evidence binder logic, evidence graph helpers, workspace UI helpers, detail view/interactions, timeline logic, and API behavior
 - Cleanup of inline debug code and repository metadata

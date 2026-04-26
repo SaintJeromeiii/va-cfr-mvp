@@ -34,6 +34,7 @@
     } = deps;
 
     const api = {};
+    let activeRiskFilterKey = "";
 
     function evidenceCompletion(item, state) {
       const total = (item.evidence_checklist || []).length;
@@ -157,6 +158,10 @@
 
       const conditions = getConditions();
       const st = loadWorkspaceState();
+      const items = (st.nodes || []).map((id) => getConditionById(id)).filter(Boolean);
+      const risks = summarizeWorkspaceRisks(items, st);
+      const activeRisk = risks.find((risk) => risk.key === activeRiskFilterKey) || null;
+      const activeIds = new Set(activeRisk?.ids || []);
       const primary = st.primaryId ? getConditionById(st.primaryId) : null;
 
       if (!primary) {
@@ -200,7 +205,7 @@
       });
 
       const nodeHtml = (id, label, x, y, badge) => `
-        <g class="treeNode" data-id="${escapeHtml(id)}" transform="translate(${x},${y})">
+        <g class="treeNode${activeIds.size ? (activeIds.has(id) ? " highlighted" : " dimmed") : ""}" data-id="${escapeHtml(id)}" transform="translate(${x},${y})">
           <rect width="${nodeW}" height="${nodeH}"></rect>
           ${(() => {
             const approxChar = 7;
@@ -253,7 +258,8 @@
         const x2 = c.x;
         const y2 = c.y + nodeH / 2;
 
-        lines += `<line class="treeLine" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"></line>`;
+        const edgeActive = !activeIds.size || activeIds.has(link.from) || activeIds.has(link.to);
+        lines += `<line class="treeLine${edgeActive ? "" : " dimmed"}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"></line>`;
         labels += `<text x="${(x1 + x2) / 2 + 6}" y="${(y1 + y2) / 2 - 6}" fill="rgba(255,255,255,0.55)">${escapeHtml(link.type || "Secondary to")}</text>`;
       });
 
@@ -288,6 +294,9 @@
       const wsOrphans = documentRef.getElementById("wsOrphans");
       const wsBarFill = documentRef.getElementById("wsBarFill");
       const wsRiskSummary = documentRef.getElementById("wsRiskSummary");
+      const wsRiskFilterBar = documentRef.getElementById("wsRiskFilterBar");
+      const wsRiskFilterText = documentRef.getElementById("wsRiskFilterText");
+      const wsRiskFilterClear = documentRef.getElementById("wsRiskFilterClear");
       if (!wsList || !wsScore || !wsBarFill) return;
 
       const st = loadWorkspaceState();
@@ -298,6 +307,8 @@
       if (!items.length) {
         wsScore.textContent = "Evidence Readiness: 0/0 (0%)";
         wsBarFill.style.width = "0%";
+        if (wsRiskSummary) wsRiskSummary.innerHTML = "";
+        if (wsRiskFilterBar) wsRiskFilterBar.classList.add("hidden");
         wsList.innerHTML = `<div class="small">Workspace is empty. Open a condition and click “Add to Workspace”.</div>`;
         return;
       }
@@ -308,25 +319,43 @@
 
       const orphanItems = items.filter((item) => isOrphan(item.id, st));
       if (wsOrphans) wsOrphans.textContent = `Orphans: ${orphanItems.length}`;
+      const risks = summarizeWorkspaceRisks(items, st);
+      const activeRisk = risks.find((risk) => risk.key === activeRiskFilterKey) || null;
+      if (activeRiskFilterKey && !activeRisk?.ids?.length) activeRiskFilterKey = "";
+      const visibleItems = activeRisk?.ids?.length
+        ? items.filter((item) => activeRisk.ids.includes(item.id))
+        : items;
+
       if (wsRiskSummary) {
-        wsRiskSummary.innerHTML = summarizeWorkspaceRisks(items, st)
-          .map((risk) => `<button class="wsRiskChip" data-level="${escapeHtml(risk.level)}" data-risk-key="${escapeHtml(risk.key)}" data-risk-ids="${escapeHtml((risk.ids || []).join(","))}" type="button">${escapeHtml(risk.label)}</button>`)
+        wsRiskSummary.innerHTML = risks
+          .map((risk) => `<button class="wsRiskChip${risk.key === activeRiskFilterKey ? " active" : ""}" data-level="${escapeHtml(risk.level)}" data-risk-key="${escapeHtml(risk.key)}" data-risk-ids="${escapeHtml((risk.ids || []).join(","))}" type="button">${escapeHtml(risk.label)}</button>`)
           .join("");
 
         wsRiskSummary.querySelectorAll(".wsRiskChip").forEach((chip) => {
           chip.addEventListener("click", () => {
-            const ids = (chip.dataset.riskIds || "").split(",").filter(Boolean);
-            wsList.querySelectorAll(".wsCard").forEach((card) => {
-              card.classList.toggle("highlighted", ids.includes(card.dataset.conditionId || ""));
-            });
-            if (!ids.length) return;
-            const first = wsList.querySelector(`.wsCard[data-condition-id="${cssEscape(ids[0])}"]`);
-            first?.scrollIntoView({ behavior: "smooth", block: "center" });
+            const key = chip.dataset.riskKey || "";
+            activeRiskFilterKey = activeRiskFilterKey === key ? "" : key;
+            renderWorkspace();
           });
         });
       }
+      if (wsRiskFilterBar && wsRiskFilterText) {
+        if (activeRisk?.ids?.length) {
+          wsRiskFilterBar.classList.remove("hidden");
+          wsRiskFilterText.textContent = `Focused view: ${activeRisk.label}`;
+        } else {
+          wsRiskFilterBar.classList.add("hidden");
+          wsRiskFilterText.textContent = "";
+        }
+      }
+      if (wsRiskFilterClear) {
+        wsRiskFilterClear.onclick = () => {
+          activeRiskFilterKey = "";
+          renderWorkspace();
+        };
+      }
 
-      items.forEach((item) => {
+      visibleItems.forEach((item) => {
         const isPrimary = item.id === st.primaryId;
         const orphan = isOrphan(item.id, st);
         const stNow = loadWorkspaceState();
@@ -337,6 +366,7 @@
         const card = documentRef.createElement("div");
         card.className = `wsCard ${systemClassName(item.body_system)}${orphan ? " orphan" : ""}`;
         card.dataset.conditionId = item.id;
+        if (activeRisk?.ids?.includes(item.id)) card.classList.add("highlighted");
         card.innerHTML = `
           <div class="wsRow">
             <div style="min-width:260px">
@@ -403,6 +433,10 @@
 
         wsList.appendChild(card);
       });
+
+      if (!visibleItems.length) {
+        wsList.innerHTML = `<div class="small">No workspace items match the current risk focus.</div>`;
+      }
 
       wsList.querySelectorAll("button[data-open]").forEach((button) => {
         button.addEventListener("click", () => showDetail(button.dataset.open));
