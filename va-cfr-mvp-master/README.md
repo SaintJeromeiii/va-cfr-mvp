@@ -42,8 +42,16 @@ The nested [va-cfr-mvp/](/Users/jeromeanderson/va-cfr-mvp/va-cfr-mvp-master/va-c
 - Workspace packet export now supports audience-specific output modes for quick review, veteran-facing summaries, and representative-facing review packets
 - Guided onboarding now adds a Start Here flow plus a sticky workspace summary with primary-condition, snapshot, rating, and blocker context
 - Claim Theory Builder now stores structured direct, secondary, aggravation, and increase theories and carries them through strategy summaries, packet exports, snapshots, and backups
+- Guided Nexus Builder now helps users turn secondary-condition logic into a reusable nexus draft and append it directly into condition notes
+- Saved rating scenarios now let users keep named conservative, moderate, or aggressive estimate setups and reload them later
+- A reusable document library now stores intake text like DBQ notes, lay statements, and medical summaries so users can reload and reanalyze them across claims
+- Evidence Library now stores reusable evidence links and excerpts that can be attached across multiple workspace conditions
+- Restore points now support milestone labels plus compare/restore history so major claim revisions are easier to track over time
+- Workspace conditions can now be filtered by search text, support level, status, body system, and note presence for larger claims
 - Granular evidence gap detection now surfaces diagnosis, severity/impact, timeline, relationship, and checklist weaknesses across workspace cards and health summaries
 - VA Rating Estimator now supports scenario comparison so users can compare conservative, moderate, and aggressive projection paths from the same workspace
+- Workspace Timeline now runs a conflict check for invalid dates, future dates, and same-day multi-event collisions
+- One-click multi-packet export now downloads quick-review, veteran, and representative packets together
 - Timeline-to-narrative synthesis now converts dated workspace events into a draft paragraph that can feed claim-writing and review workflows
 - Workspace Snapshots now let users save and restore named claim checkpoints, including notes, timeline entries, evidence links, checklist state, and workspace relationships
 - Full Backup export/import now lets users archive or restore the entire local workspace state, including snapshots, activity history, relationships, notes, timelines, and evidence links

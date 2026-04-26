@@ -2,6 +2,11 @@ let CONDITIONS = [];
 let LAST_INTAKE_ANALYSIS = null;
 const WS_RATING_STATE_KEY = "vaCfrWorkspaceRatingEstimator:v1";
 const WS_THEORY_STATE_KEY = "vaCfrWorkspaceTheories:v1";
+const WS_RATING_SCENARIOS_KEY = "vaCfrWorkspaceRatingScenarios:v1";
+const DOC_LIBRARY_KEY = "vaCfrDocumentLibrary:v1";
+const EVIDENCE_LIBRARY_KEY = "vaCfrEvidenceLibrary:v1";
+const WS_SNAPSHOT_HISTORY_KEY = "vaCfrWorkspaceSnapshotHistory:v1";
+const WS_PANEL_STATE_KEY = "vaCfrWorkspacePanelState:v1";
 
 function normalize(s) {
   return (s || "").toLowerCase().trim();
@@ -408,7 +413,11 @@ function buildWorkspaceBackup() {
     conditions,
     evidenceRelations: loadEvidenceRelations(),
     theories: loadTheoryState(),
+    ratingScenarios: loadRatingScenarios(),
+    documentLibrary: loadDocumentLibrary(),
+    evidenceLibrary: loadEvidenceLibrary(),
     snapshots: loadWorkspaceSnapshots(),
+    snapshotHistory: loadSnapshotHistory(),
     activity: loadWorkspaceActivity(),
     theme: localStorage.getItem("vaCfrTheme") || ""
   };
@@ -446,7 +455,11 @@ function applyWorkspaceBackup(backup) {
 
   saveEvidenceRelations(backup.evidenceRelations && typeof backup.evidenceRelations === "object" ? backup.evidenceRelations : {});
   saveTheoryState(Array.isArray(backup.theories) ? backup.theories : []);
+  saveRatingScenarios(Array.isArray(backup.ratingScenarios) ? backup.ratingScenarios : []);
+  saveDocumentLibrary(Array.isArray(backup.documentLibrary) ? backup.documentLibrary : []);
+  saveEvidenceLibrary(Array.isArray(backup.evidenceLibrary) ? backup.evidenceLibrary : []);
   saveWorkspaceSnapshots(Array.isArray(backup.snapshots) ? backup.snapshots : []);
+  saveSnapshotHistory(Array.isArray(backup.snapshotHistory) ? backup.snapshotHistory : []);
   saveWorkspaceActivity(Array.isArray(backup.activity) ? backup.activity : []);
 
   if (typeof backup.theme === "string" && backup.theme) {
@@ -920,6 +933,18 @@ function removeNode(id) {
 
   saveWorkspaceState(st);
   saveTheoryState(loadTheoryState().filter((theory) => theory.subjectId !== id && theory.parentId !== id));
+  const ratingState = loadRatingEstimatorState();
+  if (ratingState.projected && typeof ratingState.projected === "object") {
+    delete ratingState.projected[id];
+    saveRatingEstimatorState(ratingState);
+  }
+  saveRatingScenarios(loadRatingScenarios().map((scenario) => ({
+    ...scenario,
+    state: {
+      currentRating: Number(scenario.state?.currentRating || 0) || 0,
+      projected: Object.fromEntries(Object.entries(scenario.state?.projected || {}).filter(([key]) => key !== id))
+    }
+  })));
   pushWorkspaceActivity("Condition removed", `${conditionNameById(id)} was removed from the workspace.`);
   return st;
 }
@@ -927,6 +952,8 @@ function removeNode(id) {
 function clearWorkspace() {
   saveWorkspaceState({ nodes: [], primaryId: "", links: [] });
   saveTheoryState([]);
+  saveRatingEstimatorState({ currentRating: 0, projected: {} });
+  saveRatingScenarios([]);
   pushWorkspaceActivity("Workspace cleared", "The workspace tree, links, and readiness state were cleared.");
 }
 
@@ -946,11 +973,81 @@ function workspaceSummary(st) {
 function summarizeSnapshot(snapshot) {
   const summary = snapshot?.summary || {};
   const parts = [];
+  if (snapshot?.milestone) parts.push(snapshot.milestone);
   if (summary.primaryName) parts.push(`Primary: ${summary.primaryName}`);
   parts.push(`${summary.nodeCount || 0} conditions`);
   parts.push(`${summary.linkCount || 0} links`);
   parts.push(`Readiness ${summary.readinessText || "0/0"}`);
   return parts.join(" • ");
+}
+
+function analyzeTimelineConflicts(entriesByCondition = {}) {
+  const conflicts = [];
+  const datePattern = /^\d{4}(?:-\d{2}(?:-\d{2})?)?$/;
+
+  Object.entries(entriesByCondition).forEach(([conditionName, entries]) => {
+    const arr = Array.isArray(entries) ? entries : [];
+    const byDate = new Map();
+
+    arr.forEach((entry) => {
+      const date = (entry?.date || "").trim();
+      if (!date || !datePattern.test(date)) {
+        conflicts.push(`${conditionName}: has an entry with a missing or invalid date.`);
+        return;
+      }
+
+      const compareDate = new Date(`${date.length === 4 ? `${date}-01-01` : date.length === 7 ? `${date}-01` : date}T00:00:00`);
+      if (!Number.isNaN(compareDate.valueOf()) && compareDate > new Date()) {
+        conflicts.push(`${conditionName}: has a future timeline date (${date}).`);
+      }
+
+      const list = byDate.get(date) || [];
+      list.push(entry);
+      byDate.set(date, list);
+    });
+
+    byDate.forEach((sameDateEntries, date) => {
+      const types = [...new Set(sameDateEntries.map((entry) => entry?.type || "Other"))];
+      if (sameDateEntries.length > 1 && types.length > 1) {
+        conflicts.push(`${conditionName}: has multiple event types on ${date} (${types.join(", ")}). Review whether those entries should be merged or clarified.`);
+      }
+    });
+  });
+
+  return conflicts;
+}
+
+function filterWorkspaceItems(items, filters = {}, workspaceState = loadWorkspaceState()) {
+  const query = normalize(filters.search || "");
+  const supportFilter = normalize(filters.support || "");
+  const statusFilter = normalize(filters.status || "");
+  const systemFilter = normalize(filters.system || "");
+  const notesFilter = normalize(filters.notes || "");
+
+  return (items || []).filter((item) => {
+    const notes = (loadNotes(item.id) || "").trim();
+    const strength = evidenceStrength(item, workspaceState).label.toLowerCase();
+    const isPrimaryItem = item.id === workspaceState.primaryId;
+    const isLinkedItem = parentsOf(item.id, workspaceState.links).length > 0;
+    const orphan = isOrphan(item.id, workspaceState);
+    const haystack = [
+      item.name,
+      item.id,
+      item.body_system,
+      notes
+    ].filter(Boolean).join(" ").toLowerCase();
+
+    if (query && !haystack.includes(query)) return false;
+    if (supportFilter && strength !== supportFilter) return false;
+    if (systemFilter && normalize(item.body_system || "") !== systemFilter) return false;
+    if (notesFilter === "missing" && notes) return false;
+    if (notesFilter === "present" && !notes) return false;
+    if (statusFilter === "primary" && !isPrimaryItem) return false;
+    if (statusFilter === "linked" && !isLinkedItem) return false;
+    if (statusFilter === "orphan" && !orphan) return false;
+    if (statusFilter === "unlinked" && (isPrimaryItem || isLinkedItem)) return false;
+    return true;
+  });
 }
 
 function linkKey(link) {
@@ -1074,6 +1171,7 @@ function renderSnapshotComparison(snapshot) {
 
 function buildWorkspaceSnapshot(name) {
   const st = loadWorkspaceState();
+  const milestone = document.getElementById("wsSnapshotMilestone")?.value || "Working draft";
   const payload = {
     workspaceState: st,
     conditions: {},
@@ -1094,6 +1192,7 @@ function buildWorkspaceSnapshot(name) {
   return {
     id: `snapshot-${now.getTime()}`,
     name: (name || "").trim() || `Workspace snapshot ${now.toLocaleString()}`,
+    milestone,
     createdAt: now.toISOString(),
     summary: workspaceSummary(st),
     payload
@@ -1329,6 +1428,7 @@ function renderSnapshotList() {
           <div class="snapshotHeader">
             <div>
               <strong>${escapeHtml(snapshot.name || "Workspace snapshot")}</strong>
+              <div class="small">${escapeHtml(snapshot.milestone || "Working draft")}</div>
               <div class="small">${escapeHtml(summarizeSnapshot(snapshot))}</div>
             </div>
             <div class="small">${snapshot.createdAt ? escapeHtml(new Date(snapshot.createdAt).toLocaleString()) : ""}</div>
@@ -1346,7 +1446,9 @@ function renderSnapshotList() {
     btn.addEventListener("click", () => {
       const snapshot = loadWorkspaceSnapshots().find(item => item.id === btn.dataset.snapshotCompare);
       if (!snapshot) return;
+      pushSnapshotHistory("Compared", snapshot);
       renderSnapshotComparison(snapshot);
+      renderSnapshotHistoryList();
     });
   });
 
@@ -1356,11 +1458,13 @@ function renderSnapshotList() {
       if (!snapshot) return;
       if (!confirm(`Restore "${snapshot.name}" and replace the current workspace?`)) return;
       applyWorkspaceSnapshot(snapshot);
+      pushSnapshotHistory("Restored", snapshot);
       renderSnapshotComparison(null);
       renderWorkspace();
       renderClaimTree();
       renderHealthPanel();
       renderStickyWorkspaceSummary();
+      renderSnapshotHistoryList();
       alert(`Restored ${snapshot.name}.`);
     });
   });
@@ -1490,6 +1594,266 @@ function saveTheoryState(items) {
   localStorage.setItem(WS_THEORY_STATE_KEY, JSON.stringify(Array.isArray(items) ? items : []));
 }
 
+function loadRatingScenarios() {
+  try {
+    const raw = localStorage.getItem(WS_RATING_SCENARIOS_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveRatingScenarios(items) {
+  localStorage.setItem(WS_RATING_SCENARIOS_KEY, JSON.stringify(Array.isArray(items) ? items : []));
+}
+
+function loadDocumentLibrary() {
+  try {
+    const raw = localStorage.getItem(DOC_LIBRARY_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveDocumentLibrary(items) {
+  localStorage.setItem(DOC_LIBRARY_KEY, JSON.stringify(Array.isArray(items) ? items : []));
+}
+
+function loadEvidenceLibrary() {
+  try {
+    const raw = localStorage.getItem(EVIDENCE_LIBRARY_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveEvidenceLibrary(items) {
+  localStorage.setItem(EVIDENCE_LIBRARY_KEY, JSON.stringify(Array.isArray(items) ? items : []));
+}
+
+function loadSnapshotHistory() {
+  try {
+    const raw = localStorage.getItem(WS_SNAPSHOT_HISTORY_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveSnapshotHistory(items) {
+  localStorage.setItem(WS_SNAPSHOT_HISTORY_KEY, JSON.stringify(Array.isArray(items) ? items : []));
+}
+
+function loadWorkspacePanelState() {
+  try {
+    const raw = localStorage.getItem(WS_PANEL_STATE_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveWorkspacePanelState(state) {
+  localStorage.setItem(WS_PANEL_STATE_KEY, JSON.stringify(state && typeof state === "object" ? state : {}));
+}
+
+function setWorkspacePanelCollapsed(panelId, collapsed) {
+  const state = loadWorkspacePanelState();
+  state[panelId] = !!collapsed;
+  saveWorkspacePanelState(state);
+}
+
+function mountWorkspacePanelToggles() {
+  if (typeof document === "undefined") return;
+  const panels = [...document.querySelectorAll(".workspacePanel[id]")];
+  const savedState = loadWorkspacePanelState();
+  const defaultOpenPanels = new Set([
+    "ws-overview-panel",
+    "ws-health-panel",
+    "ws-conditions-panel",
+  ]);
+
+  const applyState = (panel, collapsed) => {
+    panel.classList.toggle("collapsed", !!collapsed);
+    const button = panel.querySelector(".panelToggle");
+    if (button) {
+      button.setAttribute("aria-expanded", collapsed ? "false" : "true");
+      button.textContent = collapsed ? "Expand" : "Collapse";
+    }
+  };
+
+  panels.forEach((panel) => {
+    const heading = panel.querySelector("h3");
+    if (!heading) return;
+
+    let button = heading.querySelector(".panelToggle");
+    if (!button) {
+      button = document.createElement("button");
+      button.type = "button";
+      button.className = "panelToggle miniBtn";
+      heading.appendChild(button);
+      heading.classList.add("workspacePanelHeading");
+      button.addEventListener("click", () => {
+        const nextCollapsed = !panel.classList.contains("collapsed");
+        applyState(panel, nextCollapsed);
+        setWorkspacePanelCollapsed(panel.id, nextCollapsed);
+      });
+    }
+
+    const isSaved = Object.prototype.hasOwnProperty.call(savedState, panel.id);
+    const collapsed = isSaved ? !!savedState[panel.id] : !defaultOpenPanels.has(panel.id);
+    applyState(panel, collapsed);
+  });
+
+  const collapseAll = document.getElementById("wsCollapseAll");
+  const expandAll = document.getElementById("wsExpandAll");
+
+  if (collapseAll && !collapseAll.dataset.bound) {
+    collapseAll.dataset.bound = "1";
+    collapseAll.addEventListener("click", () => {
+      panels.forEach((panel) => {
+        applyState(panel, true);
+        setWorkspacePanelCollapsed(panel.id, true);
+      });
+    });
+  }
+
+  if (expandAll && !expandAll.dataset.bound) {
+    expandAll.dataset.bound = "1";
+    expandAll.addEventListener("click", () => {
+      panels.forEach((panel) => {
+        applyState(panel, false);
+        setWorkspacePanelCollapsed(panel.id, false);
+      });
+    });
+  }
+}
+
+function pushSnapshotHistory(action, snapshot) {
+  const next = [
+    {
+      id: `snapshot-history-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      action: action || "Compared",
+      snapshotId: snapshot?.id || "",
+      snapshotName: snapshot?.name || "Workspace snapshot",
+      milestone: snapshot?.milestone || "",
+      createdAt: new Date().toISOString()
+    },
+    ...loadSnapshotHistory()
+  ].slice(0, 20);
+  saveSnapshotHistory(next);
+}
+
+function buildRatingScenarioSnapshot(state = loadRatingEstimatorState()) {
+  return {
+    currentRating: Math.max(0, Math.min(100, Number(state.currentRating || 0) || 0)),
+    projected: Object.fromEntries(
+      Object.entries(state.projected || {}).filter(([, value]) => Number.isFinite(Number(value)) && Number(value) >= 0)
+    )
+  };
+}
+
+function estimateScenarioSnapshot(snapshot, workspaceItems = null) {
+  const state = snapshot || { currentRating: 0, projected: {} };
+  const items = Array.isArray(workspaceItems)
+    ? workspaceItems
+    : (loadWorkspaceState().nodes || []).map(id => CONDITIONS.find(c => c.id === id)).filter(Boolean);
+  const projectedSelections = items
+    .map((item) => Number(state.projected?.[item.id] || 0))
+    .filter((value) => Number.isFinite(value) && value > 0);
+  return combineRatings([Number(state.currentRating || 0), ...projectedSelections]);
+}
+
+function saveCurrentRatingScenario(name) {
+  const trimmed = (name || "").trim();
+  const snapshot = buildRatingScenarioSnapshot();
+  return {
+    id: `rating-scenario-${Date.now()}`,
+    name: trimmed || `Scenario ${new Date().toLocaleString()}`,
+    createdAt: new Date().toISOString(),
+    state: snapshot
+  };
+}
+
+function applyRatingScenario(scenario) {
+  if (!scenario?.state) return;
+  saveRatingEstimatorState({
+    currentRating: Number(scenario.state.currentRating || 0) || 0,
+    projected: scenario.state.projected && typeof scenario.state.projected === "object" ? scenario.state.projected : {}
+  });
+}
+
+function buildNexusDraft(options = {}) {
+  const child = options.childName || "This condition";
+  const parent = options.parentName || "the primary condition";
+  const relation = options.relationType || "Secondary service connection";
+  const mechanism = (options.mechanism || "").trim();
+  const symptoms = (options.symptoms || "").trim();
+  const treatment = (options.treatment || "").trim();
+  const support = (options.support || "").trim();
+  const rationale = (options.rationale || "").trim();
+
+  const lines = [];
+  lines.push("[Guided Nexus Draft]");
+  lines.push(`Theory: ${relation}`);
+  lines.push(`Condition: ${child}`);
+  lines.push(`Related condition: ${parent}`);
+  lines.push("");
+  lines.push(`The current theory is that ${child} is connected to ${parent}.`);
+  if (mechanism) lines.push(`Mechanism: ${mechanism}`);
+  if (symptoms) lines.push(`Symptoms / functional impact: ${symptoms}`);
+  if (treatment) lines.push(`Treatment / timeline support: ${treatment}`);
+  if (support) lines.push(`Supporting evidence or records: ${support}`);
+  if (rationale) lines.push(`Nexus language / rationale: ${rationale}`);
+  lines.push("");
+  lines.push("Use this as a working draft only. Replace broad statements with record-specific dates, providers, DBQs, treatment notes, and medical rationale when available.");
+  return lines.join("\n");
+}
+
+function createDocumentRecord({ name, type, tags, text }) {
+  const normalizedTags = Array.isArray(tags)
+    ? tags
+    : String(tags || "")
+        .split(",")
+        .map(tag => tag.trim())
+        .filter(Boolean);
+
+  return {
+    id: `doc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    name: (name || "").trim() || `Document ${new Date().toLocaleString()}`,
+    type: (type || "").trim() || "General",
+    tags: normalizedTags,
+    text: (text || "").trim(),
+    createdAt: new Date().toISOString()
+  };
+}
+
+function createEvidenceLibraryRecord({ label, url, type, excerpt, tags }) {
+  const normalizedTags = Array.isArray(tags)
+    ? tags
+    : String(tags || "")
+        .split(",")
+        .map(tag => tag.trim())
+        .filter(Boolean);
+
+  return {
+    id: `evidence-library-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    label: (label || "").trim() || "Evidence record",
+    url: (url || "").trim(),
+    type: (type || "").trim() || "Other",
+    excerpt: (excerpt || "").trim(),
+    tags: normalizedTags,
+    createdAt: new Date().toISOString()
+  };
+}
+
 function granularGapsForCondition(item, st = loadWorkspaceState()) {
   const notes = (loadNotes(item.id) || "").trim();
   const links = loadEvidenceLinks(item.id);
@@ -1577,6 +1941,7 @@ function renderRatingEstimator() {
   if (!items.length) {
     rowsEl.innerHTML = `<div class="small">Add conditions to the workspace to model new or increased ratings.</div>`;
     summaryEl.textContent = "";
+    renderRatingScenarioList();
     return;
   }
 
@@ -1615,6 +1980,7 @@ function renderRatingEstimator() {
   });
 
   summaryEl.textContent = "This estimate uses standard VA combined-rating math. It does not account for bilateral factor issues, pyramiding, effective dates, or whether a condition is already part of the current combined rating.";
+  renderRatingScenarioList();
 }
 
 function generateScenarioComparisons() {
@@ -1998,6 +2364,265 @@ function renderDocumentIntakeResults() {
     : `<div class="small">No known conditions were detected in that text. Try pasting a longer record summary or more specific symptom language.</div>`;
 }
 
+function renderDocumentLibrary() {
+  const host = document.getElementById("docLibraryList");
+  if (!host) return;
+
+  const docs = loadDocumentLibrary();
+  host.innerHTML = docs.length
+    ? docs.map((doc) => `
+        <article class="builderSuggestionCard">
+          <div class="builderSuggestionTop">
+            <div>
+              <strong>${escapeHtml(doc.name)}</strong>
+              <div class="small">${escapeHtml(doc.type || "General")}${doc.tags?.length ? ` • tags: ${escapeHtml(doc.tags.join(", "))}` : ""}</div>
+              <div class="small" style="margin-top:6px">${escapeHtml((doc.text || "").slice(0, 180))}${(doc.text || "").length > 180 ? "..." : ""}</div>
+            </div>
+            <div class="healthBtns" style="margin-top:0">
+              <button class="miniBtn" data-doc-load="${escapeHtml(doc.id)}" type="button">Load</button>
+              <button class="miniBtn" data-doc-analyze="${escapeHtml(doc.id)}" type="button">Analyze</button>
+              <button class="miniBtn danger" data-doc-delete="${escapeHtml(doc.id)}" type="button">Delete</button>
+            </div>
+          </div>
+        </article>
+      `).join("")
+    : `<div class="small">No saved documents yet. Save DBQ text, lay statements, or medical note summaries here so you can reuse them across claims.</div>`;
+
+  host.querySelectorAll("[data-doc-load]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const doc = loadDocumentLibrary().find((item) => item.id === button.dataset.docLoad);
+      if (!doc) return;
+      const input = document.getElementById("docIntakeInput");
+      if (input) input.value = doc.text || "";
+      alert(`Loaded ${doc.name} into Document Intake.`);
+    });
+  });
+
+  host.querySelectorAll("[data-doc-analyze]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const doc = loadDocumentLibrary().find((item) => item.id === button.dataset.docAnalyze);
+      if (!doc) return;
+      const input = document.getElementById("docIntakeInput");
+      if (input) input.value = doc.text || "";
+      LAST_INTAKE_ANALYSIS = analyzeDocumentIntake(doc.text || "");
+      renderDocumentIntakeResults();
+      alert(`Analyzed ${doc.name}.`);
+    });
+  });
+
+  host.querySelectorAll("[data-doc-delete]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const docsNow = loadDocumentLibrary();
+      const doc = docsNow.find((item) => item.id === button.dataset.docDelete);
+      if (!doc) return;
+      saveDocumentLibrary(docsNow.filter((item) => item.id !== doc.id));
+      pushWorkspaceActivity("Document removed", `${doc.name} was removed from the document library.`);
+      renderDocumentLibrary();
+      renderWorkspaceActivity();
+      alert(`Deleted ${doc.name}.`);
+    });
+  });
+}
+
+function renderEvidenceLibrary() {
+  const host = document.getElementById("evLibraryList");
+  const targetEl = document.getElementById("evLibraryTarget");
+  if (!host || !targetEl) return;
+
+  const workspaceItems = (loadWorkspaceState().nodes || []).map(id => CONDITIONS.find(c => c.id === id)).filter(Boolean);
+  const priorTarget = targetEl.value || "";
+  targetEl.innerHTML = `<option value="">Choose workspace condition</option>${workspaceItems.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`).join("")}`;
+  if (priorTarget && workspaceItems.some((item) => item.id === priorTarget)) targetEl.value = priorTarget;
+
+  const records = loadEvidenceLibrary();
+  host.innerHTML = records.length
+    ? records.map((record) => `
+        <article class="builderSuggestionCard">
+          <div class="builderSuggestionTop">
+            <div>
+              <strong>${escapeHtml(record.label)}</strong>
+              <div class="small">${escapeHtml(record.type || "Other")}${record.tags?.length ? ` • ${escapeHtml(record.tags.join(", "))}` : ""}</div>
+              ${record.url ? `<div class="small" style="margin-top:6px">${escapeHtml(record.url)}</div>` : ""}
+              ${record.excerpt ? `<div class="small" style="margin-top:6px">${escapeHtml(record.excerpt)}</div>` : ""}
+            </div>
+            <div class="healthBtns" style="margin-top:0">
+              <button class="miniBtn" data-ev-attach="${escapeHtml(record.id)}" type="button">Attach</button>
+              <button class="miniBtn" data-ev-open="${escapeHtml(record.id)}" type="button">Open</button>
+              <button class="miniBtn danger" data-ev-delete="${escapeHtml(record.id)}" type="button">Delete</button>
+            </div>
+          </div>
+        </article>
+      `).join("")
+    : `<div class="small">No evidence records yet. Save a reusable medical note, DBQ, or statement link here, then attach it across multiple conditions.</div>`;
+
+  host.querySelectorAll("[data-ev-attach]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const targetId = targetEl.value || "";
+      if (!targetId) {
+        alert("Choose a workspace condition to attach this evidence record.");
+        return;
+      }
+      const record = loadEvidenceLibrary().find((item) => item.id === button.dataset.evAttach);
+      if (!record) return;
+      const links = loadEvidenceLinks(targetId);
+      links.push({
+        id: `evidence-link-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        url: record.url || "",
+        label: record.label || "",
+        type: record.type || "Other",
+        date: "",
+        note: record.excerpt || ""
+      });
+      saveEvidenceLinks(targetId, links);
+      if (record.excerpt) {
+        const existing = (loadNotes(targetId) || "").trim();
+        if (!existing.includes(record.excerpt)) {
+          saveNotes(targetId, existing ? `${existing}\n\n[Evidence library excerpt]\n${record.excerpt}` : `[Evidence library excerpt]\n${record.excerpt}`);
+        }
+      }
+      pushWorkspaceActivity("Evidence attached", `${record.label} was attached to ${conditionNameById(targetId)} from the evidence library.`);
+      renderWorkspace();
+      renderHealthPanel();
+      renderWorkspaceActivity();
+      alert(`Attached ${record.label} to ${conditionNameById(targetId)}.`);
+    });
+  });
+
+  host.querySelectorAll("[data-ev-open]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const record = loadEvidenceLibrary().find((item) => item.id === button.dataset.evOpen);
+      if (record?.url) window.open(record.url, "_blank", "noopener,noreferrer");
+    });
+  });
+
+  host.querySelectorAll("[data-ev-delete]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const recordsNow = loadEvidenceLibrary();
+      const record = recordsNow.find((item) => item.id === button.dataset.evDelete);
+      if (!record) return;
+      saveEvidenceLibrary(recordsNow.filter((item) => item.id !== record.id));
+      pushWorkspaceActivity("Evidence record removed", `${record.label} was removed from the evidence library.`);
+      renderEvidenceLibrary();
+      renderWorkspaceActivity();
+      alert(`Deleted ${record.label}.`);
+    });
+  });
+}
+
+function renderSnapshotHistoryList() {
+  const host = document.getElementById("wsSnapshotHistory");
+  if (!host) return;
+
+  const items = loadSnapshotHistory();
+  host.innerHTML = items.length
+    ? items.map((item) => `
+        <article class="snapshotCard">
+          <div class="snapshotHeader">
+            <div>
+              <strong>${escapeHtml(item.action || "Compared")}: ${escapeHtml(item.snapshotName || "Workspace snapshot")}</strong>
+              <div class="small">${escapeHtml(item.milestone || "No milestone label")}</div>
+            </div>
+            <div class="small">${item.createdAt ? escapeHtml(new Date(item.createdAt).toLocaleString()) : ""}</div>
+          </div>
+        </article>
+      `).join("")
+    : `<div class="small">No compare or restore history yet. Compare or restore a restore point to build a version trail.</div>`;
+}
+
+function renderNexusBuilder() {
+  const childEl = document.getElementById("nexusChild");
+  const parentEl = document.getElementById("nexusParent");
+  const relationEl = document.getElementById("nexusRelation");
+  const previewEl = document.getElementById("nexusDraftOut");
+  if (!childEl || !parentEl || !relationEl || !previewEl) return;
+
+  const st = loadWorkspaceState();
+  const items = (st.nodes || []).map(id => CONDITIONS.find(c => c.id === id)).filter(Boolean);
+  const linkedItems = items.filter((item) => parentsOf(item.id, st.links).length > 0);
+  const childOptions = linkedItems.length ? linkedItems : items.filter((item) => item.id !== st.primaryId);
+  const priorChild = childEl.value;
+  const priorParent = parentEl.value;
+
+  childEl.innerHTML = childOptions.length
+    ? childOptions.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`).join("")
+    : `<option value="">Add linked or secondary workspace conditions first</option>`;
+  if (priorChild && childOptions.some((item) => item.id === priorChild)) childEl.value = priorChild;
+
+  const selectedChild = childEl.value || childOptions[0]?.id || "";
+  const parentCandidates = selectedChild
+    ? parentsOf(selectedChild, st.links).map((link) => CONDITIONS.find(c => c.id === link.from)).filter(Boolean)
+    : [];
+  const fallbackParents = items.filter((item) => item.id !== selectedChild);
+  const parentItems = parentCandidates.length ? parentCandidates : fallbackParents;
+
+  parentEl.innerHTML = parentItems.length
+    ? parentItems.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`).join("")
+    : `<option value="">Select a related condition</option>`;
+  if (priorParent && parentItems.some((item) => item.id === priorParent)) parentEl.value = priorParent;
+
+  if (!previewEl.value.trim() && childOptions.length && parentItems.length) {
+    const child = CONDITIONS.find((item) => item.id === (childEl.value || childOptions[0]?.id));
+    const parent = CONDITIONS.find((item) => item.id === (parentEl.value || parentItems[0]?.id));
+    previewEl.value = buildNexusDraft({
+      childName: child?.name || "",
+      parentName: parent?.name || "",
+      relationType: relationEl.value || "Secondary service connection"
+    });
+  }
+}
+
+function renderRatingScenarioList() {
+  const host = document.getElementById("wsRatingScenarioList");
+  if (!host) return;
+
+  const scenarios = loadRatingScenarios();
+  const items = (loadWorkspaceState().nodes || []).map(id => CONDITIONS.find(c => c.id === id)).filter(Boolean);
+  host.innerHTML = scenarios.length
+    ? scenarios.map((scenario) => {
+        const estimate = estimateScenarioSnapshot(scenario.state, items);
+        return `
+          <article class="builderSuggestionCard">
+            <div class="builderSuggestionTop">
+              <div>
+                <strong>${escapeHtml(scenario.name)}</strong>
+                <div class="small">${escapeHtml(scenario.state?.currentRating || 0)}% current • ${escapeHtml(estimate.rounded)}% projected</div>
+                <div class="small">${scenario.createdAt ? escapeHtml(new Date(scenario.createdAt).toLocaleString()) : ""}</div>
+              </div>
+              <div class="healthBtns" style="margin-top:0">
+                <button class="miniBtn" data-rating-scenario-load="${escapeHtml(scenario.id)}" type="button">Load</button>
+                <button class="miniBtn danger" data-rating-scenario-delete="${escapeHtml(scenario.id)}" type="button">Delete</button>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join("")
+    : `<div class="small">No saved rating scenarios yet. Save a conservative, moderate, or aggressive estimate to compare later.</div>`;
+
+  host.querySelectorAll("[data-rating-scenario-load]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const scenario = loadRatingScenarios().find((item) => item.id === button.dataset.ratingScenarioLoad);
+      if (!scenario) return;
+      applyRatingScenario(scenario);
+      renderRatingEstimator();
+      renderStickyWorkspaceSummary();
+      alert(`Loaded ${scenario.name}.`);
+    });
+  });
+
+  host.querySelectorAll("[data-rating-scenario-delete]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const scenariosNow = loadRatingScenarios();
+      const scenario = scenariosNow.find((item) => item.id === button.dataset.ratingScenarioDelete);
+      if (!scenario) return;
+      saveRatingScenarios(scenariosNow.filter((item) => item.id !== scenario.id));
+      pushWorkspaceActivity("Rating scenario removed", `${scenario.name} was removed from saved rating scenarios.`);
+      renderRatingScenarioList();
+      renderWorkspaceActivity();
+      alert(`Deleted ${scenario.name}.`);
+    });
+  });
+}
+
 function buildWorkspacePacketText(items, options = {}) {
   const audience = options.audience || "review";
   const lines = [];
@@ -2166,18 +2791,32 @@ function renderWorkspace() {
   const wsScore = document.getElementById("wsScore");
   const wsOrphans = document.getElementById("wsOrphans");
   const wsBarFill = document.getElementById("wsBarFill");
+  const wsFilterSearch = document.getElementById("wsFilterSearch");
+  const wsFilterSupport = document.getElementById("wsFilterSupport");
+  const wsFilterStatus = document.getElementById("wsFilterStatus");
+  const wsFilterSystem = document.getElementById("wsFilterSystem");
+  const wsFilterNotes = document.getElementById("wsFilterNotes");
+  const wsFilterSummary = document.getElementById("wsFilterSummary");
 
   if (!wsList || !wsScore || !wsBarFill) return;
   renderSnapshotList();
+  renderSnapshotHistoryList();
   renderWorkspaceActivity();
   renderEvidenceHub();
+  renderEvidenceLibrary();
   renderRatingEstimator();
+  renderNexusBuilder();
   renderStickyWorkspaceSummary();
   renderStartHereSteps();
   renderTheoryBuilder();
 
   const st = loadWorkspaceState();
   const items = st.nodes.map(id => CONDITIONS.find(c => c.id === id)).filter(Boolean);
+  const systems = [...new Set(items.map((item) => item.body_system).filter(Boolean))].sort();
+  if (wsFilterSystem) {
+    const current = wsFilterSystem.value || "";
+    wsFilterSystem.innerHTML = `<option value="">All body systems</option>${systems.map((value) => `<option value="${escapeHtml(value)}"${value === current ? " selected" : ""}>${escapeHtml(value)}</option>`).join("")}`;
+  }
 
   wsList.innerHTML = "";
 
@@ -2197,7 +2836,18 @@ function renderWorkspace() {
   const orphanItems = items.filter(it => isOrphan(it.id, st));
   if (wsOrphans) wsOrphans.textContent = `Orphans: ${orphanItems.length}`;
 
-  items.forEach(item => {
+  const visibleItems = filterWorkspaceItems(items, {
+    search: wsFilterSearch?.value || "",
+    support: wsFilterSupport?.value || "",
+    status: wsFilterStatus?.value || "",
+    system: wsFilterSystem?.value || "",
+    notes: wsFilterNotes?.value || ""
+  }, st);
+  if (wsFilterSummary) {
+    wsFilterSummary.textContent = `${visibleItems.length} of ${items.length} workspace condition${items.length === 1 ? "" : "s"} shown.`;
+  }
+
+  visibleItems.forEach(item => {
     const isPrimary = item.id === st.primaryId;
     const orphan = isOrphan(item.id, st);
     const stNow = loadWorkspaceState();
@@ -2283,6 +2933,10 @@ function renderWorkspace() {
 
     wsList.appendChild(card);
   });
+
+  if (!visibleItems.length) {
+    wsList.innerHTML = `<div class="small">No workspace conditions matched the current filters.</div>`;
+  }
 
   // wire buttons
   wsList.querySelectorAll("button[data-open]").forEach(b => b.addEventListener("click", () => showDetail(b.dataset.open)));
@@ -5343,6 +5997,15 @@ async function init() {
   const docIntakeInput = document.getElementById("docIntakeInput");
   const docIntakeAnalyze = document.getElementById("docIntakeAnalyze");
   const docIntakeAdd = document.getElementById("docIntakeAdd");
+  const docLibraryName = document.getElementById("docLibraryName");
+  const docLibraryType = document.getElementById("docLibraryType");
+  const docLibraryTags = document.getElementById("docLibraryTags");
+  const docLibrarySave = document.getElementById("docLibrarySave");
+  const evLibraryLabel = document.getElementById("evLibraryLabel");
+  const evLibraryUrl = document.getElementById("evLibraryUrl");
+  const evLibraryType = document.getElementById("evLibraryType");
+  const evLibraryExcerpt = document.getElementById("evLibraryExcerpt");
+  const evLibrarySave = document.getElementById("evLibrarySave");
   const wsHubSearch = document.getElementById("wsHubSearch");
   const wsHubScope = document.getElementById("wsHubScope");
   const wsHubType = document.getElementById("wsHubType");
@@ -5351,6 +6014,8 @@ async function init() {
   const wsCurrentRating = document.getElementById("wsCurrentRating");
   const wsRatingCalculate = document.getElementById("wsRatingCalculate");
   const wsRatingCompare = document.getElementById("wsRatingCompare");
+  const wsRatingScenarioName = document.getElementById("wsRatingScenarioName");
+  const wsRatingScenarioSave = document.getElementById("wsRatingScenarioSave");
   const wsRatingOut = document.getElementById("wsRatingOut");
   const wsCoachGenerate = document.getElementById("wsCoachGenerate");
   const wsCoachCopy = document.getElementById("wsCoachCopy");
@@ -5360,7 +6025,19 @@ async function init() {
   const theoryParent = document.getElementById("theoryParent");
   const theorySummary = document.getElementById("theorySummary");
   const theoryAdd = document.getElementById("theoryAdd");
+  const nexusChild = document.getElementById("nexusChild");
+  const nexusParent = document.getElementById("nexusParent");
+  const nexusRelation = document.getElementById("nexusRelation");
+  const nexusMechanism = document.getElementById("nexusMechanism");
+  const nexusSymptoms = document.getElementById("nexusSymptoms");
+  const nexusTreatment = document.getElementById("nexusTreatment");
+  const nexusSupport = document.getElementById("nexusSupport");
+  const nexusRationale = document.getElementById("nexusRationale");
+  const nexusGenerate = document.getElementById("nexusGenerate");
+  const nexusApply = document.getElementById("nexusApply");
+  const nexusDraftOut = document.getElementById("nexusDraftOut");
   const wsSnapshotName = document.getElementById("wsSnapshotName");
+  const wsSnapshotMilestone = document.getElementById("wsSnapshotMilestone");
   const wsSnapshotSave = document.getElementById("wsSnapshotSave");
   const wsBackupExport = document.getElementById("wsBackupExport");
   const wsBackupImport = document.getElementById("wsBackupImport");
@@ -5393,11 +6070,16 @@ async function init() {
   applyThemeChoice(savedTheme);
   renderGuidedBuilder();
   renderDocumentIntakeResults();
+  renderDocumentLibrary();
+  renderEvidenceLibrary();
   renderEvidenceHub();
   renderRatingEstimator();
   renderStickyWorkspaceSummary();
   renderStartHereSteps();
   renderTheoryBuilder();
+  renderNexusBuilder();
+  renderSnapshotHistoryList();
+  mountWorkspacePanelToggles();
 
   if (darkToggle) {
     darkToggle.addEventListener('click', () => {
@@ -5420,8 +6102,10 @@ async function init() {
       saveWorkspaceSnapshots(nextSnapshots);
       pushWorkspaceActivity("Snapshot saved", `${snapshot.name} was saved as a workspace checkpoint.`);
       if (wsSnapshotName) wsSnapshotName.value = "";
+      if (wsSnapshotMilestone) wsSnapshotMilestone.value = "Working draft";
       renderSnapshotList();
       renderStickyWorkspaceSummary();
+      renderSnapshotHistoryList();
       renderWorkspaceActivity();
       alert("Workspace snapshot saved.");
     });
@@ -5447,6 +6131,54 @@ async function init() {
       LAST_INTAKE_ANALYSIS = analyzeDocumentIntake(docIntakeInput.value || "");
       renderDocumentIntakeResults();
       alert("Document intake analysis complete.");
+    });
+  }
+
+  if (docLibrarySave && docIntakeInput) {
+    docLibrarySave.addEventListener("click", () => {
+      const text = (docIntakeInput.value || "").trim();
+      if (!text) {
+        alert("Paste or load some intake text before saving it to the document library.");
+        return;
+      }
+
+      const doc = createDocumentRecord({
+        name: docLibraryName?.value || "",
+        type: docLibraryType?.value || "General",
+        tags: docLibraryTags?.value || "",
+        text
+      });
+      saveDocumentLibrary([doc, ...loadDocumentLibrary()].slice(0, 30));
+      pushWorkspaceActivity("Document saved", `${doc.name} was added to the reusable document library.`);
+      if (docLibraryName) docLibraryName.value = "";
+      if (docLibraryTags) docLibraryTags.value = "";
+      renderDocumentLibrary();
+      renderWorkspaceActivity();
+      alert("Document saved to library.");
+    });
+  }
+
+  if (evLibrarySave) {
+    evLibrarySave.addEventListener("click", () => {
+      const record = createEvidenceLibraryRecord({
+        label: evLibraryLabel?.value || "",
+        url: evLibraryUrl?.value || "",
+        type: evLibraryType?.value || "Other",
+        excerpt: evLibraryExcerpt?.value || "",
+        tags: []
+      });
+      if (!record.label && !record.url && !record.excerpt) {
+        alert("Add at least a label, URL, or excerpt before saving an evidence record.");
+        return;
+      }
+      saveEvidenceLibrary([record, ...loadEvidenceLibrary()].slice(0, 40));
+      pushWorkspaceActivity("Evidence record saved", `${record.label} was added to the reusable evidence library.`);
+      if (evLibraryLabel) evLibraryLabel.value = "";
+      if (evLibraryUrl) evLibraryUrl.value = "";
+      if (evLibraryExcerpt) evLibraryExcerpt.value = "";
+      renderEvidenceLibrary();
+      renderWorkspaceActivity();
+      alert("Evidence record saved.");
     });
   }
 
@@ -5549,6 +6281,18 @@ async function init() {
     });
   }
 
+  if (wsRatingScenarioSave) {
+    wsRatingScenarioSave.addEventListener("click", () => {
+      const scenario = saveCurrentRatingScenario(wsRatingScenarioName?.value || "");
+      saveRatingScenarios([scenario, ...loadRatingScenarios()].slice(0, 12));
+      pushWorkspaceActivity("Rating scenario saved", `${scenario.name} was saved from the current estimator selections.`);
+      if (wsRatingScenarioName) wsRatingScenarioName.value = "";
+      renderRatingScenarioList();
+      renderWorkspaceActivity();
+      alert("Rating scenario saved.");
+    });
+  }
+
   if (theoryAdd && theoryType && theorySubject && theoryParent && theorySummary) {
     theoryAdd.addEventListener("click", () => {
       if (!theorySubject.value) {
@@ -5583,6 +6327,54 @@ async function init() {
     });
   }
 
+  function buildNexusFromInputs() {
+    const child = CONDITIONS.find((item) => item.id === nexusChild?.value);
+    const parent = CONDITIONS.find((item) => item.id === nexusParent?.value);
+    return buildNexusDraft({
+      childName: child?.name || nexusChild?.value || "",
+      parentName: parent?.name || nexusParent?.value || "",
+      relationType: nexusRelation?.value || "Secondary service connection",
+      mechanism: nexusMechanism?.value || "",
+      symptoms: nexusSymptoms?.value || "",
+      treatment: nexusTreatment?.value || "",
+      support: nexusSupport?.value || "",
+      rationale: nexusRationale?.value || ""
+    });
+  }
+
+  [nexusChild, nexusParent].forEach((el) => {
+    if (!el) return;
+    el.addEventListener("change", () => {
+      renderNexusBuilder();
+    });
+  });
+
+  if (nexusGenerate && nexusDraftOut) {
+    nexusGenerate.addEventListener("click", () => {
+      nexusDraftOut.value = buildNexusFromInputs();
+    });
+  }
+
+  if (nexusApply && nexusDraftOut && nexusChild) {
+    nexusApply.addEventListener("click", () => {
+      if (!nexusChild.value) {
+        alert("Choose a condition in the Guided Nexus Builder first.");
+        return;
+      }
+
+      const draft = nexusDraftOut.value.trim() || buildNexusFromInputs();
+      const existing = (loadNotes(nexusChild.value) || "").trim();
+      const nextNote = existing ? `${existing}\n\n${draft}` : draft;
+      saveNotes(nexusChild.value, nextNote);
+      const child = CONDITIONS.find((item) => item.id === nexusChild.value);
+      pushWorkspaceActivity("Nexus draft applied", `A guided nexus note was appended to ${child?.name || nexusChild.value}.`);
+      renderWorkspace();
+      renderHealthPanel();
+      renderWorkspaceActivity();
+      alert("Guided nexus draft appended to condition notes.");
+    });
+  }
+
   if (wsBackupExport) {
     wsBackupExport.addEventListener("click", () => {
       const backup = buildWorkspaceBackup();
@@ -5611,6 +6403,9 @@ async function init() {
         applyWorkspaceBackup(backup);
         pushWorkspaceActivity("Backup imported", `${file.name} restored a full workspace backup.`);
         renderSnapshotComparison(null);
+        renderDocumentLibrary();
+        renderEvidenceLibrary();
+        renderSnapshotHistoryList();
         renderWorkspace();
         renderClaimTree();
         renderHealthPanel();
@@ -5753,9 +6548,15 @@ async function init() {
 
   // Workspace buttons
   const wsExport = document.getElementById("wsExport");
+  const wsExportAll = document.getElementById("wsExportAll");
   const wsExportAudience = document.getElementById("wsExportAudience");
   const wsClear = document.getElementById("wsClear");
   const wsShowTips = document.getElementById("wsShowTips");
+  const wsFilterSearch = document.getElementById("wsFilterSearch");
+  const wsFilterSupport = document.getElementById("wsFilterSupport");
+  const wsFilterStatus = document.getElementById("wsFilterStatus");
+  const wsFilterSystem = document.getElementById("wsFilterSystem");
+  const wsFilterNotes = document.getElementById("wsFilterNotes");
 
   if (wsClear) {
     wsClear.addEventListener("click", () => {
@@ -5790,6 +6591,35 @@ async function init() {
       downloadText(`claim_workspace_packet_${audience}.txt`, text);
     });
   }
+
+  if (wsExportAll) {
+    wsExportAll.addEventListener("click", () => {
+      const st = loadWorkspaceState();
+      const primary = st.primaryId ? CONDITIONS.find(c => c.id === st.primaryId) : null;
+      const secondaries = st.links
+        .filter(l => l.from === st.primaryId)
+        .map(s => CONDITIONS.find(c => c.id === s.to))
+        .filter(Boolean);
+      const unassigned = st.nodes
+        .filter(id => id !== st.primaryId && !st.links.some(l => l.from === st.primaryId && l.to === id))
+        .map(id => CONDITIONS.find(c => c.id === id))
+        .filter(Boolean);
+      const ordered = [ ...(primary ? [primary] : []), ...secondaries, ...unassigned ];
+
+      ["review", "veteran", "representative"].forEach((audience) => {
+        const text = buildWorkspacePacketText(ordered, { audience });
+        downloadText(`claim_workspace_packet_${audience}.txt`, text);
+      });
+      alert("All packet versions exported.");
+    });
+  }
+
+  [wsFilterSearch, wsFilterSupport, wsFilterStatus, wsFilterSystem, wsFilterNotes].forEach((el) => {
+    if (!el) return;
+    el.addEventListener(el.tagName === "INPUT" ? "input" : "change", () => {
+      renderWorkspace();
+    });
+  });
 
   if (wsShowTips) {
     wsShowTips.addEventListener("click", () => {
@@ -5910,6 +6740,7 @@ async function init() {
   const wsTimelineScope = document.getElementById("wsTimelineScope");
   const wsTimelineInclude = document.getElementById("wsTimelineInclude");
   const wsTimelineContrib = document.getElementById("wsTimelineContrib");
+  const wsTimelineConflictSummary = document.getElementById("wsTimelineConflictSummary");
 
   function regenWsTimeline() {
     const scope = wsTimelineScope?.value || "all";
@@ -5933,12 +6764,23 @@ async function init() {
         const c = getConditionById(id);
         return c ? c.name : id;
       });
+      const entriesByCondition = Object.fromEntries(ids.map((id) => {
+        const c = getConditionById(id);
+        return [c ? c.name : id, loadTimeline(id)];
+      }));
+      const conflicts = analyzeTimelineConflicts(entriesByCondition);
 
       if (wsTimelineContrib) {
         wsTimelineContrib.textContent = contributors.length ? `Timeline contributors: ${contributors.join(', ')}` : 'No timeline entries found in selected scope.';
       }
+      if (wsTimelineConflictSummary) {
+        wsTimelineConflictSummary.textContent = conflicts.length
+          ? `Timeline conflict check: ${conflicts.length} issue${conflicts.length === 1 ? "" : "s"} found. ${conflicts.slice(0, 2).join(" ")}`
+          : "Timeline conflict check: no obvious date conflicts detected.";
+      }
     } catch (e) {
       if (wsTimelineContrib) wsTimelineContrib.textContent = '';
+      if (wsTimelineConflictSummary) wsTimelineConflictSummary.textContent = "";
     }
   }
 
@@ -6104,10 +6946,12 @@ async function init() {
 
 
 
-window.addEventListener("popstate", (e) => {
-  const id = e.state?.id;
-  if (id) showDetail(id, false);
-});
+if (typeof window !== "undefined" && window.addEventListener) {
+  window.addEventListener("popstate", (e) => {
+    const id = e.state?.id;
+    if (id) showDetail(id, false);
+  });
+}
 
 function tryLoadFromPath() {
   const parts = window.location.pathname.split("/").filter(Boolean);
@@ -6116,6 +6960,19 @@ function tryLoadFromPath() {
   }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  init();
-});
+if (typeof document !== "undefined" && document.addEventListener) {
+  document.addEventListener("DOMContentLoaded", () => {
+    init();
+  });
+}
+
+if (typeof module !== "undefined") {
+  module.exports = {
+    analyzeTimelineConflicts,
+    buildNexusDraft,
+    createEvidenceLibraryRecord,
+    createDocumentRecord,
+    estimateScenarioSnapshot,
+    filterWorkspaceItems,
+  };
+}

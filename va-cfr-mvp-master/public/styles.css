@@ -6,6 +6,10 @@ body {
   transition: background-color 200ms ease, color 200ms ease;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body.dark-mode {
   background: #121212;
   color: #ffffff;
@@ -32,6 +36,69 @@ h1 {
   color: #b8c4d6;
 }
 
+.pageHero {
+  margin-bottom: 18px;
+}
+
+.sectionAnchor {
+  scroll-margin-top: 110px;
+}
+
+.appJumpNav,
+.workspaceJumpNav {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(15, 22, 34, 0.92);
+  backdrop-filter: blur(10px);
+}
+
+.appJumpNav {
+  position: sticky;
+  top: 10px;
+  z-index: 30;
+  margin: 0 0 20px;
+}
+
+.workspaceJumpNav {
+  position: sticky;
+  top: 74px;
+  z-index: 20;
+  margin: 0 0 14px;
+}
+
+.workspaceUtilityBar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0 0 14px;
+}
+
+.appJumpNav a,
+.workspaceJumpNav a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(96,165,250,0.18);
+  background: rgba(59,130,246,0.08);
+  color: #dbeafe;
+  font-size: 0.9rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.appJumpNav a:hover,
+.workspaceJumpNav a:hover {
+  background: rgba(59,130,246,0.16);
+  border-color: rgba(96,165,250,0.34);
+  text-decoration: none;
+}
+
 .search input {
   width: 100%;
   padding: 12px 14px;
@@ -40,6 +107,15 @@ h1 {
   background: #111826;
   color: #e8eef6;
   outline: none;
+}
+
+.search {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(15, 22, 34, 0.56);
 }
 
 .controls {
@@ -662,7 +738,13 @@ mark.hl {
 .evBar { height: 10px; border-radius: 999px; background: rgba(255,255,255,0.12); overflow: hidden; }
 .evBarFill { height: 100%; width: 0%; border-radius: 999px; background: rgba(255,255,255,0.55); transition: width 120ms ease; }
 
-.workspace { margin-top: 16px; padding: 12px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.12); }
+.workspace {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(15, 22, 34, 0.48);
+}
 .wsHead { display:flex; gap:10px; justify-content: space-between; align-items: center; flex-wrap: wrap; }
 .wsBtns { display:flex; gap:8px; flex-wrap: wrap; }
 .wsList { display:grid; gap:10px; margin: 10px 0; }
@@ -1022,6 +1104,46 @@ input[type="radio"]:focus {
     linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
 }
 
+.workspacePanel {
+  margin-top: 18px;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.025));
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+}
+
+.workspacePanelHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panelToggle {
+  margin-left: auto;
+}
+
+.workspacePanel.collapsed {
+  padding-bottom: 14px;
+}
+
+.workspacePanel.collapsed > :not(h3) {
+  display: none;
+}
+
+.workspaceIntro {
+  margin: 0 0 14px;
+  color: #b8c4d6;
+  line-height: 1.5;
+}
+
+.footer {
+  margin-top: 28px;
+  padding: 18px 0 12px;
+  color: #9fb2cc;
+}
+
 .quickStartHead {
   display: flex;
   gap: 14px;
@@ -1094,7 +1216,8 @@ input[type="radio"]:focus {
 }
 
 .builderField input,
-.builderField select {
+.builderField select,
+.builderField textarea {
   padding: 10px 12px;
   border-radius: 12px;
   border: 1px solid rgba(255,255,255,0.16);
@@ -1179,7 +1302,7 @@ input[type="radio"]:focus {
 
 .snapshotBar {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 220px) auto;
   gap: 8px;
   margin-top: 10px;
 }
@@ -1354,6 +1477,10 @@ input[type="radio"]:focus {
   .sidebar-col { grid-column: 1 / -1; }
   .snapshotBar { grid-template-columns: 1fr; }
   .builderGrid { grid-template-columns: 1fr; }
+  .appJumpNav,
+  .workspaceJumpNav {
+    position: static;
+  }
 }
   pointer-events: none;
   opacity: 0.85;

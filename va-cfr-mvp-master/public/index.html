@@ -10,12 +10,26 @@
 <body>
   <main class="container">
     <div class="main-col">
-    <h1>VA CFR Finder (MVP)</h1>
-    <p class="sub">
-      Educational tool to map common conditions to 38 CFR rating references (not legal advice / not representation).
-    </p>
+    <header id="top" class="pageHero sectionAnchor">
+      <h1>VA CFR Finder (MVP)</h1>
+      <p class="sub">
+        Educational tool to map common conditions to 38 CFR rating references (not legal advice / not representation).
+      </p>
+    </header>
 
-    <section class="quickStartPanel">
+    <nav class="appJumpNav" aria-label="Primary navigation">
+      <a href="#start-zone">Start</a>
+      <a href="#search-zone">Search</a>
+      <a href="#workspace">Workspace</a>
+      <a href="#ws-documents-panel">Documents</a>
+      <a href="#ws-theory-panel">Theory</a>
+      <a href="#ws-rating-panel">Rating</a>
+      <a href="#ws-timeline-panel">Timeline</a>
+      <a href="#ws-evidence-panel">Evidence</a>
+      <a href="#detail">Detail</a>
+    </nav>
+
+    <section id="start-zone" class="quickStartPanel sectionAnchor">
       <div class="quickStartHead">
         <div>
           <h2 style="margin:0 0 4px">Quick Start Claim Plans</h2>
@@ -26,7 +40,7 @@
       <div id="quickStartPlans" class="quickStartGrid"></div>
     </section>
 
-    <section class="quickStartPanel">
+    <section class="quickStartPanel sectionAnchor">
       <div class="quickStartHead">
         <div>
           <h2 style="margin:0 0 4px">Guided Claim Builder</h2>
@@ -51,7 +65,7 @@
       </div>
     </section>
 
-    <section class="quickStartPanel">
+    <section class="quickStartPanel sectionAnchor">
       <div class="quickStartHead">
         <div>
           <h2 style="margin:0 0 4px">Start Here</h2>
@@ -62,7 +76,7 @@
       <div id="startHereSteps" class="builderSuggestions"></div>
     </section>
 
-    <div class="search">
+    <section id="search-zone" class="search sectionAnchor">
       <div class="controls">
   <label for="q" class="sr-only">Search</label>
   <input id="q" placeholder="Search: tinnitus, 8520, 4.124a, PTSD..." />
@@ -90,16 +104,17 @@
 
       <!-- Results list -->
       <div id="results" class="results"></div>
-    </div>
+    </section>
 
     </div>
 
     <!-- Workspace panel -->
-    <section id="workspace" class="workspace sidebar-col">
+    <section id="workspace" class="workspace sidebar-col sectionAnchor">
       <div class="wsHead">
         <h2 style="margin:0">Claim Workspace</h2>
         <div class="wsBtns">
           <button id="wsExport" class="miniBtn" type="button">Export Full Packet (.txt)</button>
+          <button id="wsExportAll" class="miniBtn" type="button">Export All Packets</button>
           <select id="wsExportAudience" class="miniBtn" aria-label="Export audience">
             <option value="review">Quick Review</option>
             <option value="veteran">Veteran Packet</option>
@@ -115,20 +130,34 @@
       <div class="small" id="wsOrphans">Orphans: 0</div>
       <div class="evBar"><div id="wsBarFill" class="evBarFill"></div></div>
       <div id="wsStickySummary" class="stickySummary"></div>
+      <nav class="workspaceJumpNav" aria-label="Workspace navigation">
+        <a href="#ws-overview-panel">Overview</a>
+        <a href="#ws-conditions-panel">Conditions</a>
+        <a href="#ws-restore-panel">Restore</a>
+        <a href="#ws-documents-panel">Documents</a>
+        <a href="#ws-theory-panel">Theory</a>
+        <a href="#ws-rating-panel">Rating</a>
+        <a href="#ws-timeline-panel">Timeline</a>
+        <a href="#ws-evidence-panel">Evidence</a>
+      </nav>
+      <div class="workspaceUtilityBar">
+        <button id="wsExpandAll" class="miniBtn" type="button">Expand all</button>
+        <button id="wsCollapseAll" class="miniBtn" type="button">Collapse all</button>
+      </div>
       <div id="wsRiskSummary" class="wsRiskSummary"></div>
       <div id="wsRiskFilterBar" class="wsRiskFilterBar hidden">
         <span id="wsRiskFilterText" class="small"></span>
         <button id="wsRiskFilterClear" class="miniBtn" type="button">Clear focus</button>
       </div>
 
-      <div class="workspacePanel">
+      <div id="ws-overview-panel" class="workspacePanel sectionAnchor">
         <h3 style="margin:0 0 6px">🌳 Claim Tree View</h3>
         <p class="workspaceIntro">Use the tree to sanity-check your primary condition, linked secondaries, and overall claim structure at a glance.</p>
         <div id="tree" class="treeBox"></div>
         <div class="small">Tip: Set a Primary, then add Secondary conditions to see the tree.</div>
       </div>
 
-      <div class="workspacePanel">
+      <div id="ws-health-panel" class="workspacePanel sectionAnchor">
         <h3 style="margin:0 0 6px">✅ Workspace Health</h3>
         <p class="workspaceIntro">This panel flags disconnected nodes, missing notes, and CFR/reference issues so you can fix weak spots before exporting.</p>
         <div id="wsHealth" class="healthBox"></div>
@@ -140,25 +169,75 @@
         </div>
       </div>
 
-      <div class="workspacePanel">
+      <div id="ws-conditions-panel" class="workspacePanel sectionAnchor">
         <h3 style="margin:0 0 6px">📂 Workspace Conditions</h3>
         <p class="workspaceIntro">Open any condition in your workspace to update notes, evidence readiness, related links, and timeline details.</p>
+        <div class="builderGrid">
+          <label class="builderField">
+            <span class="small">Search workspace</span>
+            <input id="wsFilterSearch" placeholder="Search names, notes, IDs, or body systems..." />
+          </label>
+          <label class="builderField">
+            <span class="small">Support</span>
+            <select id="wsFilterSupport">
+              <option value="">All support levels</option>
+              <option value="weak">Weak</option>
+              <option value="moderate">Moderate</option>
+              <option value="strong">Strong</option>
+            </select>
+          </label>
+          <label class="builderField">
+            <span class="small">Status</span>
+            <select id="wsFilterStatus">
+              <option value="">All statuses</option>
+              <option value="primary">Primary</option>
+              <option value="linked">Linked</option>
+              <option value="orphan">Orphan</option>
+              <option value="unlinked">Unlinked</option>
+            </select>
+          </label>
+          <label class="builderField">
+            <span class="small">Body system</span>
+            <select id="wsFilterSystem">
+              <option value="">All body systems</option>
+            </select>
+          </label>
+          <label class="builderField">
+            <span class="small">Notes</span>
+            <select id="wsFilterNotes">
+              <option value="">Any note state</option>
+              <option value="missing">Missing notes</option>
+              <option value="present">Has notes</option>
+            </select>
+          </label>
+        </div>
+        <div id="wsFilterSummary" class="small" style="margin-top:8px"></div>
         <div id="wsList" class="wsList"></div>
         <div class="small">Tip: open a condition and click “Add to Workspace”.</div>
       </div>
 
-      <div class="workspacePanel">
-        <h3 style="margin:0 0 6px">💾 Workspace Snapshots</h3>
-        <p class="workspaceIntro">Save a named checkpoint before you try a different theory, relationship structure, or evidence strategy.</p>
+      <div id="ws-restore-panel" class="workspacePanel sectionAnchor">
+        <h3 style="margin:0 0 6px">💾 Restore Points</h3>
+        <p class="workspaceIntro">Save a named checkpoint with a milestone label before you try a different theory, relationship structure, or evidence strategy.</p>
         <div class="snapshotBar">
           <input id="wsSnapshotName" type="text" placeholder="Optional snapshot name" />
+          <select id="wsSnapshotMilestone">
+            <option value="Working draft">Working draft</option>
+            <option value="Before intake import">Before intake import</option>
+            <option value="Before theory rewrite">Before theory rewrite</option>
+            <option value="Before nexus revision">Before nexus revision</option>
+            <option value="Before VSO review">Before VSO review</option>
+            <option value="Submission prep">Submission prep</option>
+          </select>
           <button id="wsSnapshotSave" class="miniBtn" type="button">Save Snapshot</button>
         </div>
         <div id="wsSnapshotList" class="snapshotList"></div>
         <div id="wsSnapshotCompare" class="snapshotCompare hidden"></div>
+        <div class="small" style="margin-top:12px"><strong>Compare / restore history</strong></div>
+        <div id="wsSnapshotHistory" class="snapshotList"></div>
       </div>
 
-      <div class="workspacePanel">
+      <div id="ws-backup-panel" class="workspacePanel sectionAnchor">
         <h3 style="margin:0 0 6px">🗃️ Full Backup</h3>
         <p class="workspaceIntro">Export or restore the full local workspace, including snapshots, activity, notes, timelines, evidence links, and relationships.</p>
         <div class="healthBtns" style="margin-top:0">
@@ -168,7 +247,7 @@
         <input id="wsBackupImportFile" type="file" accept="application/json,.json" class="hidden" />
       </div>
 
-      <div class="workspacePanel">
+      <div id="ws-activity-panel" class="workspacePanel sectionAnchor">
         <h3 style="margin:0 0 6px">🕒 Workspace Activity</h3>
         <p class="workspaceIntro">Review the recent claim-building steps you took so it’s easier to trace how the current workspace came together.</p>
         <div class="healthBtns" style="margin-top:0">
@@ -177,19 +256,42 @@
         <div id="wsActivityLog" class="activityLog"></div>
       </div>
 
-      <div class="workspacePanel">
+      <div id="ws-documents-panel" class="workspacePanel sectionAnchor">
         <h3 style="margin:0 0 6px">📥 Document Intake</h3>
         <p class="workspaceIntro">Paste note text, lay statements, DBQ text, or medical summaries to detect likely conditions, dates, and workspace candidates.</p>
+        <div class="builderGrid">
+          <label class="builderField">
+            <span class="small">Document name</span>
+            <input id="docLibraryName" placeholder="e.g. Sleep study summary" />
+          </label>
+          <label class="builderField">
+            <span class="small">Document type</span>
+            <select id="docLibraryType">
+              <option value="General">General</option>
+              <option value="Medical record">Medical record</option>
+              <option value="DBQ">DBQ</option>
+              <option value="Lay statement">Lay statement</option>
+              <option value="Exam note">Exam note</option>
+            </select>
+          </label>
+          <label class="builderField" style="grid-column:1 / -1">
+            <span class="small">Tags</span>
+            <input id="docLibraryTags" placeholder="e.g. migraines, sleep, nexus" />
+          </label>
+        </div>
         <textarea id="docIntakeInput" class="wsNarrativeOut" rows="8" placeholder="Paste source text here..."></textarea>
         <div class="healthBtns">
           <button id="docIntakeAnalyze" class="miniBtn" type="button">Analyze Intake</button>
           <button id="docIntakeAdd" class="miniBtn" type="button">Add Selected to Workspace</button>
+          <button id="docLibrarySave" class="miniBtn" type="button">Save to Library</button>
         </div>
         <div id="docIntakeSummary" class="small" style="margin-top:8px"></div>
         <div id="docIntakeResults" class="builderSuggestions"></div>
+        <div class="small" style="margin-top:12px"><strong>Saved document library</strong></div>
+        <div id="docLibraryList" class="builderSuggestions"></div>
       </div>
 
-      <div class="workspacePanel">
+      <div id="ws-coach-panel" class="workspacePanel sectionAnchor">
         <h3 style="margin:0 0 6px">🧭 Claim Strategy Coach</h3>
         <p class="workspaceIntro">Turn the current workspace into a plain-English theory summary with strengths, weak points, and next actions.</p>
         <div class="healthBtns" style="margin-top:0">
@@ -199,7 +301,7 @@
         <textarea id="wsCoachOut" class="wsNarrativeOut" rows="12" placeholder='Click "Generate Strategy Coach" to build a coaching summary...'></textarea>
       </div>
 
-      <div class="workspacePanel">
+      <div id="ws-theory-panel" class="workspacePanel sectionAnchor">
         <h3 style="margin:0 0 6px">🧩 Claim Theory Builder</h3>
         <p class="workspaceIntro">Capture the actual theory of the claim in a structured way so the coach, packet exports, and review tools all work from the same logic.</p>
         <div class="builderGrid">
@@ -233,7 +335,55 @@
         <div id="theoryList" class="builderSuggestions"></div>
       </div>
 
-      <div class="workspacePanel">
+      <div id="ws-nexus-panel" class="workspacePanel sectionAnchor">
+        <h3 style="margin:0 0 6px">🔗 Guided Nexus Builder</h3>
+        <p class="workspaceIntro">Build a stronger secondary-connection note by walking through the related condition, mechanism, symptoms, treatment history, and supporting rationale.</p>
+        <div class="builderGrid">
+          <label class="builderField">
+            <span class="small">Child / claimed condition</span>
+            <select id="nexusChild"></select>
+          </label>
+          <label class="builderField">
+            <span class="small">Related / parent condition</span>
+            <select id="nexusParent"></select>
+          </label>
+          <label class="builderField">
+            <span class="small">Relationship type</span>
+            <select id="nexusRelation">
+              <option value="Secondary service connection">Secondary service connection</option>
+              <option value="Aggravation theory">Aggravation theory</option>
+              <option value="Increase / worsening theory">Increase / worsening theory</option>
+            </select>
+          </label>
+          <label class="builderField">
+            <span class="small">Mechanism</span>
+            <input id="nexusMechanism" placeholder="How does the parent condition affect the child condition?" />
+          </label>
+          <label class="builderField">
+            <span class="small">Symptoms / functional impact</span>
+            <input id="nexusSymptoms" placeholder="Headaches, missed work, poor sleep, anxiety, etc." />
+          </label>
+          <label class="builderField">
+            <span class="small">Treatment / timeline support</span>
+            <input id="nexusTreatment" placeholder="When treatment started, worsening points, provider visits..." />
+          </label>
+          <label class="builderField">
+            <span class="small">Evidence support</span>
+            <input id="nexusSupport" placeholder="DBQ, medical note, sleep study, lay statement, exam..." />
+          </label>
+          <label class="builderField">
+            <span class="small">Nexus language / rationale</span>
+            <input id="nexusRationale" placeholder="Provider rationale or plain-language relationship explanation" />
+          </label>
+        </div>
+        <div class="healthBtns">
+          <button id="nexusGenerate" class="miniBtn" type="button">Generate Nexus Draft</button>
+          <button id="nexusApply" class="miniBtn" type="button">Append to Condition Notes</button>
+        </div>
+        <textarea id="nexusDraftOut" class="wsNarrativeOut" rows="10" placeholder='Click "Generate Nexus Draft" to create a reusable secondary-claim note...'></textarea>
+      </div>
+
+      <div id="ws-rating-panel" class="workspacePanel sectionAnchor">
         <h3 style="margin:0 0 6px">🧮 VA Rating Estimator</h3>
         <p class="workspaceIntro">Estimate how new or increased workspace conditions could affect the current combined VA rating using standard VA combined-rating math.</p>
         <div class="builderGrid">
@@ -248,11 +398,16 @@
           <button id="wsRatingCalculate" class="miniBtn" type="button">Calculate Projection</button>
           <button id="wsRatingCompare" class="miniBtn" type="button">Compare Scenarios</button>
         </div>
+        <div class="snapshotBar">
+          <input id="wsRatingScenarioName" type="text" placeholder="Optional scenario name" />
+          <button id="wsRatingScenarioSave" class="miniBtn" type="button">Save Scenario</button>
+        </div>
         <div id="wsRatingSummary" class="small" style="margin-top:8px"></div>
         <textarea id="wsRatingOut" class="wsNarrativeOut" rows="10" placeholder='Click "Calculate Projection" to estimate the combined rating impact...'></textarea>
+        <div id="wsRatingScenarioList" class="builderSuggestions"></div>
       </div>
 
-      <div class="workspacePanel">
+      <div id="ws-narrative-panel" class="workspacePanel sectionAnchor">
         <h3 style="margin:0 0 6px">🧠 Claim Narrative Draft</h3>
         <p class="workspaceIntro">Generate a structured educational draft from your saved notes, links, and evidence readiness to spot missing detail fast.</p>
 
@@ -283,7 +438,7 @@
       </div>
       </div>
 
-      <div class="workspacePanel">
+      <div id="ws-timeline-panel" class="workspacePanel sectionAnchor">
       <h3 style="margin:0 0 6px">🗓️ Workspace Timeline <span class="helpIcon" title="Timeline merges per-condition dated events into one chronological list">?</span></h3>
       <p class="workspaceIntro">Merge dated condition events into one chronological view so you can review onset, treatment, exams, and impact in sequence.</p>
 
@@ -304,6 +459,7 @@
       </div>
 
       <div id="wsTimelineContrib" class="small" style="margin-top:8px"></div>
+      <div id="wsTimelineConflictSummary" class="small" style="margin-top:8px"></div>
       <div class="helpTip" data-tip-id="timeline">
         <div class="small">Tip: The Workspace Timeline merges dated events you add per-condition. Use the "Add all with timeline to Workspace" button to quickly include items that already have dated entries. Choose a scope to limit results (Primary / Linked / All). Export or copy the timeline to include it in claim drafts.</div>
         <button class="tipClose" data-tip-id="timeline" aria-label="Dismiss tip">×</button>
@@ -313,7 +469,7 @@
       <textarea id="wsTimelineNarrativeOut" class="wsNarrativeOut" rows="8" placeholder='Click "Timeline to Narrative" to turn dated entries into a paragraph...'></textarea>
       </div>
 
-      <div class="workspacePanel">
+      <div id="ws-evidence-panel" class="workspacePanel sectionAnchor">
       <h3 style="margin:0 0 6px">🧾 Evidence Hub</h3>
       <p class="workspaceIntro">Review all workspace evidence in one searchable place, then jump straight to the linked conditions that use each item.</p>
 
@@ -355,7 +511,46 @@
       <div id="wsHubList" class="builderSuggestions"></div>
       </div>
 
-      <div class="workspacePanel">
+      <div id="ws-evidence-library-panel" class="workspacePanel sectionAnchor">
+        <h3 style="margin:0 0 6px">🗂️ Evidence Library</h3>
+        <p class="workspaceIntro">Save reusable evidence links and excerpts once, then attach them to multiple conditions without rebuilding the same record each time.</p>
+        <div class="builderGrid">
+          <label class="builderField">
+            <span class="small">Evidence label</span>
+            <input id="evLibraryLabel" placeholder="e.g. Neurology note April 2025" />
+          </label>
+          <label class="builderField">
+            <span class="small">Evidence URL</span>
+            <input id="evLibraryUrl" placeholder="https://..." />
+          </label>
+          <label class="builderField">
+            <span class="small">Evidence type</span>
+            <select id="evLibraryType">
+              <option value="Medical record">Medical record</option>
+              <option value="DBQ">DBQ</option>
+              <option value="Lay statement">Lay statement</option>
+              <option value="Exam note">Exam note</option>
+              <option value="Other">Other</option>
+            </select>
+          </label>
+          <label class="builderField">
+            <span class="small">Attach target</span>
+            <select id="evLibraryTarget">
+              <option value="">Choose workspace condition</option>
+            </select>
+          </label>
+          <label class="builderField" style="grid-column:1 / -1">
+            <span class="small">Excerpt / notes</span>
+            <textarea id="evLibraryExcerpt" class="wsNarrativeOut" rows="4" placeholder="Short excerpt or why this evidence matters..."></textarea>
+          </label>
+        </div>
+        <div class="healthBtns">
+          <button id="evLibrarySave" class="miniBtn" type="button">Save Evidence Record</button>
+        </div>
+        <div id="evLibraryList" class="builderSuggestions"></div>
+      </div>
+
+      <div id="ws-binder-panel" class="workspacePanel sectionAnchor">
       <h3 style="margin:0 0 6px">📎 Workspace Evidence Binder <span class="helpIcon" title="Binder consolidates and deduplicates evidence links across your workspace">?</span></h3>
       <p class="workspaceIntro">Combine saved evidence across the workspace into one consolidated list, then sort or cluster it for easier review.</p>
 
@@ -404,7 +599,7 @@
       <textarea id="wsBinderOut" class="wsNarrativeOut" rows="12" placeholder='Click "Generate Binder" to merge evidence links across your workspace...'></textarea>
       </div>
 
-      <div class="workspacePanel">
+      <div id="ws-graph-panel" class="workspacePanel sectionAnchor">
       <h3 style="margin:0 0 6px">🕸️ Evidence Relationship Graph <span class="helpIcon" title="Graph shows connections between evidence items; drag to reposition, scroll to zoom">?</span></h3>
       <p class="workspaceIntro">Visualize how records, notes, and statements connect so you can spot isolated evidence and stronger clusters quickly.</p>
 
@@ -443,7 +638,7 @@
     </section>
 
     <!-- Detail view (ONLY ONE) -->
-    <section id="detail" class="detail hidden"></section>
+    <section id="detail" class="detail hidden sectionAnchor"></section>
 
     <footer class="footer">
       <small>
