@@ -11,8 +11,6 @@ The active app lives at the repository root:
 - [public/](/Users/jeromeanderson/va-cfr-mvp/va-cfr-mvp-master/public)
 - [data/conditions.json](/Users/jeromeanderson/va-cfr-mvp/va-cfr-mvp-master/data/conditions.json)
 
-The nested [va-cfr-mvp/](/Users/jeromeanderson/va-cfr-mvp/va-cfr-mvp-master/va-cfr-mvp) folder is a legacy snapshot and is not used by the active server.
-
 ## Scripts
 
 - `npm run dev` starts the app with live reload.
