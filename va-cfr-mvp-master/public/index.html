@@ -21,12 +21,15 @@
       <a href="#start-zone">Start</a>
       <a href="#search-zone">Search</a>
       <a href="#workspace">Workspace</a>
+      <a href="#ws-dashboard-panel">Dashboard</a>
       <a href="#ws-documents-panel">Documents</a>
       <a href="#ws-theory-panel">Theory</a>
-      <a href="#ws-rating-panel">Rating</a>
-      <a href="#ws-timeline-panel">Timeline</a>
-      <a href="#ws-evidence-panel">Evidence</a>
-      <a href="#detail">Detail</a>
+      <a href="#ws-review-panel">Review</a>
+        <a href="#ws-rating-panel">Rating</a>
+        <a href="#ws-timeline-panel">Timeline</a>
+        <a href="#ws-evidence-panel">Evidence</a>
+        <a href="#ws-coverage-panel">Coverage</a>
+        <a href="#detail">Detail</a>
     </nav>
 
     <section id="start-zone" class="quickStartPanel sectionAnchor">
@@ -115,6 +118,7 @@
         <div class="wsBtns">
           <button id="wsExport" class="miniBtn" type="button">Export Full Packet (.txt)</button>
           <button id="wsExportAll" class="miniBtn" type="button">Export All Packets</button>
+          <button id="wsPrintPacket" class="miniBtn" type="button">Open Printable Packet</button>
           <select id="wsExportAudience" class="miniBtn" aria-label="Export audience">
             <option value="review">Quick Review</option>
             <option value="veteran">Veteran Packet</option>
@@ -131,14 +135,21 @@
       <div class="evBar"><div id="wsBarFill" class="evBarFill"></div></div>
       <div id="wsStickySummary" class="stickySummary"></div>
       <nav class="workspaceJumpNav" aria-label="Workspace navigation">
+        <a href="#ws-dashboard-panel">Dashboard</a>
         <a href="#ws-overview-panel">Overview</a>
         <a href="#ws-conditions-panel">Conditions</a>
+        <a href="#ws-profiles-panel">Profiles</a>
         <a href="#ws-restore-panel">Restore</a>
         <a href="#ws-documents-panel">Documents</a>
         <a href="#ws-theory-panel">Theory</a>
+        <a href="#ws-review-panel">Review</a>
+        <a href="#ws-submit-panel">Submit</a>
+        <a href="#ws-assembler-panel">Assemble</a>
+        <a href="#ws-action-panel">Actions</a>
         <a href="#ws-rating-panel">Rating</a>
         <a href="#ws-timeline-panel">Timeline</a>
         <a href="#ws-evidence-panel">Evidence</a>
+        <a href="#ws-coverage-panel">Coverage</a>
       </nav>
       <div class="workspaceUtilityBar">
         <button id="wsExpandAll" class="miniBtn" type="button">Expand all</button>
@@ -148,6 +159,18 @@
       <div id="wsRiskFilterBar" class="wsRiskFilterBar hidden">
         <span id="wsRiskFilterText" class="small"></span>
         <button id="wsRiskFilterClear" class="miniBtn" type="button">Clear focus</button>
+      </div>
+
+      <div id="ws-dashboard-panel" class="workspacePanel sectionAnchor">
+        <h3 style="margin:0 0 6px">📊 Workspace Dashboard</h3>
+        <p class="workspaceIntro">Use this command-center summary to see the current anchor condition, strongest and weakest claims, projected rating context, and the next best actions.</p>
+        <div id="wsDashboard"></div>
+      </div>
+
+      <div id="ws-action-panel" class="workspacePanel sectionAnchor">
+        <h3 style="margin:0 0 6px">⚡ Auto Next Actions</h3>
+        <p class="workspaceIntro">Use this engine when you want the app to tell you the highest-value next moves across packet issues, evidence conflicts, and claim milestones.</p>
+        <div id="wsActionEngine" class="builderSuggestions"></div>
       </div>
 
       <div id="ws-overview-panel" class="workspacePanel sectionAnchor">
@@ -214,6 +237,19 @@
         <div id="wsFilterSummary" class="small" style="margin-top:8px"></div>
         <div id="wsList" class="wsList"></div>
         <div class="small">Tip: open a condition and click “Add to Workspace”.</div>
+      </div>
+
+      <div id="ws-profiles-panel" class="workspacePanel sectionAnchor">
+        <h3 style="margin:0 0 6px">🗂️ Claim Workspaces / Profiles</h3>
+        <p class="workspaceIntro">Save separate local claim workspaces for different veterans, alternate theories, or milestone versions without mixing everything into one active state.</p>
+        <div class="snapshotBar">
+          <input id="wsProfileName" type="text" placeholder="Profile name (e.g. Jerome - sleep claim)" />
+          <input id="wsProfileNotes" type="text" placeholder="Optional profile notes or veteran context" />
+          <button id="wsProfileSaveCurrent" class="miniBtn" type="button">Save Current as Profile</button>
+          <button id="wsProfileNewBlank" class="miniBtn" type="button">New Blank Profile</button>
+        </div>
+        <div id="wsProfileCurrent" class="small" style="margin-top:8px"></div>
+        <div id="wsProfileList" class="snapshotList"></div>
       </div>
 
       <div id="ws-restore-panel" class="workspacePanel sectionAnchor">
@@ -287,6 +323,7 @@
         </div>
         <div id="docIntakeSummary" class="small" style="margin-top:8px"></div>
         <div id="docIntakeResults" class="builderSuggestions"></div>
+        <div id="docMapperResults" class="builderSuggestions" style="margin-top:12px"></div>
         <div class="small" style="margin-top:12px"><strong>Saved document library</strong></div>
         <div id="docLibraryList" class="builderSuggestions"></div>
       </div>
@@ -299,6 +336,68 @@
           <button id="wsCoachCopy" class="miniBtn" type="button">Copy Coach Summary</button>
         </div>
         <textarea id="wsCoachOut" class="wsNarrativeOut" rows="12" placeholder='Click "Generate Strategy Coach" to build a coaching summary...'></textarea>
+      </div>
+
+      <div id="ws-review-panel" class="workspacePanel sectionAnchor">
+        <h3 style="margin:0 0 6px">🧪 Packet Review Mode</h3>
+        <p class="workspaceIntro">Run a final audit for missing theories, weak secondaries, unsupported rating assumptions, timeline issues, and thin evidence support before export.</p>
+        <div class="healthBtns" style="margin-top:0">
+          <button id="wsReviewGenerate" class="miniBtn" type="button">Run Packet Review</button>
+          <button id="wsReviewCopy" class="miniBtn" type="button">Copy Review</button>
+        </div>
+        <textarea id="wsReviewOut" class="wsNarrativeOut" rows="12" placeholder='Click "Run Packet Review" to audit the current workspace...'></textarea>
+      </div>
+
+      <div id="ws-submit-panel" class="workspacePanel sectionAnchor">
+        <h3 style="margin:0 0 6px">📤 Submission-Prep Mode</h3>
+        <p class="workspaceIntro">Use this as the final handoff pass before sharing the workspace with a VSO, representative, or reviewer.</p>
+        <div class="healthBtns" style="margin-top:0">
+          <button id="wsSubmitGenerate" class="miniBtn" type="button">Generate Submission Prep</button>
+          <button id="wsSubmitCopy" class="miniBtn" type="button">Copy Submission Prep</button>
+        </div>
+        <textarea id="wsSubmitOut" class="wsNarrativeOut" rows="12" placeholder='Click "Generate Submission Prep" to build a final handoff review...'></textarea>
+      </div>
+
+      <div id="ws-handoff-panel" class="workspacePanel sectionAnchor">
+        <h3 style="margin:0 0 6px">🤝 Representative Handoff</h3>
+        <p class="workspaceIntro">Generate a cleaner representative-facing workspace summary with strongest claims, weak spots, evidence conflicts, and top review items.</p>
+        <div class="healthBtns" style="margin-top:0">
+          <button id="wsHandoffGenerate" class="miniBtn" type="button">Generate Handoff</button>
+          <button id="wsHandoffCopy" class="miniBtn" type="button">Copy Handoff</button>
+        </div>
+        <textarea id="wsHandoffOut" class="wsNarrativeOut" rows="12" placeholder='Click "Generate Handoff" to build a representative-facing review summary...'></textarea>
+      </div>
+
+      <div id="ws-assembler-panel" class="workspacePanel sectionAnchor">
+        <h3 style="margin:0 0 6px">🧱 Smart Packet Assembler</h3>
+        <p class="workspaceIntro">Assemble one configurable handoff packet by combining the workspace overview, theory review, coach output, timeline, evidence binder, and coverage matrix in one draft.</p>
+        <div class="builderGrid">
+          <label class="builderField"><span class="small">Audience</span>
+            <select id="wsAssemblerAudience">
+              <option value="review">Quick Review</option>
+              <option value="veteran">Veteran Packet</option>
+              <option value="representative">Representative Packet</option>
+            </select>
+          </label>
+          <label class="builderField"><span class="small">Include sections</span>
+            <div class="healthBtns" style="margin-top:6px">
+              <label class="small"><input id="wsAssemblerOverview" type="checkbox" checked /> Overview</label>
+              <label class="small"><input id="wsAssemblerCoach" type="checkbox" checked /> Coach</label>
+              <label class="small"><input id="wsAssemblerSubmission" type="checkbox" checked /> Submission Prep</label>
+              <label class="small"><input id="wsAssemblerTheories" type="checkbox" checked /> Theory Review</label>
+              <label class="small"><input id="wsAssemblerNarrative" type="checkbox" checked /> Narrative</label>
+              <label class="small"><input id="wsAssemblerTimeline" type="checkbox" checked /> Timeline</label>
+              <label class="small"><input id="wsAssemblerBinder" type="checkbox" checked /> Evidence Binder</label>
+              <label class="small"><input id="wsAssemblerCoverage" type="checkbox" checked /> Coverage Matrix</label>
+            </div>
+          </label>
+        </div>
+        <div class="healthBtns" style="margin-top:12px">
+          <button id="wsAssemblerGenerate" class="miniBtn" type="button">Assemble Packet</button>
+          <button id="wsAssemblerCopy" class="miniBtn" type="button">Copy Packet</button>
+          <button id="wsAssemblerDownload" class="miniBtn" type="button">Download Packet (.txt)</button>
+        </div>
+        <textarea id="wsAssemblerOut" class="wsNarrativeOut" rows="16" placeholder='Click "Assemble Packet" to build one combined handoff draft...'></textarea>
       </div>
 
       <div id="ws-theory-panel" class="workspacePanel sectionAnchor">
@@ -511,6 +610,25 @@
       <div id="wsHubList" class="builderSuggestions"></div>
       </div>
 
+      <div id="ws-coverage-panel" class="workspacePanel sectionAnchor">
+        <h3 style="margin:0 0 6px">🧮 Evidence Coverage Matrix</h3>
+        <p class="workspaceIntro">See which conditions already have support for diagnosis, severity, timeline, and nexus, and which claim elements still need work.</p>
+        <div id="wsCoverageSummary" class="small" style="margin-top:8px"></div>
+        <div id="wsCoverageMatrix" style="margin-top:12px"></div>
+      </div>
+
+      <div id="ws-conflicts-panel" class="workspacePanel sectionAnchor">
+        <h3 style="margin:0 0 6px">🧯 Evidence Duplicate / Conflict Engine</h3>
+        <p class="workspaceIntro">Review duplicate evidence records, conflicting dates, and mismatched labels before you export or hand the workspace off.</p>
+        <div class="healthBtns" style="margin-top:0">
+          <button id="wsConflictsRefresh" class="miniBtn" type="button">Refresh Conflict Review</button>
+          <button id="evLibraryExportCsv" class="miniBtn" type="button">Export Evidence CSV</button>
+          <button id="evLibraryImportCsv" class="miniBtn" type="button">Import Evidence CSV</button>
+        </div>
+        <input id="evLibraryImportFile" type="file" accept=".csv,text/csv" class="hidden" />
+        <div id="wsConflictsList" class="builderSuggestions" style="margin-top:12px"></div>
+      </div>
+
       <div id="ws-evidence-library-panel" class="workspacePanel sectionAnchor">
         <h3 style="margin:0 0 6px">🗂️ Evidence Library</h3>
         <p class="workspaceIntro">Save reusable evidence links and excerpts once, then attach them to multiple conditions without rebuilding the same record each time.</p>
@@ -634,6 +752,38 @@
         </label>
 
       <div id="wsGraphInfo" class="graphInfo small">(Click a node to open its link. Drag nodes to reposition.)</div>
+      </div>
+
+      <div id="ws-milestones-panel" class="workspacePanel sectionAnchor">
+        <h3 style="margin:0 0 6px">🏁 Claim Milestone Tracker</h3>
+        <p class="workspaceIntro">Track claim-stage milestones like intent to file, diagnosis, worsening, C&P exam, decision, and appeal events alongside the medical workspace.</p>
+        <div class="builderGrid">
+          <label class="builderField">
+            <span class="small">Date</span>
+            <input id="wsMilestoneDate" placeholder="YYYY-MM-DD" />
+          </label>
+          <label class="builderField">
+            <span class="small">Stage</span>
+            <select id="wsMilestoneStage">
+              <option value="Intent to File">Intent to File</option>
+              <option value="Diagnosis">Diagnosis</option>
+              <option value="Worsening">Worsening</option>
+              <option value="C&P Exam">C&P Exam</option>
+              <option value="Decision">Decision</option>
+              <option value="Appeal / Supplemental">Appeal / Supplemental</option>
+              <option value="Other">Other</option>
+            </select>
+          </label>
+          <label class="builderField" style="grid-column:1 / -1">
+            <span class="small">Note</span>
+            <input id="wsMilestoneNote" placeholder="Short note about this claim-stage event" />
+          </label>
+        </div>
+        <div class="healthBtns" style="margin-top:12px">
+          <button id="wsMilestoneAdd" class="miniBtn" type="button">Add Milestone</button>
+          <button id="wsMilestoneExportCsv" class="miniBtn" type="button">Export Milestones CSV</button>
+        </div>
+        <div id="wsMilestoneList" class="snapshotList" style="margin-top:12px"></div>
       </div>
     </section>
 

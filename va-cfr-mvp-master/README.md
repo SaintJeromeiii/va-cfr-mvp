@@ -46,13 +46,36 @@ The active app lives at the repository root:
 - Evidence Library now stores reusable evidence links and excerpts that can be attached across multiple workspace conditions
 - Restore points now support milestone labels plus compare/restore history so major claim revisions are easier to track over time
 - Workspace conditions can now be filtered by search text, support level, status, body system, and note presence for larger claims
+- Workspace Dashboard now highlights the current primary condition, projected rating context, restore/theory counts, strongest claims, weakest claims, and next-best actions in one place
+- Claim Workspaces / Profiles now let users save separate local workspaces for different veterans, alternate theories, or milestone claim versions and reload them cleanly
 - Granular evidence gap detection now surfaces diagnosis, severity/impact, timeline, relationship, and checklist weaknesses across workspace cards and health summaries
+- Section-based readiness scoring now breaks each condition into diagnosis, severity, nexus, timeline, and evidence readiness instead of only one broad support signal
+- Packet Review Mode now audits the current workspace for missing theories, thin secondaries, missing evidence, timeline conflicts, and overly aggressive rating assumptions before export
+- Submission-Prep Mode now generates a final handoff review with strongest claims, weakest claims, verification steps, and assumptions to review before sharing the packet externally
+- Condition-specific coaching now gives more targeted next-step guidance inside workspace cards and the detail view instead of only generic gap messaging
+- Evidence Library records now surface suggested workspace targets automatically based on label, excerpt, tags, and condition/body-system matches
+- Record-to-Claim Mapper now breaks pasted records into likely supported conditions, claim elements, quoted excerpts, confidence hints, and follow-up prompts
+- Evidence Coverage Matrix now shows which workspace conditions already have diagnosis, severity, timeline, and nexus support and which claim elements are still missing
+- Missing coverage cells in the Evidence Coverage Matrix now jump directly into the right condition area and can drop in starter text for notes or timeline work
+- Smart Packet Assembler now combines selected sections like overview, theory review, coach output, submission prep, narrative, timeline, binder, and coverage into one configurable handoff draft
+- Structured theories now get reviewer-style scoring and feedback so users can see whether each theory is strong, moderate, or still needs work
+- Printable packet output can now open in a cleaner browser-friendly format for easier review, printing, and representative handoff
+- Condition detail views now show a compact readiness and provenance summary strip so the user can see the weakest section before editing notes, timeline, or evidence
+- Generated and inferred content is now labeled with a provenance layer so the app distinguishes user-entered, inferred, and generated material more clearly
 - VA Rating Estimator now supports scenario comparison so users can compare conservative, moderate, and aggressive projection paths from the same workspace
 - Workspace Timeline now runs a conflict check for invalid dates, future dates, and same-day multi-event collisions
 - One-click multi-packet export now downloads quick-review, veteran, and representative packets together
+- Guided condition forms now give condition-specific structured prompts inside the detail view and can append a reusable summary into notes
+- Evidence duplicate / conflict review now surfaces duplicate library records plus conflicting attached dates and labels in a dedicated workspace panel
+- Representative Handoff now generates a representative-facing review summary with strongest claims, weak spots, evidence conflicts, and next actions
+- Auto Next Actions now turns top blockers, missing milestones, and evidence conflicts into a prioritized workspace action queue
+- Claim Milestone Tracker now captures claim-stage events like intent to file, C&P exams, decisions, and appeal steps and can export them to CSV
+- Printable packet output now includes a cover sheet, summary cards, stronger review framing, and better page-break behavior for printing
+- Evidence Library CSV import/export now gives the app a cleaner data portability path for reusable evidence records
 - Timeline-to-narrative synthesis now converts dated workspace events into a draft paragraph that can feed claim-writing and review workflows
 - Workspace Snapshots now let users save and restore named claim checkpoints, including notes, timeline entries, evidence links, checklist state, and workspace relationships
 - Full Backup export/import now lets users archive or restore the entire local workspace state, including snapshots, activity history, relationships, notes, timelines, and evidence links
+- Mobile and tablet spacing has been tightened with better wrapping for navigation, dashboard cards, detail summaries, and dense workspace controls
 - Removal of the unused `public/js/intelligence.js` experimental script
 - Jest coverage for parsing, validation, storage migrations, workspace export/share logic, evidence binder logic, evidence graph helpers, workspace UI helpers, detail view/interactions, timeline logic, and API behavior
 - Cleanup of inline debug code and repository metadata

@@ -1,14 +1,44 @@
 "use strict";
 
 const {
+  analyzeEvidenceConflicts,
   analyzeTimelineConflicts,
+  analyzeRecordToClaimMapper,
+  buildAssembledPacketText,
+  buildEvidenceLibraryCsv,
+  buildCoverageStarter,
+  buildMilestonesCsv,
   buildNexusDraft,
+  buildPacketReviewSnapshot,
+  buildPrintablePacketHtml,
+  buildSubmissionPrepSnapshot,
+  buildSymptomFormSummary,
+  computeEvidenceCoverageMatrix,
+  getConditionGuidedFormSchema,
+  conditionSpecificCoaching,
+  computeConditionReadinessSnapshot,
   createEvidenceLibraryRecord,
   createDocumentRecord,
   estimateScenarioSnapshot,
+  parseEvidenceCsv,
+  scoreTheoryRecord,
+  suggestEvidenceTargets,
+  workspaceProfileSummary,
 } = require("../public/app");
 
 describe("guided upgrade helpers", () => {
+  beforeEach(() => {
+    const store = {};
+    global.localStorage = {
+      getItem: (key) => (Object.prototype.hasOwnProperty.call(store, key) ? store[key] : null),
+      setItem: (key, value) => { store[key] = String(value); },
+      removeItem: (key) => { delete store[key]; },
+      clear: () => {
+        Object.keys(store).forEach((key) => delete store[key]);
+      },
+    };
+  });
+
   test("builds a nexus draft with the provided fields", () => {
     const text = buildNexusDraft({
       childName: "Migraines",
@@ -57,6 +87,25 @@ describe("guided upgrade helpers", () => {
     expect(record.tags).toEqual(["migraines", "sleep"]);
   });
 
+  test("returns a condition-specific guided form schema and summary", () => {
+    const schema = getConditionGuidedFormSchema({
+      name: "Migraines",
+      aliases: ["headaches"],
+      body_system: "Neurological Conditions",
+    });
+    const summary = buildSymptomFormSummary(
+      { name: "Migraines", aliases: ["headaches"], body_system: "Neurological Conditions" },
+      {
+        frequency: "3-4 times per week",
+        prostrating: "Twice monthly",
+      },
+    );
+
+    expect(schema.title).toMatch(/Migraine/i);
+    expect(schema.fields.some((field) => field.key === "frequency")).toBe(true);
+    expect(summary).toContain("Headache frequency: 3-4 times per week");
+  });
+
   test("estimates a saved rating scenario against workspace items", () => {
     const result = estimateScenarioSnapshot(
       {
@@ -93,5 +142,295 @@ describe("guided upgrade helpers", () => {
     expect(conflicts.some((line) => line.includes("future timeline date"))).toBe(true);
     expect(conflicts.some((line) => line.includes("multiple event types on 2024-02-01"))).toBe(true);
     expect(conflicts.some((line) => line.includes("missing or invalid date"))).toBe(true);
+  });
+
+  test("scores condition readiness by section and highlights the weakest gap", () => {
+    const readiness = computeConditionReadinessSnapshot(
+      {
+        id: "migraines",
+        evidence_checklist: ["Diagnosis", "Frequency log", "Lay statement"],
+      },
+      {
+        notes: "Frequent headaches affect work and sleep. Neurology treatment note confirms diagnosis.",
+        evidenceLinks: [{ id: "a" }],
+        timeline: [{ date: "2024-02-01", type: "Diagnosis" }],
+        evidenceState: { 0: true, 1: true },
+        theories: [{ subjectId: "migraines", parentId: "ptsd" }],
+        workspaceState: { primaryId: "ptsd", links: [{ from: "ptsd", to: "migraines", type: "Secondary to" }] },
+      },
+    );
+
+    expect(readiness.scores.diagnosis).toBeGreaterThan(50);
+    expect(readiness.scores.timeline).toBeGreaterThan(40);
+    expect(readiness.overall).toBeGreaterThan(55);
+    expect(typeof readiness.nextAction).toBe("string");
+  });
+
+  test("suggests likely workspace targets for evidence records", () => {
+    const suggestions = suggestEvidenceTargets(
+      {
+        label: "Neurology migraines note",
+        excerpt: "Headache frequency worsened after PTSD-related sleep disruption.",
+        type: "Medical record",
+        tags: ["migraines", "sleep"],
+      },
+      [
+        { id: "ptsd", name: "PTSD", body_system: "Mental Disorders", aliases: [] },
+        { id: "migraines", name: "Migraines", body_system: "Neurological Conditions", aliases: ["headaches"] },
+        { id: "tinnitus", name: "Tinnitus", body_system: "Auditory", aliases: [] },
+      ],
+    );
+
+    expect(suggestions[0].id).toBe("migraines");
+    expect(suggestions.some((entry) => entry.id === "ptsd")).toBe(true);
+  });
+
+  test("reviews packet blockers across theory, timeline, and rating posture", () => {
+    const review = buildPacketReviewSnapshot({
+      items: [
+        { id: "ptsd", name: "PTSD", evidence_checklist: ["Diagnosis"] },
+        { id: "migraines", name: "Migraines", evidence_checklist: ["Diagnosis", "Nexus"] },
+      ],
+      primaryId: "ptsd",
+      links: [{ from: "ptsd", to: "migraines", type: "Secondary to" }],
+      theories: [],
+      notesById: {
+        ptsd: "Diagnosis and symptoms documented.",
+        migraines: "Headaches continue.",
+      },
+      evidenceLinksById: {
+        ptsd: [{ id: "ev1" }],
+        migraines: [],
+      },
+      timelineById: {
+        ptsd: [{ date: "bad-date", type: "Other" }],
+        migraines: [],
+      },
+      evidenceStateById: {
+        ptsd: { 0: true },
+        migraines: {},
+      },
+      currentRating: 70,
+      projected: { migraines: 70 },
+    });
+
+    expect(review.summary.warnings).toBeGreaterThan(0);
+    expect(review.findings.some((finding) => finding.text.includes("No structured claim theory"))).toBe(true);
+    expect(review.findings.some((finding) => finding.text.includes("migraines") || finding.text.includes("Migraines"))).toBe(true);
+  });
+
+  test("generates condition-specific coaching prompts", () => {
+    const tips = conditionSpecificCoaching(
+      {
+        id: "migraines",
+        name: "Migraines",
+        aliases: ["headaches"],
+        body_system: "Neurological Conditions",
+        evidence_checklist: ["Diagnosis", "Frequency log"],
+      },
+      {
+        primaryId: "ptsd",
+        links: [{ from: "ptsd", to: "migraines", type: "Secondary to" }],
+      },
+      {
+        notes: "Headaches interrupt work and sleep.",
+        evidenceLinks: [],
+        timeline: [],
+        evidenceState: {},
+        theories: [],
+      },
+    );
+
+    expect(tips.some((tip) => /headaches|frequency|prostrating/i.test(tip))).toBe(true);
+  });
+
+  test("summarizes submission-prep posture for handoff", () => {
+    const prep = buildSubmissionPrepSnapshot({
+      items: [{ id: "ptsd", name: "PTSD" }],
+      review: { summary: { errors: 0, warnings: 2, infos: 1 }, findings: [{ text: "Attach evidence link", severity: "warn" }] },
+      strongest: [{ item: { name: "PTSD" }, readiness: { overall: 80 }, strength: { label: "Strong" } }],
+      weakest: [{ item: { name: "Migraines" }, readiness: { nextAction: "Add timeline detail." } }],
+      theories: [{ id: "theory-1" }],
+      primary: { id: "ptsd", name: "PTSD" },
+    });
+
+    expect(prep.status).toMatch(/review|staged|cleanup/i);
+    expect(prep.verify.length).toBeGreaterThan(0);
+  });
+
+  test("summarizes workspace profiles for the profile manager", () => {
+    expect(workspaceProfileSummary({
+      backup: {
+        workspaceState: {
+          nodes: ["ptsd", "migraines"],
+          links: [{ from: "ptsd", to: "migraines" }],
+        },
+        snapshots: [{ id: "snap-1" }],
+      },
+    })).toBe("2 conditions • 1 link • 1 restore point");
+  });
+
+  test("maps a record into claim elements, excerpts, and likely conditions", () => {
+    const result = analyzeRecordToClaimMapper(
+      "The Veteran reports migraine headaches since 2022. Neurology treatment notes document frequency and worsening after PTSD-related sleep disruption.",
+      [
+        { id: "migraines", name: "Migraines", aliases: ["headaches"], body_system: "Neurological Conditions" },
+        { id: "ptsd", name: "PTSD", aliases: [], body_system: "Mental Disorders" },
+      ],
+    );
+
+    expect(result.globalElements).toEqual(expect.arrayContaining(["diagnosis", "severity", "timeline"]));
+    const migraineEntry = result.conditions.find((entry) => entry.name === "Migraines");
+    expect(migraineEntry).toBeTruthy();
+    expect(migraineEntry.excerpts.length).toBeGreaterThan(0);
+  });
+
+  test("scores structured theories with reviewer-style feedback", () => {
+    const scored = scoreTheoryRecord(
+      {
+        type: "Secondary service connection",
+        subjectId: "migraines",
+        parentId: "ptsd",
+        summary: "Migraines are worsened by PTSD-related sleep disruption and work stress, causing frequent prostrating headaches.",
+      },
+      {
+        subject: { id: "migraines", body_system: "Neurological Conditions" },
+        parent: { id: "ptsd" },
+      },
+    );
+
+    expect(scored.score).toBeGreaterThan(50);
+    expect(["Strong", "Moderate", "Needs work"]).toContain(scored.tier);
+  });
+
+  test("builds printable packet html with provenance and sections", () => {
+    const html = buildPrintablePacketHtml(
+      [{ id: "ptsd", name: "PTSD", body_system: "Mental Disorders" }],
+      {
+        audience: "representative",
+        primary: { name: "PTSD" },
+        theories: [{ type: "Direct service connection", subjectName: "PTSD", parentName: "" }],
+      },
+    );
+
+    expect(html).toContain("VA CFR Finder Printable Packet");
+    expect(html).toContain("Provenance:");
+    expect(html).toContain("Reviewer Summary Sheet");
+    expect(html).toContain("PTSD");
+  });
+
+  test("builds an evidence coverage matrix across core claim elements", () => {
+    localStorage.setItem("vaCfrNotes:migraines", "Diagnosis confirmed. Frequent headaches affect work and sleep. Secondary to PTSD.");
+    localStorage.setItem("vaCfrTimeline:migraines", JSON.stringify([{ date: "2024-02-01", type: "Diagnosis" }]));
+    localStorage.setItem("vaCfrEvidenceLinks:migraines", JSON.stringify([{ label: "Neurology note", note: "Provider documents headache frequency.", type: "Medical record" }]));
+
+    const matrix = computeEvidenceCoverageMatrix(
+      [{ id: "migraines", name: "Migraines" }],
+      { primaryId: "ptsd", links: [{ from: "ptsd", to: "migraines", type: "Secondary to" }] },
+    );
+
+    expect(matrix.rows[0].cells.diagnosis).toBe(true);
+    expect(matrix.rows[0].cells.severity).toBe(true);
+    expect(matrix.rows[0].cells.timeline).toBe(true);
+    expect(matrix.rows[0].cells.nexus).toBe(true);
+  });
+
+  test("builds starter guidance for missing coverage actions", () => {
+    const starter = buildCoverageStarter(
+      "migraines",
+      "nexus",
+      { primaryId: "ptsd", links: [{ from: "ptsd", to: "migraines", type: "Secondary to" }] },
+    );
+
+    expect(starter.jump).toBe("notes");
+    expect(starter.noteTemplate).toContain("Nexus starter");
+    expect(starter.noteTemplate).toContain("ptsd");
+  });
+
+  test("assembles a combined packet with selected sections", () => {
+    const text = buildAssembledPacketText({
+      audience: "review",
+      include: {
+        overview: false,
+        coach: false,
+        submission: false,
+        theories: true,
+        narrative: false,
+        timeline: false,
+        binder: false,
+        coverage: true,
+      },
+    });
+
+    expect(text).toContain("Smart Packet Assembler");
+    expect(text).toContain("STRUCTURED THEORY REVIEW");
+    expect(text).toContain("EVIDENCE COVERAGE MATRIX");
+  });
+
+  test("detects evidence duplicates and conflicting attached dates", () => {
+    localStorage.setItem("vaCfrWorkspace:v4", JSON.stringify({
+      nodes: ["migraines", "ptsd"],
+      primaryId: "ptsd",
+      links: [{ from: "ptsd", to: "migraines", type: "Secondary to" }],
+    }));
+    localStorage.setItem("vaCfrEvidenceLibrary:v1", JSON.stringify([
+      {
+        id: "lib-1",
+        label: "Neurology note",
+        url: "https://example.test/note",
+        type: "Medical record",
+        excerpt: "",
+        tags: [],
+      },
+      {
+        id: "lib-2",
+        label: "Neurology note",
+        url: "https://example.test/note",
+        type: "Medical record",
+        excerpt: "",
+        tags: [],
+      },
+    ]));
+    localStorage.setItem("vaCfrEvidenceLinks:migraines", JSON.stringify([
+      { id: "a", label: "Neurology note", url: "https://example.test/note", type: "Medical record", date: "2024-01-01" },
+    ]));
+    localStorage.setItem("vaCfrEvidenceLinks:ptsd", JSON.stringify([
+      { id: "b", label: "Neurology note", url: "https://example.test/note", type: "Medical record", date: "2024-02-01" },
+    ]));
+
+    const findings = analyzeEvidenceConflicts();
+
+    expect(findings.some((finding) => finding.type === "duplicate-url")).toBe(true);
+    expect(findings.some((finding) => finding.type === "duplicate-label")).toBe(true);
+    expect(findings.some((finding) => finding.type === "conflicting-date")).toBe(true);
+  });
+
+  test("builds and parses evidence library csv rows", () => {
+    const csv = buildEvidenceLibraryCsv([
+      {
+        label: "Neurology note",
+        url: "https://example.test/note",
+        type: "Medical record",
+        excerpt: "Headaches worsened.",
+        tags: ["migraines", "sleep"],
+      },
+    ]);
+    const parsed = parseEvidenceCsv(csv);
+
+    expect(csv).toContain("Neurology note");
+    expect(parsed).toHaveLength(1);
+    expect(parsed[0].label).toBe("Neurology note");
+    expect(parsed[0].tags).toEqual(["migraines", "sleep"]);
+  });
+
+  test("builds milestone csv export rows", () => {
+    const csv = buildMilestonesCsv([
+      { date: "2024-01-01", stage: "Intent to file", note: "Started claim planning" },
+      { date: "2024-03-15", stage: "C&P exam", note: "Migraine exam completed" },
+    ]);
+
+    expect(csv).toContain('"date","stage","note"');
+    expect(csv).toContain("Intent to file");
+    expect(csv).toContain("C&P exam");
   });
 });

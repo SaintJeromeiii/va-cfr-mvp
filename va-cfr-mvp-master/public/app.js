@@ -1,5 +1,6 @@
 let CONDITIONS = [];
 let LAST_INTAKE_ANALYSIS = null;
+let PENDING_COVERAGE_FOCUS = null;
 const WS_RATING_STATE_KEY = "vaCfrWorkspaceRatingEstimator:v1";
 const WS_THEORY_STATE_KEY = "vaCfrWorkspaceTheories:v1";
 const WS_RATING_SCENARIOS_KEY = "vaCfrWorkspaceRatingScenarios:v1";
@@ -7,6 +8,9 @@ const DOC_LIBRARY_KEY = "vaCfrDocumentLibrary:v1";
 const EVIDENCE_LIBRARY_KEY = "vaCfrEvidenceLibrary:v1";
 const WS_SNAPSHOT_HISTORY_KEY = "vaCfrWorkspaceSnapshotHistory:v1";
 const WS_PANEL_STATE_KEY = "vaCfrWorkspacePanelState:v1";
+const WS_PROFILES_KEY = "vaCfrWorkspaceProfiles:v1";
+const WS_ACTIVE_PROFILE_KEY = "vaCfrActiveWorkspaceProfile:v1";
+const WS_MILESTONES_KEY = "vaCfrClaimMilestones:v1";
 
 function normalize(s) {
   return (s || "").toLowerCase().trim();
@@ -344,6 +348,70 @@ function saveWorkspaceActivity(items) {
   localStorage.setItem(WORKSPACE_ACTIVITY_KEY, JSON.stringify(Array.isArray(items) ? items : []));
 }
 
+function loadWorkspaceProfiles() {
+  try {
+    const raw = localStorage.getItem(WS_PROFILES_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveWorkspaceProfiles(items) {
+  localStorage.setItem(WS_PROFILES_KEY, JSON.stringify(Array.isArray(items) ? items : []));
+}
+
+function symptomFormKey(conditionId) {
+  return `vaCfrSymptomForm:${conditionId}`;
+}
+
+function loadSymptomForm(conditionId) {
+  try {
+    const raw = localStorage.getItem(symptomFormKey(conditionId));
+    const parsed = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveSymptomForm(conditionId, value) {
+  localStorage.setItem(symptomFormKey(conditionId), JSON.stringify(value && typeof value === "object" ? value : {}));
+}
+
+function loadClaimMilestones() {
+  try {
+    const raw = localStorage.getItem(WS_MILESTONES_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveClaimMilestones(items) {
+  localStorage.setItem(WS_MILESTONES_KEY, JSON.stringify(Array.isArray(items) ? items : []));
+}
+
+function loadActiveWorkspaceProfileId() {
+  return localStorage.getItem(WS_ACTIVE_PROFILE_KEY) || "";
+}
+
+function saveActiveWorkspaceProfileId(id) {
+  if (!id) {
+    localStorage.removeItem(WS_ACTIVE_PROFILE_KEY);
+    return;
+  }
+  localStorage.setItem(WS_ACTIVE_PROFILE_KEY, id);
+}
+
+function activeWorkspaceProfile() {
+  const activeId = loadActiveWorkspaceProfileId();
+  if (!activeId) return null;
+  return loadWorkspaceProfiles().find((profile) => profile.id === activeId) || null;
+}
+
 function conditionNameById(id) {
   return CONDITIONS.find(c => c.id === id)?.name || id;
 }
@@ -390,11 +458,13 @@ function buildWorkspaceBackup() {
     const notes = loadNotes(id);
     const timeline = loadTimeline(id);
     const evidenceLinks = loadEvidenceLinks(id);
+    const symptomForm = loadSymptomForm(id);
     const hasData =
       Object.keys(evidenceState || {}).length ||
       (notes || "").trim() ||
       (timeline || []).length ||
-      (evidenceLinks || []).length;
+      (evidenceLinks || []).length ||
+      Object.keys(symptomForm || {}).some((key) => String(symptomForm[key] || "").trim());
 
     if (!hasData && !workspaceState.nodes.includes(id)) return;
 
@@ -402,7 +472,8 @@ function buildWorkspaceBackup() {
       evidenceState,
       notes,
       timeline,
-      evidenceLinks
+      evidenceLinks,
+      symptomForm
     };
   });
 
@@ -414,6 +485,7 @@ function buildWorkspaceBackup() {
     evidenceRelations: loadEvidenceRelations(),
     theories: loadTheoryState(),
     ratingScenarios: loadRatingScenarios(),
+    claimMilestones: loadClaimMilestones(),
     documentLibrary: loadDocumentLibrary(),
     evidenceLibrary: loadEvidenceLibrary(),
     snapshots: loadWorkspaceSnapshots(),
@@ -451,11 +523,13 @@ function applyWorkspaceBackup(backup) {
     saveNotes(id, item.notes || "");
     saveTimeline(id, Array.isArray(item.timeline) ? item.timeline : []);
     saveEvidenceLinks(id, Array.isArray(item.evidenceLinks) ? item.evidenceLinks : []);
+    saveSymptomForm(id, item.symptomForm && typeof item.symptomForm === "object" ? item.symptomForm : {});
   });
 
   saveEvidenceRelations(backup.evidenceRelations && typeof backup.evidenceRelations === "object" ? backup.evidenceRelations : {});
   saveTheoryState(Array.isArray(backup.theories) ? backup.theories : []);
   saveRatingScenarios(Array.isArray(backup.ratingScenarios) ? backup.ratingScenarios : []);
+  saveClaimMilestones(Array.isArray(backup.claimMilestones) ? backup.claimMilestones : []);
   saveDocumentLibrary(Array.isArray(backup.documentLibrary) ? backup.documentLibrary : []);
   saveEvidenceLibrary(Array.isArray(backup.evidenceLibrary) ? backup.evidenceLibrary : []);
   saveWorkspaceSnapshots(Array.isArray(backup.snapshots) ? backup.snapshots : []);
@@ -467,6 +541,322 @@ function applyWorkspaceBackup(backup) {
   }
 }
 
+function emptyWorkspaceBackup() {
+  return {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    workspaceState: { nodes: [], primaryId: "", links: [] },
+    conditions: {},
+    evidenceRelations: {},
+    theories: [],
+    ratingScenarios: [],
+    claimMilestones: [],
+    documentLibrary: [],
+    evidenceLibrary: [],
+    snapshots: [],
+    snapshotHistory: [],
+    activity: [],
+    theme: localStorage.getItem("vaCfrTheme") || ""
+  };
+}
+
+function workspaceProfileSummary(profile) {
+  const backup = profile?.backup || {};
+  const wsState = backup.workspaceState || { nodes: [], links: [] };
+  const nodes = Array.isArray(wsState.nodes) ? wsState.nodes.length : 0;
+  const links = Array.isArray(wsState.links) ? wsState.links.length : 0;
+  const snapshots = Array.isArray(backup.snapshots) ? backup.snapshots.length : 0;
+  return `${nodes} condition${nodes === 1 ? "" : "s"} • ${links} link${links === 1 ? "" : "s"} • ${snapshots} restore point${snapshots === 1 ? "" : "s"}`;
+}
+
+function buildWorkspaceProfile(options = {}) {
+  const now = new Date().toISOString();
+  return {
+    id: options.id || `profile-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    name: (options.name || "").trim() || `Claim Workspace ${new Date().toLocaleString()}`,
+    notes: (options.notes || "").trim(),
+    createdAt: options.createdAt || now,
+    updatedAt: now,
+    backup: options.backup || buildWorkspaceBackup()
+  };
+}
+
+function getConditionGuidedFormSchema(item) {
+  const name = `${item?.name || ""} ${(item?.aliases || []).join(" ")}`.toLowerCase();
+  const body = (item?.body_system || "").toLowerCase();
+
+  if (/migraine|headache/.test(name)) {
+    return {
+      title: "Migraine / Headache Form",
+      fields: [
+        { key: "frequency", label: "Headache frequency", placeholder: "e.g. 3-4 times per week" },
+        { key: "prostrating", label: "Prostrating attacks", placeholder: "e.g. 2 times per month and requires lying down" },
+        { key: "workImpact", label: "Work / concentration impact", placeholder: "Missed work, reduced focus, dark room, etc." },
+        { key: "treatment", label: "Treatment / medication", placeholder: "Neurology visits, meds, ER care, etc." },
+      ],
+    };
+  }
+
+  if (/ptsd|depression|anxiety|mental/.test(name) || /mental/.test(body)) {
+    return {
+      title: "Mental Health Form",
+      fields: [
+        { key: "occupationalImpact", label: "Occupational impact", placeholder: "Missed work, isolation, concentration issues, etc." },
+        { key: "socialImpact", label: "Social impact", placeholder: "Relationships, crowds, trust, irritability, etc." },
+        { key: "sleep", label: "Sleep disruption", placeholder: "Insomnia, nightmares, CPAP issues, fatigue, etc." },
+        { key: "treatment", label: "Treatment history", placeholder: "Therapy, medication changes, hospitalization, etc." },
+      ],
+    };
+  }
+
+  if (/back|spine|radicul|sciatic|knee|ankle|hip|shoulder/.test(name) || /musculoskel|neurolog/.test(body)) {
+    return {
+      title: "Musculoskeletal / Nerve Form",
+      fields: [
+        { key: "flareUps", label: "Flare-ups", placeholder: "How often, how long, what triggers them" },
+        { key: "movementLimits", label: "Movement limits", placeholder: "Bending, lifting, range of motion, numbness, etc." },
+        { key: "walkingStanding", label: "Walking / standing limits", placeholder: "Distance, time, cane, brace, falls, etc." },
+        { key: "treatment", label: "Treatment / therapy", placeholder: "PT, injections, meds, surgery, etc." },
+      ],
+    };
+  }
+
+  if (/sleep/.test(name)) {
+    return {
+      title: "Sleep / Fatigue Form",
+      fields: [
+        { key: "study", label: "Sleep study / diagnosis", placeholder: "Date, provider, key findings" },
+        { key: "cpap", label: "CPAP / treatment use", placeholder: "Prescribed, tolerated, difficulties, etc." },
+        { key: "daytime", label: "Daytime impact", placeholder: "Fatigue, naps, driving risk, concentration, etc." },
+        { key: "worsening", label: "Worsening pattern", placeholder: "How symptoms changed over time" },
+      ],
+    };
+  }
+
+  if (/tinnitus|hearing/.test(name) || /auditory/.test(body)) {
+    return {
+      title: "Auditory Form",
+      fields: [
+        { key: "noiseExposure", label: "Noise exposure history", placeholder: "Weapons, aircraft, machinery, etc." },
+        { key: "onset", label: "Symptom onset / continuity", placeholder: "When ringing or hearing issues began" },
+        { key: "dailyImpact", label: "Daily impact", placeholder: "Sleep, focus, conversation, TV, etc." },
+        { key: "treatment", label: "Treatment / audiology", placeholder: "Hearing tests, aids, audiology visits, etc." },
+      ],
+    };
+  }
+
+  return {
+    title: "General Condition Form",
+    fields: [
+      { key: "symptoms", label: "Symptoms", placeholder: "What is happening and how often?" },
+      { key: "impact", label: "Functional impact", placeholder: "Work, sleep, mobility, concentration, relationships, etc." },
+      { key: "treatment", label: "Treatment history", placeholder: "Provider visits, meds, therapy, devices, etc." },
+      { key: "timeline", label: "Timeline summary", placeholder: "Onset, worsening, diagnosis, exams, etc." },
+    ],
+  };
+}
+
+function buildSymptomFormSummary(item, values = {}) {
+  const schema = getConditionGuidedFormSchema(item);
+  const lines = [`[${schema.title}]`];
+  schema.fields.forEach((field) => {
+    const value = (values[field.key] || "").trim();
+    if (value) lines.push(`${field.label}: ${value}`);
+  });
+  return lines.length > 1 ? lines.join("\n") : "";
+}
+
+function analyzeEvidenceConflicts(records = null, workspaceState = loadWorkspaceState()) {
+  const library = Array.isArray(records) ? records : loadEvidenceLibrary();
+  const byUrl = new Map();
+  const byLabel = new Map();
+  const findings = [];
+
+  library.forEach((record) => {
+    const url = normalizeUrl(record.url || "");
+    const label = normalize((record.label || "").replace(/\s+/g, " "));
+    if (url) {
+      const arr = byUrl.get(url) || [];
+      arr.push(record);
+      byUrl.set(url, arr);
+    }
+    if (label) {
+      const arr = byLabel.get(label) || [];
+      arr.push(record);
+      byLabel.set(label, arr);
+    }
+  });
+
+  for (const [url, rows] of byUrl.entries()) {
+    if (rows.length > 1) {
+      findings.push({
+        type: "duplicate-url",
+        severity: "warn",
+        title: `Duplicate URL: ${rows[0].url || url}`,
+        detail: `${rows.length} evidence records share this same URL.`,
+      });
+    }
+  }
+
+  for (const [label, rows] of byLabel.entries()) {
+    if (rows.length > 1) {
+      findings.push({
+        type: "duplicate-label",
+        severity: "warn",
+        title: `Possible duplicate label: ${rows[0].label || label}`,
+        detail: `${rows.length} evidence records share this same label.`,
+      });
+    }
+  }
+
+  const attached = [];
+  (workspaceState.nodes || []).forEach((id) => {
+    loadEvidenceLinks(id).forEach((link) => {
+      attached.push({ conditionId: id, conditionName: conditionNameById(id), ...link });
+    });
+  });
+
+  const attachmentByUrl = new Map();
+  attached.forEach((entry) => {
+    const url = normalizeUrl(entry.url || "");
+    if (!url) return;
+    const arr = attachmentByUrl.get(url) || [];
+    arr.push(entry);
+    attachmentByUrl.set(url, arr);
+  });
+
+  for (const [, rows] of attachmentByUrl.entries()) {
+    const types = [...new Set(rows.map((row) => row.type).filter(Boolean))];
+    const dates = [...new Set(rows.map((row) => row.date).filter(Boolean))];
+    if (types.length > 1) {
+      findings.push({
+        type: "conflicting-type",
+        severity: "info",
+        title: `Conflicting evidence type labels for ${rows[0].label || rows[0].url || "record"}`,
+        detail: `Attached with multiple types: ${types.join(", ")}.`,
+      });
+    }
+    if (dates.length > 1) {
+      findings.push({
+        type: "conflicting-date",
+        severity: "warn",
+        title: `Conflicting dates for ${rows[0].label || rows[0].url || "record"}`,
+        detail: `Attached with multiple dates: ${dates.join(", ")}.`,
+      });
+    }
+  }
+
+  return findings;
+}
+
+function buildRepresentativeHandoffText() {
+  const dashboard = computeWorkspaceDashboardData();
+  const primary = dashboard.st.primaryId ? CONDITIONS.find((condition) => condition.id === dashboard.st.primaryId) : null;
+  const conflicts = analyzeEvidenceConflicts();
+  const lines = [];
+  lines.push("VA CFR Finder — Representative Handoff Workspace");
+  lines.push(new Date().toLocaleString());
+  lines.push("");
+  lines.push(`Primary condition: ${primary ? primary.name : "(not set)"}`);
+  lines.push(`Overall packet review: ${dashboard.review.summary.errors} errors, ${dashboard.review.summary.warnings} warnings, ${dashboard.review.summary.infos} info notes`);
+  lines.push(`Evidence conflicts: ${conflicts.length}`);
+  lines.push("");
+  lines.push("Strongest theories / conditions:");
+  (dashboard.strongest.length ? dashboard.strongest : []).forEach((row) => lines.push(`- ${row.item.name}: ${row.readiness.overall}% readiness, ${row.strength.label} support`));
+  if (!dashboard.strongest.length) lines.push("- No conditions staged yet.");
+  lines.push("");
+  lines.push("Weakest conditions needing review:");
+  (dashboard.weakest.length ? dashboard.weakest : []).forEach((row) => lines.push(`- ${row.item.name}: ${row.readiness.nextAction}`));
+  if (!dashboard.weakest.length) lines.push("- No obvious weak spots detected.");
+  lines.push("");
+  lines.push("Evidence conflict / duplicate review:");
+  if (conflicts.length) conflicts.slice(0, 8).forEach((finding) => lines.push(`- ${finding.title}: ${finding.detail}`));
+  else lines.push("- No obvious evidence duplicates or conflicts detected.");
+  lines.push("");
+  lines.push("Top next actions:");
+  dashboard.topActions.forEach((finding) => lines.push(`- ${finding.text}`));
+  if (!dashboard.topActions.length) lines.push("- No urgent blockers detected.");
+  lines.push("");
+  lines.push("Use this workspace as a representative-facing summary only. Verify dates, records, CFR references, and rating assumptions before filing or advising.");
+  return lines.join("\n");
+}
+
+function computeActionEngine() {
+  const dashboard = computeWorkspaceDashboardData();
+  const conflicts = analyzeEvidenceConflicts();
+  const milestones = loadClaimMilestones();
+  const actions = [];
+  dashboard.topActions.forEach((finding, index) => {
+    actions.push({
+      id: `packet-${index}`,
+      title: finding.text,
+      kind: "review",
+      severity: finding.severity,
+    });
+  });
+  if (!milestones.length) {
+    actions.push({
+      id: "milestone-start",
+      title: "Add key claim milestones like intent to file, diagnosis, C&P exam, or decision date.",
+      kind: "milestones",
+      severity: "info",
+    });
+  }
+  conflicts.slice(0, 3).forEach((finding, index) => {
+    actions.push({
+      id: `conflict-${index}`,
+      title: `${finding.title}: ${finding.detail}`,
+      kind: "conflicts",
+      severity: finding.severity,
+    });
+  });
+  return actions.slice(0, 6);
+}
+
+function buildMilestonesCsv(items = loadClaimMilestones()) {
+  const rows = [["date", "stage", "note"]];
+  items.forEach((item) => {
+    rows.push([item.date || "", item.stage || "", item.note || ""]);
+  });
+  return rows.map((row) => row.map((cell) => `"${String(cell || "").replaceAll('"', '""')}"`).join(",")).join("\n");
+}
+
+function parseEvidenceCsv(text) {
+  const lines = (text || "").split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  if (lines.length < 2) return [];
+  const header = lines[0].toLowerCase();
+  const rows = lines.slice(1);
+  return rows.map((line) => {
+    const cols = line.match(/("([^"]|"")*"|[^,]+)/g)?.map((cell) => cell.replace(/^"|"$/g, "").replaceAll('""', '"').trim()) || [];
+    if (header.includes("label") && cols.length) {
+      return createEvidenceLibraryRecord({
+        label: cols[0] || "",
+        url: cols[1] || "",
+        type: cols[2] || "Other",
+        excerpt: cols[3] || "",
+        tags: (cols[4] || "").replaceAll(";", ","),
+      });
+    }
+    return null;
+  }).filter(Boolean);
+}
+
+function buildEvidenceLibraryCsv(records = loadEvidenceLibrary()) {
+  const rows = [["label", "url", "type", "excerpt", "tags"]];
+  records.forEach((record) => {
+    rows.push([
+      record.label || "",
+      record.url || "",
+      record.type || "",
+      record.excerpt || "",
+      Array.isArray(record.tags) ? record.tags.join("; ") : "",
+    ]);
+  });
+  return rows
+    .map((row) => row.map((cell) => `"${String(cell || "").replaceAll('"', '""')}"`).join(","))
+    .join("\n");
+}
+
 function buildAdjacencyFromLinks(links) {
   const adj = new Map();
   (links || []).forEach(l => {
@@ -474,6 +864,96 @@ function buildAdjacencyFromLinks(links) {
     adj.get(l.from).push(l.to);
   });
   return adj;
+}
+
+function renderActionEngine() {
+  const host = document.getElementById("wsActionEngine");
+  if (!host) return;
+
+  const actions = computeActionEngine();
+  host.innerHTML = actions.length
+    ? actions.map((action) => `
+        <article class="builderSuggestionCard">
+          <div class="builderSuggestionTop">
+            <div>
+              <strong>${escapeHtml(action.title)}</strong>
+              <div class="small">Priority: ${escapeHtml(action.severity || "info")} • action type: ${escapeHtml(action.kind || "review")}</div>
+            </div>
+            <button class="miniBtn" data-action-jump="${escapeHtml(action.kind || "review")}" type="button">Open</button>
+          </div>
+        </article>
+      `).join("")
+    : `<div class="small">No urgent next actions detected right now.</div>`;
+
+  host.querySelectorAll("[data-action-jump]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const map = {
+        review: "ws-review-panel",
+        milestones: "ws-milestones-panel",
+        conflicts: "ws-conflicts-panel",
+      };
+      const targetId = map[button.dataset.actionJump] || "ws-overview-panel";
+      document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+}
+
+function renderEvidenceConflictEngine() {
+  const host = document.getElementById("wsConflictsList");
+  if (!host) return;
+
+  const findings = analyzeEvidenceConflicts();
+  host.innerHTML = findings.length
+    ? findings.map((finding) => `
+        <article class="builderSuggestionCard">
+          <div class="builderSuggestionTop">
+            <div>
+              <strong>${escapeHtml(finding.title)}</strong>
+              <div class="small">${escapeHtml(finding.detail)}</div>
+            </div>
+            <span class="provenanceTag ${finding.severity === "warn" ? "prov-inferred" : "prov-generated"}">${escapeHtml(finding.severity || "info")}</span>
+          </div>
+        </article>
+      `).join("")
+    : `<div class="small">No obvious duplicate or conflict signals were found in the evidence library or attached evidence links.</div>`;
+}
+
+function renderClaimMilestones() {
+  const host = document.getElementById("wsMilestoneList");
+  if (!host) return;
+
+  const items = loadClaimMilestones().slice().sort((a, b) => {
+    const da = toSortableDateKey(a.date);
+    const db = toSortableDateKey(b.date);
+    if (da !== db) return da.localeCompare(db);
+    return (a.stage || "").localeCompare(b.stage || "");
+  });
+
+  host.innerHTML = items.length
+    ? items.map((item) => `
+        <article class="snapshotItem">
+          <div class="snapshotMeta">
+            <strong>${escapeHtml(item.stage || "Milestone")}</strong>
+            <div class="small">${escapeHtml(item.date || "(date not set)")}${item.note ? ` • ${escapeHtml(item.note)}` : ""}</div>
+          </div>
+          <div class="healthBtns" style="margin-top:0">
+            <button class="miniBtn danger" data-milestone-rm="${escapeHtml(item.id)}" type="button">Remove</button>
+          </div>
+        </article>
+      `).join("")
+    : `<div class="small">No claim-stage milestones saved yet. Track intent to file, diagnosis dates, worsening points, C&P exams, decisions, and appeals here.</div>`;
+
+  host.querySelectorAll("[data-milestone-rm]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const current = loadClaimMilestones();
+      const next = current.filter((item) => item.id !== button.dataset.milestoneRm);
+      saveClaimMilestones(next);
+      pushWorkspaceActivity("Milestone removed", "A claim-stage milestone was removed from the tracker.");
+      renderClaimMilestones();
+      renderWorkspaceActivity();
+      renderActionEngine();
+    });
+  });
 }
 
 // Returns true if there's already a path start -> target in the existing graph
@@ -954,6 +1434,8 @@ function clearWorkspace() {
   saveTheoryState([]);
   saveRatingEstimatorState({ currentRating: 0, projected: {} });
   saveRatingScenarios([]);
+  saveClaimMilestones([]);
+  CONDITIONS.forEach((item) => saveSymptomForm(item.id, {}));
   pushWorkspaceActivity("Workspace cleared", "The workspace tree, links, and readiness state were cleared.");
 }
 
@@ -1675,6 +2157,7 @@ function mountWorkspacePanelToggles() {
   const panels = [...document.querySelectorAll(".workspacePanel[id]")];
   const savedState = loadWorkspacePanelState();
   const defaultOpenPanels = new Set([
+    "ws-dashboard-panel",
     "ws-overview-panel",
     "ws-health-panel",
     "ws-conditions-panel",
@@ -1829,6 +2312,7 @@ function createDocumentRecord({ name, type, tags, text }) {
     id: `doc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     name: (name || "").trim() || `Document ${new Date().toLocaleString()}`,
     type: (type || "").trim() || "General",
+    sourceType: "user-entered",
     tags: normalizedTags,
     text: (text || "").trim(),
     createdAt: new Date().toISOString()
@@ -1848,10 +2332,385 @@ function createEvidenceLibraryRecord({ label, url, type, excerpt, tags }) {
     label: (label || "").trim() || "Evidence record",
     url: (url || "").trim(),
     type: (type || "").trim() || "Other",
+    sourceType: "user-entered",
     excerpt: (excerpt || "").trim(),
     tags: normalizedTags,
     createdAt: new Date().toISOString()
   };
+}
+
+function provenanceMeta(sourceType) {
+  const normalized = (sourceType || "user-entered").toString().trim().toLowerCase();
+  if (normalized === "generated") {
+    return {
+      type: "generated",
+      label: "Generated by app",
+      className: "prov-generated"
+    };
+  }
+  if (normalized === "inferred") {
+    return {
+      type: "inferred",
+      label: "Inferred from intake",
+      className: "prov-inferred"
+    };
+  }
+  return {
+    type: "user-entered",
+    label: "User-entered",
+    className: "prov-user"
+  };
+}
+
+function readinessTone(pct) {
+  if (pct >= 80) return { label: "Strong", className: "strength-strong" };
+  if (pct >= 55) return { label: "Moderate", className: "strength-moderate" };
+  return { label: "Weak", className: "strength-weak" };
+}
+
+function computeConditionReadinessSnapshot(item, snapshot = {}) {
+  const notes = (snapshot.notes || "").trim();
+  const noteText = notes.toLowerCase();
+  const evidenceLinks = Array.isArray(snapshot.evidenceLinks) ? snapshot.evidenceLinks : [];
+  const timeline = Array.isArray(snapshot.timeline) ? snapshot.timeline : [];
+  const evidenceState = snapshot.evidenceState || {};
+  const theories = Array.isArray(snapshot.theories) ? snapshot.theories : [];
+  const st = snapshot.workspaceState || { primaryId: "", links: [] };
+  const checklist = Array.isArray(item?.evidence_checklist) ? item.evidence_checklist : [];
+  const checklistCompletion = evidenceCompletion(item, evidenceState);
+  const parentCount = parentsOf(item?.id, st.links || []).length;
+  const linked = item?.id === st.primaryId || parentCount > 0;
+  const hasRelationshipLanguage = /\bnexus\b|\bsecondary\b|\bdue to\b|\baggravat|\bcaused by\b|\brelated to\b/i.test(notes);
+  const linkedTheory = theories.some((theory) => theory.subjectId === item?.id || theory.parentId === item?.id);
+  const diagnosisSignals = evidenceLinks.length > 0 || /\bdiagnos|dbq|exam|treatment|record|provider|medical\b/i.test(notes);
+  const severitySignals = /\bsever|frequency|impact|work|sleep|flare|pain|symptom|panic|missed work|functional\b/i.test(noteText);
+  const timelineSignals = timeline.length > 0;
+  const evidenceSignals = evidenceLinks.length > 0 || checklistCompletion.pct > 0;
+  const diagnosis = diagnosisSignals ? Math.min(100, 40 + Math.min(evidenceLinks.length, 3) * 15 + (notes ? 20 : 0)) : (notes ? 25 : 0);
+  const severity = severitySignals ? Math.min(100, 55 + (timelineSignals ? 15 : 0) + (checklistCompletion.pct >= 50 ? 15 : 0)) : (notes ? 30 : 0);
+  const nexusBase = item?.id === st.primaryId ? 80 : linked ? 40 : 20;
+  const nexus = Math.min(100, nexusBase + (hasRelationshipLanguage ? 25 : 0) + (linkedTheory ? 20 : 0));
+  const timelineScore = timelineSignals ? Math.min(100, 50 + Math.min(timeline.length, 3) * 15 + (notes ? 10 : 0)) : 0;
+  const evidence = Math.min(100, Math.round(checklistCompletion.pct * 0.65) + Math.min(evidenceLinks.length, 3) * 12 + (notes ? 10 : 0));
+  const scores = { diagnosis, severity, nexus, timeline: timelineScore, evidence };
+  const overall = Math.round((diagnosis + severity + nexus + timelineScore + evidence) / 5);
+  const nextGap = Object.entries(scores).sort((a, b) => a[1] - b[1])[0]?.[0] || "evidence";
+  return {
+    scores,
+    overall,
+    overallTone: readinessTone(overall),
+    checklistCompletion,
+    nextGap,
+    nextAction: nextGap === "diagnosis"
+      ? "Add diagnosis-level support like a DBQ, treatment note, exam, or medical record reference."
+      : nextGap === "severity"
+        ? "Add frequency, flare, work, sleep, or functional-impact detail to strengthen severity support."
+        : nextGap === "nexus"
+          ? "Write the relationship logic more explicitly so the theory and supporting rationale are easier to review."
+          : nextGap === "timeline"
+            ? "Add dated onset, treatment, worsening, or exam events to make the chronology easier to follow."
+            : "Attach more evidence links or finish the checklist so support is easier to verify."
+  };
+}
+
+function conditionReadiness(item, st = loadWorkspaceState()) {
+  return computeConditionReadinessSnapshot(item, {
+    notes: loadNotes(item.id),
+    evidenceLinks: loadEvidenceLinks(item.id),
+    timeline: loadTimeline(item.id),
+    evidenceState: loadEvidenceState(item.id),
+    theories: loadTheoryState(),
+    workspaceState: st,
+  });
+}
+
+function conditionSpecificCoaching(item, st = loadWorkspaceState(), snapshot = {}) {
+  const notes = ((snapshot.notes ?? loadNotes(item.id)) || "").trim();
+  const evidenceLinks = Array.isArray(snapshot.evidenceLinks) ? snapshot.evidenceLinks : loadEvidenceLinks(item.id);
+  const timeline = Array.isArray(snapshot.timeline) ? snapshot.timeline : loadTimeline(item.id);
+  const readiness = computeConditionReadinessSnapshot(item, {
+    notes,
+    evidenceLinks,
+    timeline,
+    evidenceState: snapshot.evidenceState || loadEvidenceState(item.id),
+    theories: snapshot.theories || loadTheoryState(),
+    workspaceState: st,
+  });
+  const parents = parentsOf(item.id, st.links);
+  const tips = [];
+
+  if (readiness.scores.diagnosis < 60) {
+    tips.push("Add a diagnosis-level source like a DBQ, treatment note, exam report, or provider record reference.");
+  }
+  if (readiness.scores.severity < 60) {
+    tips.push("Describe frequency, flare pattern, daily impact, missed work, sleep disruption, or functional loss more explicitly.");
+  }
+  if (readiness.scores.timeline < 60) {
+    tips.push("Add dated onset, treatment, worsening, or exam events so the chronology reads more clearly.");
+  }
+  if (parents.length && readiness.scores.nexus < 65) {
+    tips.push("Spell out why this condition is linked to the parent condition, not just that it exists alongside it.");
+  }
+
+  const lowerName = `${item.name} ${(item.aliases || []).join(" ")}`.toLowerCase();
+  if (/migraine|headache/.test(lowerName)) {
+    tips.push("For headaches, document frequency, whether attacks are prostrating, and how they affect work or concentration.");
+  } else if (/ptsd|depression|anxiety|mental/.test(lowerName) || /mental/i.test(item.body_system || "")) {
+    tips.push("For mental-health claims, describe occupational and social impact, sleep disruption, panic, treatment changes, and symptom patterns over time.");
+  } else if (/sleep apnea|sleep/.test(lowerName)) {
+    tips.push("For sleep-related claims, capture the sleep study, CPAP or treatment history, and daytime fatigue or functional consequences.");
+  } else if (/tinnitus|hearing/.test(lowerName) || /auditory/i.test(item.body_system || "")) {
+    tips.push("For auditory claims, describe onset, noise exposure history, continuity of symptoms, and practical communication impact.");
+  } else if (/knee|back|spine|ankle|hip|shoulder|musculoskeletal|radiculopathy|sciatic/.test(lowerName) || /musculoskel|neurolog/i.test(item.body_system || "")) {
+    tips.push("For musculoskeletal or nerve claims, add range-of-motion loss, flare-up behavior, walking or standing limits, and treatment history.");
+  }
+
+  if (evidenceLinks.length >= 2 && notes) {
+    tips.push("You already have source material here. Tighten the note so it tells the reviewer exactly which record proves diagnosis, severity, and nexus.");
+  } else if (!evidenceLinks.length && notes) {
+    tips.push("The note exists, but it will read stronger once at least one supporting record or statement is attached.");
+  } else if (!notes && timeline.length) {
+    tips.push("Turn the existing dated events into one short narrative note so the condition story is easier to follow.");
+  }
+
+  tips.push(readiness.nextAction);
+  return [...new Set(tips)].slice(0, 4);
+}
+
+function buildSubmissionPrepSnapshot(snapshot = {}) {
+  const items = Array.isArray(snapshot.items) ? snapshot.items : [];
+  const review = snapshot.review || { findings: [], summary: { errors: 0, warnings: 0, infos: 0 } };
+  const strongest = snapshot.strongest || [];
+  const weakest = snapshot.weakest || [];
+  const theories = Array.isArray(snapshot.theories) ? snapshot.theories : [];
+  const primary = snapshot.primary || null;
+  const status = review.summary.errors
+    ? "Needs major review"
+    : review.summary.warnings > 3
+      ? "Needs focused cleanup"
+      : items.length && theories.length && primary
+        ? "Reasonably staged for handoff"
+        : "Still building core structure";
+
+  const verify = [];
+  if (!primary) verify.push("Pick and confirm the strongest primary condition.");
+  if (!theories.length) verify.push("Save at least one structured theory before handoff.");
+  if (review.findings.some((finding) => /timeline/i.test(finding.text))) verify.push("Check chronology for missing or conflicting dates.");
+  if (review.findings.some((finding) => /evidence link/i.test(finding.text))) verify.push("Attach at least one concrete supporting record to thin conditions.");
+  if (review.findings.some((finding) => /rating/i.test(finding.text))) verify.push("Review rating scenarios and make sure the estimate is not driving the theory.");
+
+  return {
+    status,
+    verify: [...new Set(verify)].slice(0, 5),
+    strongest: strongest.slice(0, 3),
+    weakest: weakest.slice(0, 3),
+  };
+}
+
+function generateSubmissionPrepText() {
+  const dashboard = computeWorkspaceDashboardData();
+  const primary = dashboard.st.primaryId ? CONDITIONS.find((condition) => condition.id === dashboard.st.primaryId) : null;
+  const prep = buildSubmissionPrepSnapshot({
+    items: dashboard.items,
+    review: dashboard.review,
+    strongest: dashboard.strongest,
+    weakest: dashboard.weakest,
+    theories: loadTheoryState(),
+    primary,
+  });
+
+  const lines = [];
+  lines.push("VA CFR Finder — Submission Prep Mode");
+  lines.push(new Date().toLocaleString());
+  lines.push("");
+  lines.push(`Overall handoff status: ${prep.status}`);
+  lines.push(`Primary condition: ${primary ? primary.name : "(not set)"}`);
+  lines.push(`Workspace size: ${dashboard.items.length} condition${dashboard.items.length === 1 ? "" : "s"}`);
+  lines.push(`Packet review summary: ${dashboard.review.summary.errors} error(s), ${dashboard.review.summary.warnings} warning(s), ${dashboard.review.summary.infos} info note(s)`);
+  lines.push("");
+  lines.push("Strongest conditions to lead with:");
+  (prep.strongest.length
+    ? prep.strongest.map((row) => `${row.item.name} (${row.readiness.overall}% readiness, ${row.strength.label} support)`)
+    : ["No workspace conditions yet."]).forEach((line) => lines.push(`- ${line}`));
+  lines.push("");
+  lines.push("Conditions needing more work:");
+  (prep.weakest.length
+    ? prep.weakest.map((row) => `${row.item.name}: ${row.readiness.nextAction}`)
+    : ["No obvious weak conditions detected."]).forEach((line) => lines.push(`- ${line}`));
+  lines.push("");
+  lines.push("Verify before handing this to a VSO or representative:");
+  (prep.verify.length ? prep.verify : ["Review all theory summaries, dates, and supporting links one more time."]).forEach((line) => lines.push(`- ${line}`));
+  lines.push("");
+  lines.push("Assumptions to review:");
+  lines.push("- Generated summaries and coaching text are drafting aids, not legal advice.");
+  lines.push("- Intake matches and evidence suggestions are inferred and may be wrong.");
+  lines.push("- Rating projections remain estimates only and should not replace claim theory review.");
+  lines.push("");
+  lines.push("Recommended next exports:");
+  lines.push("- Quick Review packet for fast triage");
+  lines.push("- Representative packet for handoff");
+  lines.push("- Full backup JSON before major edits or external review");
+  return lines.join("\n");
+}
+
+function suggestEvidenceTargets(record, workspaceItems = []) {
+  const haystack = [
+    record?.label || "",
+    record?.excerpt || "",
+    record?.type || "",
+    ...(Array.isArray(record?.tags) ? record.tags : []),
+  ].join(" ").toLowerCase();
+  if (!haystack.trim()) return [];
+
+  return workspaceItems
+    .map((item) => {
+      let score = 0;
+      const reasons = [];
+      const terms = [item.name, item.id, ...(item.aliases || [])].filter(Boolean);
+      terms.forEach((term) => {
+        const normalized = term.toLowerCase();
+        if (haystack.includes(normalized)) {
+          score += normalized === item.id.toLowerCase() ? 5 : 4;
+          reasons.push(`mentions ${term}`);
+        }
+      });
+      if (item.body_system && haystack.includes(item.body_system.toLowerCase())) {
+        score += 2;
+        reasons.push(`matches ${item.body_system}`);
+      }
+      if (/\bdbq\b/.test(haystack) && /mental|respir|neurolog|musculoskel|auditory/i.test(item.body_system || "")) {
+        score += 1;
+        reasons.push("looks like a structured medical record");
+      }
+      return {
+        id: item.id,
+        name: item.name,
+        score,
+        reasons: [...new Set(reasons)],
+      };
+    })
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
+    .slice(0, 3);
+}
+
+function buildPacketReviewSnapshot(snapshot = {}) {
+  const items = Array.isArray(snapshot.items) ? snapshot.items : [];
+  const primaryId = snapshot.primaryId || "";
+  const links = Array.isArray(snapshot.links) ? snapshot.links : [];
+  const theories = Array.isArray(snapshot.theories) ? snapshot.theories : [];
+  const notesById = snapshot.notesById || {};
+  const evidenceLinksById = snapshot.evidenceLinksById || {};
+  const timelineById = snapshot.timelineById || {};
+  const evidenceStateById = snapshot.evidenceStateById || {};
+  const currentRating = Math.max(0, Math.min(100, Number(snapshot.currentRating || 0) || 0));
+  const projected = snapshot.projected || {};
+  const findings = [];
+  const timelineConflicts = analyzeTimelineConflicts(
+    Object.fromEntries(items.map((item) => [item.name, timelineById[item.id] || []])),
+  );
+
+  if (!items.length) {
+    return {
+      findings: [{ severity: "warn", text: "No workspace items exist yet, so there is nothing to review." }],
+      summary: { errors: 0, warnings: 1, infos: 0 },
+      timelineConflicts,
+    };
+  }
+
+  if (!primaryId) {
+    findings.push({ severity: "error", text: "No primary condition is set. Pick the strongest anchor condition before final packet review." });
+  }
+
+  if (!theories.length) {
+    findings.push({ severity: "warn", text: "No structured claim theory is saved yet. The packet is easier to review when the theory is explicit." });
+  }
+
+  items.forEach((item) => {
+    const notes = (notesById[item.id] || "").trim();
+    const evidenceLinks = Array.isArray(evidenceLinksById[item.id]) ? evidenceLinksById[item.id] : [];
+    const timeline = Array.isArray(timelineById[item.id]) ? timelineById[item.id] : [];
+    const readiness = computeConditionReadinessSnapshot(item, {
+      notes,
+      evidenceLinks,
+      timeline,
+      evidenceState: evidenceStateById[item.id] || {},
+      theories,
+      workspaceState: { primaryId, links },
+    });
+    const parents = parentsOf(item.id, links);
+    const projectedPct = Number(projected[item.id] || 0);
+
+    if (parents.length && !/\bnexus\b|\bsecondary\b|\bdue to\b|\baggravat|\bcaused by\b/i.test(notes) && !theories.some((theory) => theory.subjectId === item.id)) {
+      findings.push({ severity: "warn", text: `${item.name} is linked as a secondary-style condition but still lacks clear nexus or relationship language.` });
+    }
+    if (!evidenceLinks.length) {
+      findings.push({ severity: "warn", text: `${item.name} has no supporting evidence links attached yet.` });
+    }
+    if (!timeline.length) {
+      findings.push({ severity: "info", text: `${item.name} has no timeline entries, so chronology may be harder to explain.` });
+    }
+    if (readiness.overall < 55) {
+      findings.push({ severity: "warn", text: `${item.name} is still in the weak readiness tier. Next focus: ${readiness.nextAction}` });
+    }
+    if (projectedPct >= 70 && readiness.overall < 60) {
+      findings.push({ severity: "warn", text: `${item.name} is modeled at ${projectedPct}% in the estimator, but the current support is still fairly thin.` });
+    }
+  });
+
+  timelineConflicts.forEach((text) => findings.push({ severity: "warn", text }));
+
+  const summary = findings.reduce((acc, finding) => {
+    if (finding.severity === "error") acc.errors += 1;
+    else if (finding.severity === "warn") acc.warnings += 1;
+    else acc.infos += 1;
+    return acc;
+  }, { errors: 0, warnings: 0, infos: 0 });
+
+  return { findings, summary, timelineConflicts };
+}
+
+function buildPacketReviewText() {
+  const st = loadWorkspaceState();
+  const items = (st.nodes || []).map((id) => CONDITIONS.find((condition) => condition.id === id)).filter(Boolean);
+  const ratingState = loadRatingEstimatorState();
+  const review = buildPacketReviewSnapshot({
+    items,
+    primaryId: st.primaryId,
+    links: st.links,
+    theories: loadTheoryState(),
+    notesById: Object.fromEntries(items.map((item) => [item.id, loadNotes(item.id) || ""])),
+    evidenceLinksById: Object.fromEntries(items.map((item) => [item.id, loadEvidenceLinks(item.id)])),
+    timelineById: Object.fromEntries(items.map((item) => [item.id, loadTimeline(item.id)])),
+    evidenceStateById: Object.fromEntries(items.map((item) => [item.id, loadEvidenceState(item.id)])),
+    currentRating: ratingState.currentRating,
+    projected: ratingState.projected || {},
+  });
+
+  const lines = [];
+  lines.push("VA CFR Finder — Packet Review");
+  lines.push(new Date().toLocaleString());
+  lines.push("");
+  lines.push("This review is generated by the app from current workspace data.");
+  lines.push("User-entered data includes notes, timelines, evidence links, theories, and saved document text.");
+  lines.push("Inferred data includes intake matches and evidence-target suggestions.");
+  lines.push("");
+  lines.push(`Review summary: ${review.summary.errors} error(s), ${review.summary.warnings} warning(s), ${review.summary.infos} info note(s).`);
+  lines.push("");
+  lines.push("Findings:");
+  if (!review.findings.length) {
+    lines.push("- No obvious packet blockers were detected.");
+  } else {
+    review.findings.forEach((finding) => {
+      lines.push(`- [${finding.severity.toUpperCase()}] ${finding.text}`);
+    });
+  }
+  lines.push("");
+  lines.push("Assumptions to review:");
+  lines.push("- Rating projections are estimates only.");
+  lines.push("- CFR references should be checked for freshness before relying on them.");
+  lines.push("- Weak timeline or nexus support may still need record-specific detail even when a checklist looks complete.");
+  return lines.join("\n");
 }
 
 function granularGapsForCondition(item, st = loadWorkspaceState()) {
@@ -1884,6 +2743,102 @@ function topWorkspaceBlockers(limit = 3) {
     });
   });
   return gaps.slice(0, limit);
+}
+
+function computeWorkspaceDashboardData() {
+  const st = loadWorkspaceState();
+  const items = (st.nodes || []).map((id) => CONDITIONS.find((condition) => condition.id === id)).filter(Boolean);
+  const ratingState = loadRatingEstimatorState();
+  const review = buildPacketReviewSnapshot({
+    items,
+    primaryId: st.primaryId,
+    links: st.links,
+    theories: loadTheoryState(),
+    notesById: Object.fromEntries(items.map((item) => [item.id, loadNotes(item.id) || ""])),
+    evidenceLinksById: Object.fromEntries(items.map((item) => [item.id, loadEvidenceLinks(item.id)])),
+    timelineById: Object.fromEntries(items.map((item) => [item.id, loadTimeline(item.id)])),
+    evidenceStateById: Object.fromEntries(items.map((item) => [item.id, loadEvidenceState(item.id)])),
+    currentRating: ratingState.currentRating,
+    projected: ratingState.projected || {},
+  });
+  const readinessRows = items.map((item) => ({
+    item,
+    readiness: conditionReadiness(item, st),
+    strength: evidenceStrength(item, st),
+  })).sort((a, b) => b.readiness.overall - a.readiness.overall || a.item.name.localeCompare(b.item.name));
+  const projectedRatings = Object.values(ratingState.projected || {}).map(Number).filter((value) => Number.isFinite(value) && value > 0);
+  const currentRating = Math.max(0, Math.min(100, Number(ratingState.currentRating || 0) || 0));
+  const projected = projectedRatings.length ? combineRatings([currentRating, ...projectedRatings]) : null;
+  const topActions = [
+    ...review.findings.filter((finding) => finding.severity === "error"),
+    ...review.findings.filter((finding) => finding.severity === "warn"),
+    ...review.findings.filter((finding) => finding.severity === "info"),
+  ].slice(0, 3);
+
+  return {
+    items,
+    st,
+    review,
+    strongest: readinessRows.slice(0, 3),
+    weakest: readinessRows.slice(-3).reverse(),
+    projected,
+    currentRating,
+    restoreCount: loadWorkspaceSnapshots().length,
+    theoryCount: loadTheoryState().length,
+    topActions,
+  };
+}
+
+function renderWorkspaceDashboard() {
+  const host = document.getElementById("wsDashboard");
+  if (!host) return;
+
+  const data = computeWorkspaceDashboardData();
+  const primary = data.st.primaryId ? CONDITIONS.find((condition) => condition.id === data.st.primaryId) : null;
+  host.innerHTML = `
+    <div class="dashboardSummaryGrid">
+      <article class="dashboardMetricCard">
+        <div class="small">Primary condition</div>
+        <strong>${escapeHtml(primary?.name || "(not set)")}</strong>
+        <div class="small">${escapeHtml(primary?.body_system || "Choose the strongest anchor condition to tighten the claim theory.")}</div>
+      </article>
+      <article class="dashboardMetricCard">
+        <div class="small">Projected rating</div>
+        <strong>${escapeHtml(data.projected ? `${data.currentRating}% -> ${data.projected.rounded}%` : data.currentRating ? `${data.currentRating}% current only` : "Not modeled")}</strong>
+        <div class="small">Saved scenarios use estimate math only.</div>
+      </article>
+      <article class="dashboardMetricCard">
+        <div class="small">Saved structure</div>
+        <strong>${data.restoreCount} restore point${data.restoreCount === 1 ? "" : "s"}</strong>
+        <div class="small">${data.theoryCount} structured theor${data.theoryCount === 1 ? "y" : "ies"} saved</div>
+      </article>
+      <article class="dashboardMetricCard">
+        <div class="small">Packet review</div>
+        <strong>${data.review.summary.errors} error(s) • ${data.review.summary.warnings} warning(s)</strong>
+        <div class="small">${data.review.summary.infos} info note(s)</div>
+      </article>
+    </div>
+    <div class="dashboardSplit">
+      <article class="dashboardPane">
+        <h4>Strongest conditions</h4>
+        ${data.strongest.length
+          ? data.strongest.map((row) => `<div class="small"><strong>${escapeHtml(row.item.name)}</strong> • ${row.readiness.overall}% readiness • ${escapeHtml(row.strength.label)} support</div>`).join("")
+          : `<div class="small">No workspace conditions yet.</div>`}
+      </article>
+      <article class="dashboardPane">
+        <h4>Weakest conditions</h4>
+        ${data.weakest.length
+          ? data.weakest.map((row) => `<div class="small"><strong>${escapeHtml(row.item.name)}</strong> • ${row.readiness.overall}% readiness • next: ${escapeHtml(row.readiness.nextAction)}</div>`).join("")
+          : `<div class="small">No weak spots detected yet.</div>`}
+      </article>
+      <article class="dashboardPane">
+        <h4>Next best actions</h4>
+        ${data.topActions.length
+          ? data.topActions.map((finding) => `<div class="small"><span class="healthTag">${escapeHtml(finding.severity.toUpperCase())}</span> ${escapeHtml(finding.text)}</div>`).join("")
+          : `<div class="small">No urgent blockers. Use the coach, narrative, or binder tools to refine the packet.</div>`}
+      </article>
+    </div>
+  `;
 }
 
 function ratingOptionsForCondition(item) {
@@ -2041,6 +2996,7 @@ function renderStickyWorkspaceSummary() {
   const primary = st.primaryId ? CONDITIONS.find(c => c.id === st.primaryId) : null;
   const ratingState = loadRatingEstimatorState();
   const snapshots = loadWorkspaceSnapshots();
+  const activeProfile = activeWorkspaceProfile();
   const blockers = topWorkspaceBlockers(3);
   const currentRating = Math.max(0, Math.min(100, Number(ratingState.currentRating || 0) || 0));
   const projectedRatings = Object.values(ratingState.projected || {}).map(Number).filter((value) => Number.isFinite(value) && value > 0);
@@ -2048,6 +3004,7 @@ function renderStickyWorkspaceSummary() {
 
   host.innerHTML = `
     <div class="quickStartNames">
+      <span class="quickStartTag">Profile: ${escapeHtml(activeProfile?.name || "unsaved workspace")}</span>
       <span class="quickStartTag">Primary: ${escapeHtml(primary?.name || "(not set)")}</span>
       <span class="quickStartTag">Projected rating: ${escapeHtml(projected ? `${currentRating}% -> ${projected.rounded}%` : currentRating ? `${currentRating}% current entered` : "not modeled")}</span>
       <span class="quickStartTag">Last snapshot: ${escapeHtml(snapshots[0]?.name || "none saved")}</span>
@@ -2135,18 +3092,25 @@ function renderTheoryBuilder() {
 
   const theories = loadTheoryState();
   listEl.innerHTML = theories.length
-    ? theories.map((theory) => `
+    ? theories.map((theory) => {
+        const subject = items.find((item) => item.id === theory.subjectId) || null;
+        const parent = items.find((item) => item.id === theory.parentId) || null;
+        const score = scoreTheoryRecord(theory, { subject, parent });
+        return `
         <article class="builderSuggestionCard">
           <div class="builderSuggestionTop">
             <div>
               <strong>${escapeHtml(theory.type)}</strong>
               <div class="small">${escapeHtml(theory.subjectName)}${theory.parentName ? ` • linked to ${escapeHtml(theory.parentName)}` : ""}</div>
               <div class="small" style="margin-top:6px">${escapeHtml(theory.summary || "(no summary)")}</div>
+              <div class="small" style="margin-top:6px"><strong>Theory review:</strong> ${escapeHtml(score.tier)} • ${score.score}/100</div>
+              ${score.feedback.length ? `<div class="small" style="margin-top:4px">${escapeHtml(score.feedback.join(" "))}</div>` : ""}
             </div>
             <button class="miniBtn danger" data-theory-remove="${escapeHtml(theory.id)}" type="button">Remove</button>
           </div>
         </article>
-      `).join("")
+      `;
+      }).join("")
     : `<div class="small">No structured theories yet. Add one to tie the workspace, coach, and exports together.</div>`;
 
   listEl.querySelectorAll("[data-theory-remove]").forEach((button) => {
@@ -2257,12 +3221,13 @@ function generateStrategyCoachText() {
 
   items.forEach(item => {
     const strength = evidenceStrength(item, st);
+    const readiness = conditionReadiness(item, st);
     const notes = (loadNotes(item.id) || "").trim();
     const links = loadEvidenceLinks(item.id).length;
     const timeline = loadTimeline(item.id).length;
     const rel = item.id === st.primaryId ? "Primary" : (parentsOf(item.id, st.links).length ? "Linked" : "Unlinked");
     const gaps = granularGapsForCondition(item, st);
-    const line = `${item.name}: ${strength.label} support, ${rel.toLowerCase()}, ${links} evidence link${links === 1 ? "" : "s"}, ${timeline} timeline entr${timeline === 1 ? "y" : "ies"}, ${notes ? "notes present" : "notes missing"}${gaps.length ? `, biggest gaps: ${gaps.slice(0, 2).join("; ")}` : ""}.`;
+    const line = `${item.name}: ${strength.label} support, ${readiness.overall}% readiness, ${rel.toLowerCase()}, ${links} evidence link${links === 1 ? "" : "s"}, ${timeline} timeline entr${timeline === 1 ? "y" : "ies"}, ${notes ? "notes present" : "notes missing"}${gaps.length ? `, biggest gaps: ${gaps.slice(0, 2).join("; ")}` : ""}.`;
     if (strength.label === "Strong") strengths.push(line);
     else weakSpots.push(line);
   });
@@ -2282,6 +3247,7 @@ function generateStrategyCoachText() {
   lines.push(`Primary theory: ${primary ? primary.name : "(not set)"}`);
   lines.push(`Workspace scope: ${items.length} condition${items.length === 1 ? "" : "s"} with ${st.links.length} relationship link${st.links.length === 1 ? "" : "s"}.`);
   lines.push(`Overall readiness: ${health.evidence.done}/${health.evidence.total} (${health.evidence.pct}%).`);
+  lines.push("Provenance: notes, timelines, evidence links, and saved theories are user-entered; intake matches and evidence suggestions are inferred; this coach summary is generated by the app.");
   lines.push("");
   lines.push("Structured theories:");
   (theories.length
@@ -2302,6 +3268,10 @@ function generateStrategyCoachText() {
   lines.push("");
   lines.push("Recommended next actions:");
   nextSteps.slice(0, 5).forEach(step => lines.push(`- ${step}`));
+  lines.push("");
+  lines.push("Assumptions to review:");
+  lines.push("- CFR references should be checked for freshness before relying on them.");
+  lines.push("- Strong checklist completion does not replace condition-specific diagnosis, severity, and nexus detail.");
   lines.push("");
   lines.push("Educational use only. Verify facts, records, and current CFR language before relying on this summary.");
   return lines.join("\n");
@@ -2335,15 +3305,433 @@ function analyzeDocumentIntake(rawText) {
   return { text, dates, matches };
 }
 
+function extractRecordExcerpts(text, terms, maxCount = 3) {
+  const sentences = (text || "").split(/(?<=[.!?])\s+/).filter(Boolean);
+  const excerpts = [];
+  sentences.forEach((sentence) => {
+    const lower = sentence.toLowerCase();
+    if (terms.some((term) => term && lower.includes(term.toLowerCase())) && !excerpts.includes(sentence.trim())) {
+      excerpts.push(sentence.trim());
+    }
+  });
+  return excerpts.slice(0, maxCount);
+}
+
+function detectClaimElements(text) {
+  const lower = (text || "").toLowerCase();
+  const elements = [];
+  if (/\bdiagnos|dbq|exam|provider|treatment|record|assessment\b/.test(lower)) elements.push("diagnosis");
+  if (/\bsever|frequency|impact|work|sleep|panic|flare|functional|missed work|prostrating\b/.test(lower)) elements.push("severity");
+  if (/\b(?:19|20)\d{2}\b|\bonset\b|\bsince\b|\bafter\b|\bbefore\b|\bwhen\b/.test(lower)) elements.push("timeline");
+  if (/\bnexus\b|\bdue to\b|\bcaused by\b|\bsecondary\b|\baggravat|\brelated to\b/.test(lower)) elements.push("nexus");
+  return elements;
+}
+
+function analyzeRecordToClaimMapper(rawText, workspaceItems = CONDITIONS) {
+  const text = (rawText || "").trim();
+  if (!text) {
+    return { text: "", conditions: [], globalElements: [], followUps: [] };
+  }
+
+  const globalElements = detectClaimElements(text);
+  const items = (workspaceItems || []).filter(Boolean);
+  const conditions = items.map((item) => {
+    const terms = [item.name, item.id, ...(item.aliases || [])].filter(Boolean);
+    const excerpts = extractRecordExcerpts(text, terms, 3);
+    const claimElements = detectClaimElements(excerpts.join(" ") || text);
+    let confidence = 0;
+    const lower = text.toLowerCase();
+    terms.forEach((term) => {
+      if (!term) return;
+      const normalized = term.toLowerCase();
+      if (lower.includes(normalized)) {
+        confidence += normalized === item.id.toLowerCase() ? 0.22 : 0.35;
+      }
+    });
+    if (item.body_system && lower.includes(item.body_system.toLowerCase())) confidence += 0.1;
+    if (claimElements.length) confidence += Math.min(0.25, claimElements.length * 0.06);
+    confidence = Math.max(0, Math.min(0.98, confidence));
+    const followUps = [];
+    if (!claimElements.includes("diagnosis")) followUps.push("This record may mention the condition, but diagnosis support is still unclear.");
+    if (!claimElements.includes("severity")) followUps.push("Add detail about symptom frequency, flare pattern, or functional impact.");
+    if (!claimElements.includes("timeline")) followUps.push("Capture when symptoms started, worsened, or were treated.");
+    if (!claimElements.includes("nexus") && /\bsecondary|aggravat|caused by|due to\b/i.test(text) === false) followUps.push("If this supports a relationship theory, explain the mechanism more directly.");
+    return {
+      id: item.id,
+      name: item.name,
+      confidence,
+      claimElements,
+      excerpts,
+      followUps: followUps.slice(0, 2),
+    };
+  }).filter((entry) => entry.confidence >= 0.2 || entry.excerpts.length)
+    .sort((a, b) => b.confidence - a.confidence || a.name.localeCompare(b.name))
+    .slice(0, 6);
+
+  const followUps = [];
+  if (!globalElements.includes("diagnosis")) followUps.push("Diagnosis evidence is still not obvious in this record.");
+  if (!globalElements.includes("severity")) followUps.push("This record needs stronger severity or functional-impact detail.");
+  if (!globalElements.includes("timeline")) followUps.push("Add or extract clearer dates before relying on this as chronology support.");
+  if (!globalElements.includes("nexus")) followUps.push("If this record supports a secondary or aggravation theory, add clearer nexus wording.");
+
+  return {
+    text,
+    conditions,
+    globalElements,
+    followUps: [...new Set(followUps)].slice(0, 4),
+  };
+}
+
+function computeEvidenceCoverageMatrix(items, st = loadWorkspaceState()) {
+  const rows = (items || []).map((item) => {
+    const notes = (loadNotes(item.id) || "").trim();
+    const evidenceLinks = loadEvidenceLinks(item.id);
+    const timeline = loadTimeline(item.id);
+    const readiness = conditionReadiness(item, st);
+    const combinedText = [
+      notes,
+      ...evidenceLinks.map((link) => `${link.label || ""} ${link.note || ""} ${link.type || ""}`),
+    ].join(" ");
+    const elements = new Set(detectClaimElements(combinedText));
+    if (timeline.length) elements.add("timeline");
+    if (evidenceLinks.length) elements.add("diagnosis");
+    const hasParent = parentsOf(item.id, st.links).length > 0;
+    if (hasParent && /\bnexus\b|\bsecondary\b|\bdue to\b|\bcaused by\b|\baggravat|\brelated to\b/i.test(notes)) {
+      elements.add("nexus");
+    }
+    if (/\bimpact\b|\bfrequency\b|\bflare\b|\bwork\b|\bsleep\b|\bpanic\b|\bprostrating\b|\bfunctional\b/i.test(combinedText)) {
+      elements.add("severity");
+    }
+
+    const cells = {
+      diagnosis: readiness.scores.diagnosis >= 60 || elements.has("diagnosis"),
+      severity: readiness.scores.severity >= 60 || elements.has("severity"),
+      timeline: readiness.scores.timeline >= 60 || elements.has("timeline"),
+      nexus: item.id === st.primaryId ? true : (readiness.scores.nexus >= 60 || elements.has("nexus")),
+    };
+
+    const missing = Object.entries(cells)
+      .filter(([, covered]) => !covered)
+      .map(([key]) => key);
+
+    return {
+      id: item.id,
+      name: item.name,
+      cells,
+      missing,
+      nextAction: missing.length
+        ? `Add ${missing.slice(0, 2).join(" and ")} support next.`
+        : "Coverage looks balanced across the core claim elements.",
+    };
+  });
+
+  const totals = rows.reduce((acc, row) => {
+    Object.entries(row.cells).forEach(([key, covered]) => {
+      acc[key] = acc[key] || { covered: 0, total: 0 };
+      acc[key].total += 1;
+      if (covered) acc[key].covered += 1;
+    });
+    return acc;
+  }, {});
+
+  return { rows, totals };
+}
+
+function buildCoverageStarter(itemId, element, st = loadWorkspaceState()) {
+  const item = CONDITIONS.find((condition) => condition.id === itemId) || { id: itemId, name: conditionNameById(itemId) };
+  const parentLink = parentsOf(itemId, st.links)[0] || null;
+  const parentName = parentLink ? conditionNameById(parentLink.from) : "the related condition";
+
+  if (element === "timeline") {
+    return {
+      jump: "timeline",
+      timelineTemplate: `Document the first clear dated event for ${item.name}: symptom onset, diagnosis, treatment, worsening, or exam milestone.`,
+    };
+  }
+
+  if (element === "nexus") {
+    return {
+      jump: "notes",
+      noteTemplate: `[Nexus starter]\nTheory: ${item.name} is related to ${parentName}.\nMechanism:\nSupporting records:\nFunctional impact:\nWhy this relationship makes sense:\n`,
+    };
+  }
+
+  if (element === "severity") {
+    return {
+      jump: "notes",
+      noteTemplate: `[Severity starter]\nFrequency / flare pattern:\nHow symptoms affect work, sleep, concentration, mobility, or daily life:\nWorst days / bad periods:\nTreatment changes or worsening since:\n`,
+    };
+  }
+
+  return {
+    jump: "notes",
+    noteTemplate: `[Diagnosis support starter]\nDiagnosis source / provider:\nRecord or DBQ date:\nKey symptoms documented:\nWhy this record matters for ${item.name}:\n`,
+  };
+}
+
+function queueCoverageFocus(itemId, element) {
+  PENDING_COVERAGE_FOCUS = {
+    itemId,
+    element,
+    createdAt: Date.now(),
+  };
+}
+
+function applyCoverageFocusAction(item) {
+  if (!PENDING_COVERAGE_FOCUS || PENDING_COVERAGE_FOCUS.itemId !== item?.id) return;
+  const pending = PENDING_COVERAGE_FOCUS;
+  PENDING_COVERAGE_FOCUS = null;
+  const starter = buildCoverageStarter(item.id, pending.element, loadWorkspaceState());
+
+  if (starter.jump === "timeline") {
+    const timelineHeading = document.getElementById("jump-timeline");
+    if (timelineHeading) timelineHeading.scrollIntoView({ behavior: "smooth", block: "start" });
+    const tlDate = document.getElementById("tlDate");
+    const tlNote = document.getElementById("tlNote");
+    if (tlNote && !tlNote.value.trim()) {
+      tlNote.value = starter.timelineTemplate || "";
+    }
+    setTimeout(() => {
+      tlDate?.focus();
+    }, 150);
+    return;
+  }
+
+  const notesAnchor = document.getElementById("jump-notes");
+  if (notesAnchor) notesAnchor.scrollIntoView({ behavior: "smooth", block: "start" });
+  const notesEl = document.getElementById("notes");
+  if (notesEl && starter.noteTemplate) {
+    const current = (notesEl.value || "").trim();
+    if (!current) {
+      notesEl.value = starter.noteTemplate;
+      saveNotes(item.id, notesEl.value);
+    } else if (!current.includes(starter.noteTemplate.split("\n")[0])) {
+      notesEl.value = `${notesEl.value.trim()}\n\n${starter.noteTemplate}`;
+      saveNotes(item.id, notesEl.value);
+    }
+    setTimeout(() => {
+      notesEl.focus();
+      notesEl.setSelectionRange(notesEl.value.length, notesEl.value.length);
+    }, 150);
+  }
+}
+
+function renderEvidenceCoverageMatrix() {
+  const host = document.getElementById("wsCoverageMatrix");
+  const summary = document.getElementById("wsCoverageSummary");
+  if (!host || !summary) return;
+
+  const st = loadWorkspaceState();
+  const items = (st.nodes || []).map((id) => CONDITIONS.find((condition) => condition.id === id)).filter(Boolean);
+  if (!items.length) {
+    summary.textContent = "";
+    host.innerHTML = `<div class="small">Add workspace conditions to see claim-element coverage across diagnosis, severity, timeline, and nexus.</div>`;
+    return;
+  }
+
+  const matrix = computeEvidenceCoverageMatrix(items, st);
+  const totalsText = ["diagnosis", "severity", "timeline", "nexus"]
+    .map((key) => `${key}: ${matrix.totals[key]?.covered || 0}/${matrix.totals[key]?.total || 0}`)
+    .join(" • ");
+  const weakestRows = matrix.rows.filter((row) => row.missing.length).sort((a, b) => b.missing.length - a.missing.length).slice(0, 3);
+  summary.textContent = `Coverage totals — ${totalsText}${weakestRows.length ? ` • biggest gaps: ${weakestRows.map((row) => `${row.name} (${row.missing.join(", ")})`).join(" | ")}` : ""}`;
+
+  const cell = (covered, label, rowId, element) => covered
+    ? `<span class="coverageCell coverage-yes" title="${escapeHtml(label)}">Yes</span>`
+    : `<button class="coverageCell coverage-no" data-coverage-open="${escapeHtml(rowId)}" data-coverage-element="${escapeHtml(element)}" title="${escapeHtml(label)}" type="button">Fix</button>`;
+  host.innerHTML = `
+    <div class="coverageMatrix">
+      <div class="coverageHeader">Condition</div>
+      <div class="coverageHeader">Diagnosis</div>
+      <div class="coverageHeader">Severity</div>
+      <div class="coverageHeader">Timeline</div>
+      <div class="coverageHeader">Nexus</div>
+      <div class="coverageHeader">Next move</div>
+      ${matrix.rows.map((row) => `
+        <div class="coverageName"><strong>${escapeHtml(row.name)}</strong></div>
+        <div>${cell(row.cells.diagnosis, `${row.name} diagnosis coverage`, row.id, "diagnosis")}</div>
+        <div>${cell(row.cells.severity, `${row.name} severity coverage`, row.id, "severity")}</div>
+        <div>${cell(row.cells.timeline, `${row.name} timeline coverage`, row.id, "timeline")}</div>
+        <div>${cell(row.cells.nexus, `${row.name} nexus coverage`, row.id, "nexus")}</div>
+        <div class="small">${escapeHtml(row.nextAction)}</div>
+      `).join("")}
+    </div>
+  `;
+
+  host.querySelectorAll("[data-coverage-open]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const id = button.dataset.coverageOpen || "";
+      const element = button.dataset.coverageElement || "notes";
+      if (!id) return;
+      queueCoverageFocus(id, element);
+      showDetail(id, true, element === "timeline" ? "timeline" : "notes");
+      document.getElementById("detail")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+}
+
+function scoreTheoryRecord(theory, context = {}) {
+  const summary = (theory?.summary || "").trim();
+  const item = context.subject || null;
+  const parent = context.parent || null;
+  let score = 0;
+  const feedback = [];
+
+  if (summary) score += 25;
+  else feedback.push("Add a plain-language summary so the theory is understandable outside the workspace.");
+
+  if (theory?.subjectId) score += 15;
+  if (theory?.type) score += 10;
+
+  if (/direct/i.test(theory?.type || "")) {
+    if (/\bin service\b|\bservice\b|\bonset\b|\bdeployment\b|\bexposure\b/i.test(summary)) score += 20;
+    else feedback.push("Direct theories read stronger when they explain the in-service event, exposure, or onset.");
+  }
+
+  if (/secondary|aggravation|increase/i.test(theory?.type || "")) {
+    if (theory?.parentId) score += 15;
+    else feedback.push("Link the theory to a parent condition so the relationship is explicit.");
+    if (/\bdue to\b|\bcaused by\b|\baggravat|\brelated to\b|\bworsen/i.test(summary)) score += 15;
+    else feedback.push("Use clearer relationship language like caused by, aggravated by, or worsened by.");
+  }
+
+  if (/\bimpact\b|\bwork\b|\bsleep\b|\bpanic\b|\bpain\b|\bfrequency\b|\bflare\b/i.test(summary)) score += 10;
+  else feedback.push("Add symptom, severity, or functional-impact language so the reviewer understands why the claim matters.");
+
+  if (item?.body_system && summary.toLowerCase().includes((item.body_system || "").toLowerCase())) score += 5;
+  if (parent && /\bsecondary|aggravation|increase/i.test(theory?.type || "")) score += 5;
+
+  const tier = score >= 75 ? "Strong" : score >= 50 ? "Moderate" : "Needs work";
+  return { score, tier, feedback: [...new Set(feedback)].slice(0, 3) };
+}
+
+function buildPrintablePacketHtml(items, options = {}) {
+  const audience = options.audience || "review";
+  const primary = options.primary || null;
+  const theories = options.theories || [];
+  const audienceTitle = audience === "veteran"
+    ? "Veteran Packet"
+    : audience === "representative"
+      ? "Representative Packet"
+      : "Quick Review Packet";
+  const generatedAt = new Date().toLocaleString();
+  const readinessRows = (items || []).map((item) => conditionReadiness(item, loadWorkspaceState()));
+  const avgReadiness = readinessRows.length
+    ? Math.round(readinessRows.reduce((sum, row) => sum + row.overall, 0) / readinessRows.length)
+    : 0;
+  const renderedItems = (items || []).map((item) => {
+    const readiness = conditionReadiness(item, loadWorkspaceState());
+    const notes = escapeHtml((loadNotes(item.id) || "").trim() || "(none)");
+    const evidenceLinks = loadEvidenceLinks(item.id);
+    const timeline = loadTimeline(item.id);
+    return `
+      <section class="packetSection">
+        <h3>${escapeHtml(item.name)}</h3>
+        <p><strong>Body system:</strong> ${escapeHtml(item.body_system || "(unknown)")}</p>
+        <p><strong>Readiness:</strong> ${readiness.overall}% | Diagnosis ${readiness.scores.diagnosis}% | Severity ${readiness.scores.severity}% | Nexus ${readiness.scores.nexus}% | Timeline ${readiness.scores.timeline}% | Evidence ${readiness.scores.evidence}%</p>
+        <p><strong>Next action:</strong> ${escapeHtml(readiness.nextAction)}</p>
+        <p><strong>Notes:</strong><br/>${notes.replaceAll("\n", "<br/>")}</p>
+        <p><strong>Evidence links:</strong> ${evidenceLinks.length ? evidenceLinks.map((link) => escapeHtml(link.label || link.url || "Evidence")).join(", ") : "(none)"}</p>
+        <p><strong>Timeline entries:</strong> ${timeline.length ? timeline.map((entry) => `${escapeHtml(entry.date || "")} ${escapeHtml(entry.type || "")}`).join(" | ") : "(none)"}</p>
+      </section>
+    `;
+  }).join("");
+
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>VA CFR Finder Printable Packet</title>
+  <style>
+    body { font-family: Georgia, "Times New Roman", serif; margin: 32px auto; max-width: 920px; color: #111; line-height: 1.5; background: #faf8f2; }
+    h1, h2, h3 { margin-bottom: 8px; }
+    .coverSheet { background: linear-gradient(180deg, #f7f0d7 0%, #fff 100%); border: 1px solid #d7d1bb; border-radius: 16px; padding: 28px; margin-bottom: 20px; }
+    .packetMeta, .packetSection { border: 1px solid #d7d7d7; border-radius: 12px; padding: 16px; margin-bottom: 16px; background: #fff; }
+    .packetGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .summaryStrip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
+    .summaryCard { border: 1px solid #e3e0d4; border-radius: 12px; padding: 12px; background: #fffdfa; }
+    .tag { display: inline-block; padding: 4px 8px; border-radius: 999px; background: #f2f2f2; margin-right: 8px; font-size: 0.9rem; }
+    .coverIntro { max-width: 56rem; }
+    .assumptionList li { margin-bottom: 6px; }
+    .pageBreak { page-break-before: always; break-before: page; }
+    @media print {
+      button { display: none; }
+      body { margin: 0.5in; background: #fff; }
+      .coverSheet { page-break-after: always; }
+      .pageBreak { page-break-before: always; break-before: page; }
+    }
+  </style>
+</head>
+<body>
+  <section class="coverSheet">
+    <div class="tag">VA CFR Finder Printable Packet</div>
+    <h1>${escapeHtml(audienceTitle)}</h1>
+    <p class="coverIntro">This printable packet is an educational claim-planning summary assembled from your saved workspace notes, evidence links, timelines, theories, and app-generated readiness guidance.</p>
+    <div class="packetGrid" style="margin-top:16px">
+      <div><strong>Audience:</strong> ${escapeHtml(audience)}</div>
+      <div><strong>Generated:</strong> ${escapeHtml(generatedAt)}</div>
+      <div><strong>Primary:</strong> ${escapeHtml(primary?.name || "(not set)")}</div>
+      <div><strong>Conditions:</strong> ${items.length}</div>
+    </div>
+    <div class="summaryStrip">
+      <div class="summaryCard">
+        <strong>Readiness average</strong>
+        <div style="font-size:1.3rem; margin-top:6px">${avgReadiness}%</div>
+      </div>
+      <div class="summaryCard">
+        <strong>Saved theories</strong>
+        <div style="font-size:1.3rem; margin-top:6px">${theories.length}</div>
+      </div>
+      <div class="summaryCard">
+        <strong>Packet focus</strong>
+        <div style="font-size:1.05rem; margin-top:6px">${escapeHtml(audienceTitle)}</div>
+      </div>
+    </div>
+  </section>
+  <div class="packetMeta">
+    <div class="packetGrid">
+      <div><strong>Audience:</strong> ${escapeHtml(audience)}</div>
+      <div><strong>Generated:</strong> ${escapeHtml(generatedAt)}</div>
+      <div><strong>Primary:</strong> ${escapeHtml(primary?.name || "(not set)")}</div>
+      <div><strong>Conditions:</strong> ${items.length}</div>
+    </div>
+    <p><strong>Structured theories:</strong> ${theories.length ? theories.map((theory) => escapeHtml(`${theory.type}: ${theory.subjectName}${theory.parentName ? ` linked to ${theory.parentName}` : ""}`)).join(" • ") : "No saved theory yet."}</p>
+    <p><strong>Provenance:</strong> Notes, timelines, evidence links, and theories are user-entered. Intake matches and mapper suggestions are inferred. Packet layout and summaries are generated by the app.</p>
+  </div>
+  <div class="packetMeta">
+    <h2>Reviewer Summary Sheet</h2>
+    <p>${audience === "representative"
+      ? "Use this version to scan the strongest theories, the thinnest evidence areas, and the follow-up work that should happen before representative review or filing."
+      : audience === "veteran"
+        ? "Use this version to review what your claim theory currently says, what evidence is already staged, and what should be strengthened next."
+        : "Use this version for a compact readiness check before sharing or exporting a more complete packet."}</p>
+    <ul class="assumptionList">
+      <li>Confirm every timeline date and provider reference before relying on this printout.</li>
+      <li>Review any rating scenarios as estimates only, not guaranteed outcomes.</li>
+      <li>Separate user-entered facts from app-generated suggestions during final review.</li>
+    </ul>
+  </div>
+  <div class="pageBreak"></div>
+  ${renderedItems}
+  <div class="packetMeta">
+    <h2>Assumptions To Review</h2>
+    <p>Verify CFR references, timeline dates, and rating assumptions before relying on this packet. This is an educational drafting aid, not legal advice or representation.</p>
+  </div>
+</body>
+</html>`;
+}
+
 function renderDocumentIntakeResults() {
   const summaryEl = document.getElementById("docIntakeSummary");
   const resultsEl = document.getElementById("docIntakeResults");
+  const mapperEl = document.getElementById("docMapperResults");
   if (!summaryEl || !resultsEl) return;
 
   const analysis = LAST_INTAKE_ANALYSIS;
   if (!analysis || !analysis.text) {
     summaryEl.textContent = "";
     resultsEl.innerHTML = `<div class="small">No intake analysis yet.</div>`;
+    if (mapperEl) mapperEl.innerHTML = `<div class="small">No record-to-claim mapping yet.</div>`;
     return;
   }
 
@@ -2355,13 +3743,38 @@ function renderDocumentIntakeResults() {
             <input type="checkbox" data-intake-condition="${escapeHtml(match.id)}" checked />
             <span>
               <strong>${escapeHtml(match.name)}</strong>
-              <span class="small">${escapeHtml(match.bodySystem)} • matched on "${escapeHtml(match.hit)}"</span>
+              <span class="small">${escapeHtml(match.bodySystem)} • matched on "${escapeHtml(match.hit)}" <span class="provenanceTag prov-inferred">Inferred from intake</span></span>
               ${match.sentence ? `<div class="small" style="margin-top:6px">${escapeHtml(match.sentence)}</div>` : ""}
             </span>
           </label>
         </article>
       `).join("")
     : `<div class="small">No known conditions were detected in that text. Try pasting a longer record summary or more specific symptom language.</div>`;
+
+  if (mapperEl) {
+    const mapping = analysis.mapper || analyzeRecordToClaimMapper(analysis.text, CONDITIONS);
+    mapperEl.innerHTML = `
+      <article class="builderSuggestionCard">
+        <div class="builderSuggestionTop">
+          <div>
+            <strong>Record-to-Claim Mapper</strong>
+            <div class="small">Claim elements detected: ${mapping.globalElements.length ? escapeHtml(mapping.globalElements.join(", ")) : "none obvious yet"}</div>
+          </div>
+          <span class="provenanceTag prov-generated">Generated by app</span>
+        </div>
+        ${mapping.conditions.length
+          ? mapping.conditions.map((entry) => `
+              <div class="small" style="margin-top:10px">
+                <strong>${escapeHtml(entry.name)}</strong> • confidence ${Math.round(entry.confidence * 100)}% • supports ${entry.claimElements.length ? escapeHtml(entry.claimElements.join(", ")) : "general mention only"}
+                ${entry.excerpts.length ? `<div style="margin-top:4px">${entry.excerpts.map((excerpt) => `“${escapeHtml(excerpt)}”`).join("<br/>")}</div>` : ""}
+                ${entry.followUps.length ? `<div style="margin-top:4px"><em>${escapeHtml(entry.followUps.join(" "))}</em></div>` : ""}
+              </div>
+            `).join("")
+          : `<div class="small" style="margin-top:10px">No strong condition mapping was detected yet.</div>`}
+        ${mapping.followUps.length ? `<div class="small" style="margin-top:10px"><strong>Follow-up prompts:</strong> ${escapeHtml(mapping.followUps.join(" "))}</div>` : ""}
+      </article>
+    `;
+  }
 }
 
 function renderDocumentLibrary() {
@@ -2370,12 +3783,14 @@ function renderDocumentLibrary() {
 
   const docs = loadDocumentLibrary();
   host.innerHTML = docs.length
-    ? docs.map((doc) => `
+    ? docs.map((doc) => {
+        const provenance = provenanceMeta(doc.sourceType);
+        return `
         <article class="builderSuggestionCard">
           <div class="builderSuggestionTop">
             <div>
               <strong>${escapeHtml(doc.name)}</strong>
-              <div class="small">${escapeHtml(doc.type || "General")}${doc.tags?.length ? ` • tags: ${escapeHtml(doc.tags.join(", "))}` : ""}</div>
+              <div class="small">${escapeHtml(doc.type || "General")} <span class="provenanceTag ${escapeHtml(provenance.className)}">${escapeHtml(provenance.label)}</span>${doc.tags?.length ? ` • tags: ${escapeHtml(doc.tags.join(", "))}` : ""}</div>
               <div class="small" style="margin-top:6px">${escapeHtml((doc.text || "").slice(0, 180))}${(doc.text || "").length > 180 ? "..." : ""}</div>
             </div>
             <div class="healthBtns" style="margin-top:0">
@@ -2385,7 +3800,8 @@ function renderDocumentLibrary() {
             </div>
           </div>
         </article>
-      `).join("")
+      `;
+      }).join("")
     : `<div class="small">No saved documents yet. Save DBQ text, lay statements, or medical note summaries here so you can reuse them across claims.</div>`;
 
   host.querySelectorAll("[data-doc-load]").forEach((button) => {
@@ -2405,6 +3821,7 @@ function renderDocumentLibrary() {
       const input = document.getElementById("docIntakeInput");
       if (input) input.value = doc.text || "";
       LAST_INTAKE_ANALYSIS = analyzeDocumentIntake(doc.text || "");
+      LAST_INTAKE_ANALYSIS.mapper = analyzeRecordToClaimMapper(doc.text || "", CONDITIONS);
       renderDocumentIntakeResults();
       alert(`Analyzed ${doc.name}.`);
     });
@@ -2436,14 +3853,18 @@ function renderEvidenceLibrary() {
 
   const records = loadEvidenceLibrary();
   host.innerHTML = records.length
-    ? records.map((record) => `
+    ? records.map((record) => {
+        const provenance = provenanceMeta(record.sourceType);
+        const suggestions = suggestEvidenceTargets(record, workspaceItems);
+        return `
         <article class="builderSuggestionCard">
           <div class="builderSuggestionTop">
             <div>
               <strong>${escapeHtml(record.label)}</strong>
-              <div class="small">${escapeHtml(record.type || "Other")}${record.tags?.length ? ` • ${escapeHtml(record.tags.join(", "))}` : ""}</div>
+              <div class="small">${escapeHtml(record.type || "Other")} <span class="provenanceTag ${escapeHtml(provenance.className)}">${escapeHtml(provenance.label)}</span>${record.tags?.length ? ` • ${escapeHtml(record.tags.join(", "))}` : ""}</div>
               ${record.url ? `<div class="small" style="margin-top:6px">${escapeHtml(record.url)}</div>` : ""}
               ${record.excerpt ? `<div class="small" style="margin-top:6px">${escapeHtml(record.excerpt)}</div>` : ""}
+              ${suggestions.length ? `<div class="small" style="margin-top:6px"><strong>Suggested targets:</strong> ${suggestions.map((suggestion) => `${escapeHtml(suggestion.name)} (${escapeHtml(suggestion.reasons[0] || "best match")})`).join(" • ")}</div>` : `<div class="small" style="margin-top:6px">No clear workspace match detected yet.</div>`}
             </div>
             <div class="healthBtns" style="margin-top:0">
               <button class="miniBtn" data-ev-attach="${escapeHtml(record.id)}" type="button">Attach</button>
@@ -2451,8 +3872,10 @@ function renderEvidenceLibrary() {
               <button class="miniBtn danger" data-ev-delete="${escapeHtml(record.id)}" type="button">Delete</button>
             </div>
           </div>
+          ${suggestions.length ? `<div class="healthBtns" style="margin-top:8px">${suggestions.map((suggestion) => `<button class="miniBtn" data-ev-suggested-attach="${escapeHtml(record.id)}" data-ev-suggested-target="${escapeHtml(suggestion.id)}" type="button">Attach to ${escapeHtml(suggestion.name)}</button>`).join("")}</div>` : ""}
         </article>
-      `).join("")
+      `;
+      }).join("")
     : `<div class="small">No evidence records yet. Save a reusable medical note, DBQ, or statement link here, then attach it across multiple conditions.</div>`;
 
   host.querySelectorAll("[data-ev-attach]").forEach((button) => {
@@ -2507,6 +3930,17 @@ function renderEvidenceLibrary() {
       alert(`Deleted ${record.label}.`);
     });
   });
+
+  host.querySelectorAll("[data-ev-suggested-attach]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const record = loadEvidenceLibrary().find((item) => item.id === button.dataset.evSuggestedAttach);
+      const targetId = button.dataset.evSuggestedTarget || "";
+      if (!record || !targetId) return;
+      targetEl.value = targetId;
+      const attachButton = host.querySelector(`[data-ev-attach="${CSS.escape(record.id)}"]`);
+      attachButton?.click();
+    });
+  });
 }
 
 function renderSnapshotHistoryList() {
@@ -2527,6 +3961,109 @@ function renderSnapshotHistoryList() {
         </article>
       `).join("")
     : `<div class="small">No compare or restore history yet. Compare or restore a restore point to build a version trail.</div>`;
+}
+
+function renderWorkspaceProfiles() {
+  const host = document.getElementById("wsProfileList");
+  const currentEl = document.getElementById("wsProfileCurrent");
+  if (!host || !currentEl) return;
+
+  const profiles = loadWorkspaceProfiles().sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
+  const activeId = loadActiveWorkspaceProfileId();
+  const active = profiles.find((profile) => profile.id === activeId) || null;
+  currentEl.innerHTML = active
+    ? `<strong>Current profile:</strong> ${escapeHtml(active.name)} <span class="small">• ${escapeHtml(workspaceProfileSummary(active))}</span>`
+    : `<strong>Current profile:</strong> none selected yet`;
+
+  host.innerHTML = profiles.length
+    ? profiles.map((profile) => `
+        <article class="snapshotCard ${profile.id === activeId ? "profileActiveCard" : ""}">
+          <div class="snapshotHeader">
+            <div>
+              <strong>${escapeHtml(profile.name)}</strong>
+              <div class="small">${escapeHtml(profile.notes || "No profile notes yet")}</div>
+              <div class="small">${escapeHtml(workspaceProfileSummary(profile))}</div>
+            </div>
+            <div class="small">${profile.updatedAt ? escapeHtml(new Date(profile.updatedAt).toLocaleString()) : ""}</div>
+          </div>
+          <div class="healthBtns" style="margin-top:8px">
+            <button class="miniBtn" data-profile-load="${escapeHtml(profile.id)}" type="button">Load</button>
+            <button class="miniBtn" data-profile-saveover="${escapeHtml(profile.id)}" type="button">Save Over</button>
+            <button class="miniBtn" data-profile-duplicate="${escapeHtml(profile.id)}" type="button">Duplicate</button>
+            <button class="miniBtn danger" data-profile-delete="${escapeHtml(profile.id)}" type="button">Delete</button>
+          </div>
+        </article>
+      `).join("")
+    : `<div class="small">No saved claim workspaces yet. Save the current workspace as a profile to manage multiple veterans or claim versions cleanly.</div>`;
+
+  host.querySelectorAll("[data-profile-load]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const profile = loadWorkspaceProfiles().find((item) => item.id === button.dataset.profileLoad);
+      if (!profile) return;
+      if (!confirm(`Load "${profile.name}" and replace the current local workspace?`)) return;
+      applyWorkspaceBackup(profile.backup || emptyWorkspaceBackup());
+      saveActiveWorkspaceProfileId(profile.id);
+      pushWorkspaceActivity("Profile loaded", `${profile.name} was loaded as the active claim workspace.`);
+      renderWorkspaceProfiles();
+      renderSnapshotComparison(null);
+      renderDocumentLibrary();
+      renderEvidenceLibrary();
+      renderSnapshotHistoryList();
+      renderWorkspace();
+      renderClaimTree();
+      renderHealthPanel();
+      renderWorkspaceActivity();
+      alert(`Loaded ${profile.name}.`);
+    });
+  });
+
+  host.querySelectorAll("[data-profile-saveover]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const profilesNow = loadWorkspaceProfiles();
+      const index = profilesNow.findIndex((item) => item.id === button.dataset.profileSaveover);
+      if (index < 0) return;
+      const existing = profilesNow[index];
+      profilesNow[index] = {
+        ...existing,
+        updatedAt: new Date().toISOString(),
+        backup: buildWorkspaceBackup()
+      };
+      saveWorkspaceProfiles(profilesNow);
+      saveActiveWorkspaceProfileId(existing.id);
+      renderWorkspaceProfiles();
+      alert(`Saved current workspace into ${existing.name}.`);
+    });
+  });
+
+  host.querySelectorAll("[data-profile-duplicate]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const profile = loadWorkspaceProfiles().find((item) => item.id === button.dataset.profileDuplicate);
+      if (!profile) return;
+      const duplicate = buildWorkspaceProfile({
+        name: `${profile.name} Copy`,
+        notes: profile.notes || "",
+        backup: JSON.parse(JSON.stringify(profile.backup || emptyWorkspaceBackup()))
+      });
+      saveWorkspaceProfiles([duplicate, ...loadWorkspaceProfiles()].slice(0, 20));
+      renderWorkspaceProfiles();
+      alert(`Duplicated ${profile.name}.`);
+    });
+  });
+
+  host.querySelectorAll("[data-profile-delete]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const profilesNow = loadWorkspaceProfiles();
+      const profile = profilesNow.find((item) => item.id === button.dataset.profileDelete);
+      if (!profile) return;
+      if (!confirm(`Delete "${profile.name}"?`)) return;
+      saveWorkspaceProfiles(profilesNow.filter((item) => item.id !== profile.id));
+      if (loadActiveWorkspaceProfileId() === profile.id) {
+        saveActiveWorkspaceProfileId("");
+      }
+      renderWorkspaceProfiles();
+      alert(`Deleted ${profile.name}.`);
+    });
+  });
 }
 
 function renderNexusBuilder() {
@@ -2638,6 +4175,7 @@ function buildWorkspacePacketText(items, options = {}) {
   lines.push(`Primary condition: ${primary ? primary.name : "(not set)"}`);
   lines.push(`Conditions in workspace: ${items.length}`);
   lines.push(`Overall readiness: ${health.evidence.done}/${health.evidence.total} (${health.evidence.pct}%)`);
+  lines.push("Provenance: notes, timelines, evidence links, and saved theories are user-entered; intake matches and evidence suggestions are inferred; packet summaries and coaching text are generated by the app.");
   lines.push("");
 
   if (audience === "review") {
@@ -2679,12 +4217,14 @@ function buildWorkspacePacketText(items, options = {}) {
     const wsState = loadWorkspaceState();
     const linksToMe = (wsState.links || []).filter(l => l.to === item.id);
     const strength = evidenceStrength(item, wsState);
+    const readiness = conditionReadiness(item, wsState);
     const gaps = granularGapsForCondition(item, wsState);
     
     lines.push("============================================================");
     lines.push(`${i + 1}) ${item.name} (${item.id})`);
     lines.push(`Body system: ${item.body_system || "(unknown)"}`);
     lines.push(`Support strength: ${strength.label}`);
+    lines.push(`Readiness by section: diagnosis ${readiness.scores.diagnosis}% | severity ${readiness.scores.severity}% | nexus ${readiness.scores.nexus}% | timeline ${readiness.scores.timeline}% | evidence ${readiness.scores.evidence}%`);
     
     if (item.id === wsState.primaryId) {
       lines.push("Role: Primary");
@@ -2710,6 +4250,7 @@ function buildWorkspacePacketText(items, options = {}) {
       lines.push(`- Timeline entries: ${timelineCount}`);
       lines.push(`- Evidence links: ${evidenceLinksCount}`);
       if (gaps.length) lines.push(`- Noted gaps: ${gaps.join("; ")}`);
+      lines.push(`- Recommended next action: ${readiness.nextAction}`);
       lines.push("");
     }
 
@@ -2770,7 +4311,159 @@ function buildWorkspacePacketText(items, options = {}) {
     lines.push("Use this packet for representative-side review of theory, support, and current drafting gaps.");
   }
   lines.push("Disclaimer: Educational only. Not legal advice/representation.");
+  lines.push("Assumptions: rating projections are estimates only, and relationship theories still need record-specific support.");
   return lines.join("\n");
+}
+
+function buildAssembledPacketText(options = {}) {
+  const audience = options.audience || "review";
+  const include = {
+    overview: options.include?.overview !== false,
+    coach: options.include?.coach !== false,
+    submission: options.include?.submission !== false,
+    theories: options.include?.theories !== false,
+    narrative: options.include?.narrative !== false,
+    timeline: options.include?.timeline !== false,
+    binder: options.include?.binder !== false,
+    coverage: options.include?.coverage !== false,
+  };
+
+  const ordered = orderedWorkspaceItemsForExport();
+  const st = loadWorkspaceState();
+  const lines = [];
+  lines.push(`VA CFR Finder — Smart Packet Assembler (${audience})`);
+  lines.push(new Date().toLocaleString());
+  lines.push("");
+  lines.push("This assembled packet combines selected workspace outputs into one handoff draft.");
+  lines.push("Provenance: notes, timelines, theories, and evidence links are user-entered; suggestions and summaries are generated or inferred by the app.");
+  lines.push("");
+
+  if (include.overview) {
+    lines.push("============================================================");
+    lines.push("WORKSPACE OVERVIEW");
+    lines.push("============================================================");
+    lines.push(buildWorkspacePacketText(ordered, { audience }));
+    lines.push("");
+  }
+
+  if (include.coach) {
+    lines.push("============================================================");
+    lines.push("STRATEGY COACH");
+    lines.push("============================================================");
+    lines.push(generateStrategyCoachText());
+    lines.push("");
+  }
+
+  if (include.submission) {
+    lines.push("============================================================");
+    lines.push("SUBMISSION PREP");
+    lines.push("============================================================");
+    lines.push(generateSubmissionPrepText());
+    lines.push("");
+  }
+
+  if (include.theories) {
+    const theories = loadTheoryState();
+    lines.push("============================================================");
+    lines.push("STRUCTURED THEORY REVIEW");
+    lines.push("============================================================");
+    if (!theories.length) {
+      lines.push("No structured theories saved yet.");
+    } else {
+      theories.forEach((theory, index) => {
+        const subject = CONDITIONS.find((item) => item.id === theory.subjectId) || null;
+        const parent = CONDITIONS.find((item) => item.id === theory.parentId) || null;
+        const score = scoreTheoryRecord(theory, { subject, parent });
+        lines.push(`${index + 1}. ${theory.type}: ${theory.subjectName}${theory.parentName ? ` linked to ${theory.parentName}` : ""}`);
+        lines.push(`Summary: ${theory.summary || "(none)"}`);
+        lines.push(`Review: ${score.tier} (${score.score}/100)`);
+        if (score.feedback.length) score.feedback.forEach((entry) => lines.push(`- ${entry}`));
+        lines.push("");
+      });
+    }
+    lines.push("");
+  }
+
+  if (include.narrative) {
+    lines.push("============================================================");
+    lines.push("CLAIM NARRATIVE");
+    lines.push("============================================================");
+    lines.push(generateNarrativeDraft({ linkedOnly: false, style: "detailed" }));
+    lines.push("");
+  }
+
+  if (include.timeline) {
+    lines.push("============================================================");
+    lines.push("WORKSPACE TIMELINE");
+    lines.push("============================================================");
+    lines.push(workspaceTimelineDraft("all"));
+    lines.push("");
+  }
+
+  if (include.binder) {
+    lines.push("============================================================");
+    lines.push("EVIDENCE BINDER");
+    lines.push("============================================================");
+    lines.push(workspaceEvidenceBinderDraft("all", "date", "flat"));
+    lines.push("");
+  }
+
+  if (include.coverage) {
+    const items = (st.nodes || []).map((id) => CONDITIONS.find((condition) => condition.id === id)).filter(Boolean);
+    const matrix = computeEvidenceCoverageMatrix(items, st);
+    lines.push("============================================================");
+    lines.push("EVIDENCE COVERAGE MATRIX");
+    lines.push("============================================================");
+    if (!matrix.rows.length) {
+      lines.push("No workspace conditions yet.");
+    } else {
+      matrix.rows.forEach((row) => {
+        lines.push(`${row.name}: diagnosis ${row.cells.diagnosis ? "yes" : "no"} | severity ${row.cells.severity ? "yes" : "no"} | timeline ${row.cells.timeline ? "yes" : "no"} | nexus ${row.cells.nexus ? "yes" : "no"}`);
+        lines.push(`Next move: ${row.nextAction}`);
+      });
+    }
+    lines.push("");
+  }
+
+  return lines.join("\n");
+}
+
+function orderedWorkspaceItemsForExport() {
+  const st = loadWorkspaceState();
+  const primary = st.primaryId ? CONDITIONS.find(c => c.id === st.primaryId) : null;
+  const secondaries = st.links
+    .filter(l => l.from === st.primaryId)
+    .map(s => CONDITIONS.find(c => c.id === s.to))
+    .filter(Boolean);
+  const unassigned = st.nodes
+    .filter(id => id !== st.primaryId && !st.links.some(l => l.from === st.primaryId && l.to === id))
+    .map(id => CONDITIONS.find(c => c.id === id))
+    .filter(Boolean);
+
+  return [
+    ...(primary ? [primary] : []),
+    ...secondaries,
+    ...unassigned
+  ];
+}
+
+function openPrintablePacket(audience = "review") {
+  const items = orderedWorkspaceItemsForExport();
+  const st = loadWorkspaceState();
+  const primary = st.primaryId ? CONDITIONS.find((condition) => condition.id === st.primaryId) : null;
+  const html = buildPrintablePacketHtml(items, {
+    audience,
+    primary,
+    theories: loadTheoryState(),
+  });
+  const win = window.open("", "_blank", "noopener,noreferrer");
+  if (!win) {
+    alert("Popup blocked. Allow popups for this site to open the printable packet.");
+    return;
+  }
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
 }
 
 function parentsOf(childId, links) {
@@ -2801,14 +4494,20 @@ function renderWorkspace() {
   if (!wsList || !wsScore || !wsBarFill) return;
   renderSnapshotList();
   renderSnapshotHistoryList();
+  renderWorkspaceProfiles();
   renderWorkspaceActivity();
   renderEvidenceHub();
+  renderEvidenceCoverageMatrix();
   renderEvidenceLibrary();
+  renderEvidenceConflictEngine();
   renderRatingEstimator();
   renderNexusBuilder();
+  renderWorkspaceDashboard();
   renderStickyWorkspaceSummary();
   renderStartHereSteps();
   renderTheoryBuilder();
+  renderActionEngine();
+  renderClaimMilestones();
 
   const st = loadWorkspaceState();
   const items = st.nodes.map(id => CONDITIONS.find(c => c.id === id)).filter(Boolean);
@@ -2856,6 +4555,8 @@ function renderWorkspace() {
 
     const ev = evidenceCompletion(item, loadEvidenceState(item.id));
     const strength = evidenceStrength(item, stNow);
+    const readiness = conditionReadiness(item, stNow);
+    const coachTips = conditionSpecificCoaching(item, stNow);
     const gaps = granularGapsForCondition(item, stNow);
 
     const card = document.createElement("div");
@@ -2869,8 +4570,12 @@ function renderWorkspace() {
             ${orphan ? `<span class="orphanBadge">Orphan</span>` : ""}
             ${isPrimary ? `<span class="wsBadge">Primary</span>` : `<span class="wsBadge">Linked</span>`}
             <span class="strengthBadge ${escapeHtml(strength.className)}">${escapeHtml(strength.label)}</span>
+            <span class="strengthBadge ${escapeHtml(readiness.overallTone.className)}">${escapeHtml(readiness.overall)}% ready</span>
           </div>
               <div class="small">${escapeHtml(item.body_system || "")} • ${ev.done}/${ev.total} (${ev.pct}%)</div>
+              <div class="small">Readiness: Dx ${readiness.scores.diagnosis}% • Severity ${readiness.scores.severity}% • Nexus ${readiness.scores.nexus}% • Timeline ${readiness.scores.timeline}% • Evidence ${readiness.scores.evidence}%</div>
+              ${coachTips.length ? `<div class="small"><strong>Coach:</strong> ${escapeHtml(coachTips[0])}</div>` : ""}
+              <div class="small">Next: ${escapeHtml(readiness.nextAction)}</div>
               ${gaps.length ? `<div class="small">Gaps: ${escapeHtml(gaps.slice(0, 3).join(", "))}</div>` : `<div class="small">Gaps: none obvious</div>`}
 
           ${isPrimary ? "" : `
@@ -3290,6 +4995,22 @@ function smartJumpAfterDetailRender(query) {
     return;
   }
 
+  if (q === "timeline" || q.includes("timeline")) {
+    const timelineAnchor = document.getElementById("jump-timeline");
+    if (timelineAnchor) timelineAnchor.scrollIntoView({ behavior: "smooth", block: "start" });
+    const tlDate = document.getElementById("tlDate");
+    if (tlDate) {
+      setTimeout(() => tlDate.focus(), 150);
+    }
+    return;
+  }
+
+  if (q === "evidence" || q.includes("evidence")) {
+    const evidenceAnchor = document.getElementById("jump-evidence");
+    if (evidenceAnchor) evidenceAnchor.scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
+
 
   const detail = document.getElementById("detail");
   if (!detail) return;
@@ -3573,6 +5294,43 @@ function buildReferencesHTML(item) {
   `;
 }
 
+function buildDetailSummaryHTML(item) {
+  const st = loadWorkspaceState();
+  const readiness = conditionReadiness(item, st);
+  const coaching = conditionSpecificCoaching(item, st);
+  const notes = (loadNotes(item.id) || "").trim();
+  const theories = loadTheoryState().filter((theory) => theory.subjectId === item.id || theory.parentId === item.id);
+  const provenance = [
+    provenanceMeta("user-entered"),
+    LAST_INTAKE_ANALYSIS?.matches?.some((match) => match.id === item.id) ? provenanceMeta("inferred") : null,
+    provenanceMeta("generated"),
+  ].filter(Boolean);
+
+  return `
+    <div class="detailSummaryCard">
+      <div class="detailSummaryTop">
+        <div>
+          <strong>Condition readiness</strong>
+          <div class="small">Use this strip to see the weakest section before editing notes, timeline, evidence, or theory details.</div>
+        </div>
+        <span class="strengthBadge ${escapeHtml(readiness.overallTone.className)}">${escapeHtml(readiness.overallTone.label)} • ${escapeHtml(readiness.overall)}%</span>
+      </div>
+      <div class="readinessGrid">
+        <div class="readinessMetric"><span>Diagnosis</span><strong>${readiness.scores.diagnosis}%</strong></div>
+        <div class="readinessMetric"><span>Severity</span><strong>${readiness.scores.severity}%</strong></div>
+        <div class="readinessMetric"><span>Nexus</span><strong>${readiness.scores.nexus}%</strong></div>
+        <div class="readinessMetric"><span>Timeline</span><strong>${readiness.scores.timeline}%</strong></div>
+        <div class="readinessMetric"><span>Evidence</span><strong>${readiness.scores.evidence}%</strong></div>
+      </div>
+      <div class="small" style="margin-top:8px"><strong>Best next step:</strong> ${escapeHtml(readiness.nextAction)}</div>
+      <div class="small" style="margin-top:8px"><strong>Theory status:</strong> ${theories.length ? `${theories.length} structured theor${theories.length === 1 ? "y" : "ies"} linked` : "No structured theory linked yet."}</div>
+      <div class="small" style="margin-top:8px"><strong>Notes status:</strong> ${notes ? "User-entered notes saved." : "No notes saved yet."}</div>
+      ${coaching.length ? `<div class="small" style="margin-top:8px"><strong>Condition-specific coaching:</strong> ${escapeHtml(coaching.join(" "))}</div>` : ""}
+      <div class="provenanceRow">${provenance.map((entry) => `<span class="provenanceTag ${escapeHtml(entry.className)}">${escapeHtml(entry.label)}</span>`).join("")}</div>
+    </div>
+  `;
+}
+
 
 function renderDetail(item) {
   const el = document.getElementById("detail");
@@ -3717,6 +5475,8 @@ if (item.strategy && item.strategy.length) {
 
 <h2 style="margin-top:6px">${item.name}</h2>
 
+${buildDetailSummaryHTML(item)}
+
 <div id="jumpIndicator" class="jumpIndicator hidden">
   <span id="jumpIndicatorText"></span>
   <button id="jumpIndicatorClose" class="jumpIndicatorClose" type="button" aria-label="Close">×</button>
@@ -3784,7 +5544,11 @@ ${strategyHTML}
 
     <hr/>
 
-    <hr/>
+<h3>📝 Guided Condition Form</h3>
+<div class="small">Capture structured symptom and impact details so the notes, severity picture, and packet output are easier to review.</div>
+<div id="guidedFormHost" class="builderSuggestions" style="margin-top:12px"></div>
+
+<hr/>
 
 <h3 id="jump-notes">Notes (saved locally)</h3>
 
@@ -3798,7 +5562,7 @@ ${strategyHTML}
 
 <hr/>
 
-<h3>Timeline</h3>
+<h3 id="jump-timeline">Timeline</h3>
 <div class="small">Add dated events for this condition (educational). Supports YYYY-MM-DD, YYYY-MM, or YYYY.</div>
 
 <div class="tlForm">
@@ -4062,6 +5826,88 @@ function COND_EVIDENCE_DONE(condId) {
         if (notesEl) notesEl.value = "";
       });
     }
+
+  const guidedFormHost = document.getElementById("guidedFormHost");
+
+  function renderGuidedConditionForm() {
+    if (!guidedFormHost) return;
+    const schema = getConditionGuidedFormSchema(item);
+    const values = loadSymptomForm(item.id);
+
+    guidedFormHost.innerHTML = `
+      <article class="builderSuggestionCard">
+        <div class="builderSuggestionTop">
+          <div>
+            <strong>${escapeHtml(schema.title)}</strong>
+            <div class="small">Saved locally for this condition. Use it as structured drafting support, then append the summary to your notes when it looks right.</div>
+          </div>
+          <span class="provenanceTag prov-generated">Guided form</span>
+        </div>
+        <div class="builderGrid" style="margin-top:12px">
+          ${schema.fields.map((field) => `
+            <label class="builderField">
+              <span class="small">${escapeHtml(field.label)}</span>
+              <input data-guided-field="${escapeHtml(field.key)}" value="${escapeHtml(values[field.key] || "")}" placeholder="${escapeHtml(field.placeholder || "")}" />
+            </label>
+          `).join("")}
+        </div>
+        <div class="healthBtns" style="margin-top:12px">
+          <button id="guidedFormSave" class="miniBtn" type="button">Save Form</button>
+          <button id="guidedFormAppend" class="miniBtn" type="button">Append Summary to Notes</button>
+        </div>
+        <div class="small" id="guidedFormPreview" style="margin-top:8px"></div>
+      </article>
+    `;
+
+    const readValues = () => {
+      const next = {};
+      guidedFormHost.querySelectorAll("[data-guided-field]").forEach((input) => {
+        next[input.dataset.guidedField] = input.value || "";
+      });
+      return next;
+    };
+
+    const updatePreview = () => {
+      const preview = document.getElementById("guidedFormPreview");
+      if (!preview) return;
+      const text = buildSymptomFormSummary(item, readValues());
+      preview.innerHTML = text
+        ? `<strong>Summary preview:</strong><br/>${escapeHtml(text).replaceAll("\n", "<br/>")}`
+        : "No guided form details saved yet.";
+    };
+
+    guidedFormHost.querySelectorAll("[data-guided-field]").forEach((input) => {
+      input.addEventListener("input", updatePreview);
+    });
+
+    document.getElementById("guidedFormSave")?.addEventListener("click", () => {
+      saveSymptomForm(item.id, readValues());
+      updatePreview();
+      alert("Guided condition form saved.");
+      renderWorkspace();
+    });
+
+    document.getElementById("guidedFormAppend")?.addEventListener("click", () => {
+      const valuesNow = readValues();
+      saveSymptomForm(item.id, valuesNow);
+      const summary = buildSymptomFormSummary(item, valuesNow);
+      if (!summary) {
+        alert("Add a little guided-form detail first so there is something useful to append.");
+        return;
+      }
+      const existing = (loadNotes(item.id) || "").trim();
+      const next = existing ? `${existing}\n\n${summary}` : summary;
+      saveNotes(item.id, next);
+      if (notesEl) notesEl.value = next;
+      updatePreview();
+      renderWorkspace();
+      alert("Guided condition summary appended to notes.");
+    });
+
+    updatePreview();
+  }
+
+  renderGuidedConditionForm();
 
   // ---- Timeline wiring ----
   const tlDate = document.getElementById("tlDate");
@@ -4656,6 +6502,7 @@ async function showDetail(id, pushState = true, jumpHint = "") {
 
   // Jump immediately too (smooth UX)
   smartJumpAfterDetailRender(hint);
+  applyCoverageFocusAction(item);
 }
 
 
@@ -6020,6 +7867,17 @@ async function init() {
   const wsCoachGenerate = document.getElementById("wsCoachGenerate");
   const wsCoachCopy = document.getElementById("wsCoachCopy");
   const wsCoachOut = document.getElementById("wsCoachOut");
+  const wsReviewGenerate = document.getElementById("wsReviewGenerate");
+  const wsReviewCopy = document.getElementById("wsReviewCopy");
+  const wsReviewOut = document.getElementById("wsReviewOut");
+  const wsSubmitGenerate = document.getElementById("wsSubmitGenerate");
+  const wsSubmitCopy = document.getElementById("wsSubmitCopy");
+  const wsSubmitOut = document.getElementById("wsSubmitOut");
+  const wsAssemblerAudience = document.getElementById("wsAssemblerAudience");
+  const wsAssemblerGenerate = document.getElementById("wsAssemblerGenerate");
+  const wsAssemblerCopy = document.getElementById("wsAssemblerCopy");
+  const wsAssemblerDownload = document.getElementById("wsAssemblerDownload");
+  const wsAssemblerOut = document.getElementById("wsAssemblerOut");
   const theoryType = document.getElementById("theoryType");
   const theorySubject = document.getElementById("theorySubject");
   const theoryParent = document.getElementById("theoryParent");
@@ -6043,6 +7901,22 @@ async function init() {
   const wsBackupImport = document.getElementById("wsBackupImport");
   const wsBackupImportFile = document.getElementById("wsBackupImportFile");
   const wsActivityClear = document.getElementById("wsActivityClear");
+  const wsProfileName = document.getElementById("wsProfileName");
+  const wsProfileNotes = document.getElementById("wsProfileNotes");
+  const wsProfileSaveCurrent = document.getElementById("wsProfileSaveCurrent");
+  const wsProfileNewBlank = document.getElementById("wsProfileNewBlank");
+  const wsHandoffGenerate = document.getElementById("wsHandoffGenerate");
+  const wsHandoffCopy = document.getElementById("wsHandoffCopy");
+  const wsHandoffOut = document.getElementById("wsHandoffOut");
+  const wsConflictsRefresh = document.getElementById("wsConflictsRefresh");
+  const evLibraryExportCsv = document.getElementById("evLibraryExportCsv");
+  const evLibraryImportCsv = document.getElementById("evLibraryImportCsv");
+  const evLibraryImportFile = document.getElementById("evLibraryImportFile");
+  const wsMilestoneDate = document.getElementById("wsMilestoneDate");
+  const wsMilestoneStage = document.getElementById("wsMilestoneStage");
+  const wsMilestoneNote = document.getElementById("wsMilestoneNote");
+  const wsMilestoneAdd = document.getElementById("wsMilestoneAdd");
+  const wsMilestoneExportCsv = document.getElementById("wsMilestoneExportCsv");
 
   if (!input) {
     console.error('Missing search input with id="q" in index.html');
@@ -6074,11 +7948,16 @@ async function init() {
   renderEvidenceLibrary();
   renderEvidenceHub();
   renderRatingEstimator();
+  renderWorkspaceProfiles();
+  renderWorkspaceDashboard();
   renderStickyWorkspaceSummary();
   renderStartHereSteps();
   renderTheoryBuilder();
   renderNexusBuilder();
   renderSnapshotHistoryList();
+  renderActionEngine();
+  renderEvidenceConflictEngine();
+  renderClaimMilestones();
   mountWorkspacePanelToggles();
 
   if (darkToggle) {
@@ -6129,6 +8008,7 @@ async function init() {
   if (docIntakeAnalyze && docIntakeInput) {
     docIntakeAnalyze.addEventListener("click", () => {
       LAST_INTAKE_ANALYSIS = analyzeDocumentIntake(docIntakeInput.value || "");
+      LAST_INTAKE_ANALYSIS.mapper = analyzeRecordToClaimMapper(docIntakeInput.value || "", CONDITIONS);
       renderDocumentIntakeResults();
       alert("Document intake analysis complete.");
     });
@@ -6248,6 +8128,170 @@ async function init() {
     wsCoachCopy.addEventListener("click", async () => {
       await navigator.clipboard.writeText(wsCoachOut.value || "");
       alert("Coach summary copied!");
+    });
+  }
+
+  if (wsReviewGenerate && wsReviewOut) {
+    wsReviewGenerate.addEventListener("click", () => {
+      wsReviewOut.value = buildPacketReviewText();
+    });
+  }
+
+  if (wsReviewCopy && wsReviewOut) {
+    wsReviewCopy.addEventListener("click", async () => {
+      await navigator.clipboard.writeText(wsReviewOut.value || "");
+      alert("Packet review copied!");
+    });
+  }
+
+  if (wsSubmitGenerate && wsSubmitOut) {
+    wsSubmitGenerate.addEventListener("click", () => {
+      wsSubmitOut.value = generateSubmissionPrepText();
+    });
+  }
+
+  if (wsSubmitCopy && wsSubmitOut) {
+    wsSubmitCopy.addEventListener("click", async () => {
+      await navigator.clipboard.writeText(wsSubmitOut.value || "");
+      alert("Submission-prep summary copied!");
+    });
+  }
+
+  if (wsHandoffGenerate && wsHandoffOut) {
+    wsHandoffGenerate.addEventListener("click", () => {
+      wsHandoffOut.value = buildRepresentativeHandoffText();
+    });
+  }
+
+  if (wsHandoffCopy && wsHandoffOut) {
+    wsHandoffCopy.addEventListener("click", async () => {
+      await navigator.clipboard.writeText(wsHandoffOut.value || "");
+      alert("Representative handoff copied!");
+    });
+  }
+
+  if (wsConflictsRefresh) {
+    wsConflictsRefresh.addEventListener("click", () => {
+      renderEvidenceConflictEngine();
+    });
+  }
+
+  if (evLibraryExportCsv) {
+    evLibraryExportCsv.addEventListener("click", () => {
+      downloadText("evidence_library.csv", buildEvidenceLibraryCsv());
+    });
+  }
+
+  if (evLibraryImportCsv && evLibraryImportFile) {
+    evLibraryImportCsv.addEventListener("click", () => {
+      evLibraryImportFile.value = "";
+      evLibraryImportFile.click();
+    });
+
+    evLibraryImportFile.addEventListener("change", async () => {
+      const file = evLibraryImportFile.files?.[0];
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        const parsed = parseEvidenceCsv(text);
+        if (!parsed.length) {
+          alert("No evidence rows could be imported from that CSV.");
+          return;
+        }
+
+        const existing = loadEvidenceLibrary();
+        const seen = new Set(existing.map((record) => `${normalizeUrl(record.url || "")}::${normalize(record.label || "")}`));
+        const merged = [...existing];
+        parsed.forEach((record) => {
+          const key = `${normalizeUrl(record.url || "")}::${normalize(record.label || "")}`;
+          if (!seen.has(key)) {
+            merged.unshift(record);
+            seen.add(key);
+          }
+        });
+        saveEvidenceLibrary(merged.slice(0, 80));
+        pushWorkspaceActivity("Evidence library imported", `${parsed.length} evidence record${parsed.length === 1 ? "" : "s"} were imported from CSV.`);
+        renderEvidenceLibrary();
+        renderEvidenceConflictEngine();
+        renderWorkspaceActivity();
+        renderActionEngine();
+        alert("Evidence library CSV imported.");
+      } catch (error) {
+        console.error(error);
+        alert(error.message || "Could not import that evidence CSV.");
+      }
+    });
+  }
+
+  if (wsMilestoneAdd) {
+    wsMilestoneAdd.addEventListener("click", () => {
+      const date = (wsMilestoneDate?.value || "").trim();
+      const stage = (wsMilestoneStage?.value || "").trim();
+      const note = (wsMilestoneNote?.value || "").trim();
+      if (!date || !stage) {
+        alert("Add at least a milestone date and stage.");
+        return;
+      }
+      const next = [
+        {
+          id: `milestone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          date,
+          stage,
+          note,
+        },
+        ...loadClaimMilestones(),
+      ].slice(0, 40);
+      saveClaimMilestones(next);
+      pushWorkspaceActivity("Milestone added", `${stage} was added to the claim milestone tracker.`);
+      if (wsMilestoneDate) wsMilestoneDate.value = "";
+      if (wsMilestoneNote) wsMilestoneNote.value = "";
+      renderClaimMilestones();
+      renderWorkspaceActivity();
+      renderActionEngine();
+      alert("Claim milestone added.");
+    });
+  }
+
+  if (wsMilestoneExportCsv) {
+    wsMilestoneExportCsv.addEventListener("click", () => {
+      downloadText("claim_milestones.csv", buildMilestonesCsv());
+    });
+  }
+
+  function assemblerOptionsFromUi() {
+    return {
+      audience: wsAssemblerAudience?.value || "review",
+      include: {
+        overview: !!document.getElementById("wsAssemblerOverview")?.checked,
+        coach: !!document.getElementById("wsAssemblerCoach")?.checked,
+        submission: !!document.getElementById("wsAssemblerSubmission")?.checked,
+        theories: !!document.getElementById("wsAssemblerTheories")?.checked,
+        narrative: !!document.getElementById("wsAssemblerNarrative")?.checked,
+        timeline: !!document.getElementById("wsAssemblerTimeline")?.checked,
+        binder: !!document.getElementById("wsAssemblerBinder")?.checked,
+        coverage: !!document.getElementById("wsAssemblerCoverage")?.checked,
+      },
+    };
+  }
+
+  if (wsAssemblerGenerate && wsAssemblerOut) {
+    wsAssemblerGenerate.addEventListener("click", () => {
+      wsAssemblerOut.value = buildAssembledPacketText(assemblerOptionsFromUi());
+    });
+  }
+
+  if (wsAssemblerCopy && wsAssemblerOut) {
+    wsAssemblerCopy.addEventListener("click", async () => {
+      await navigator.clipboard.writeText(wsAssemblerOut.value || "");
+      alert("Assembled packet copied!");
+    });
+  }
+
+  if (wsAssemblerDownload && wsAssemblerOut) {
+    wsAssemblerDownload.addEventListener("click", () => {
+      const options = assemblerOptionsFromUi();
+      downloadText(`smart_packet_assembler_${options.audience}.txt`, wsAssemblerOut.value || buildAssembledPacketText(options));
     });
   }
 
@@ -6418,6 +8462,49 @@ async function init() {
     });
   }
 
+  if (wsProfileSaveCurrent) {
+    wsProfileSaveCurrent.addEventListener("click", () => {
+      const profile = buildWorkspaceProfile({
+        name: wsProfileName?.value || "",
+        notes: wsProfileNotes?.value || "",
+        backup: buildWorkspaceBackup()
+      });
+      saveWorkspaceProfiles([profile, ...loadWorkspaceProfiles()].slice(0, 20));
+      saveActiveWorkspaceProfileId(profile.id);
+      renderWorkspaceProfiles();
+      if (wsProfileName) wsProfileName.value = "";
+      if (wsProfileNotes) wsProfileNotes.value = "";
+      alert(`Saved ${profile.name} as a claim workspace profile.`);
+    });
+  }
+
+  if (wsProfileNewBlank) {
+    wsProfileNewBlank.addEventListener("click", () => {
+      const name = (wsProfileName?.value || "").trim() || `Blank Claim Workspace ${new Date().toLocaleString()}`;
+      const notes = (wsProfileNotes?.value || "").trim();
+      const profile = buildWorkspaceProfile({
+        name,
+        notes,
+        backup: emptyWorkspaceBackup()
+      });
+      saveWorkspaceProfiles([profile, ...loadWorkspaceProfiles()].slice(0, 20));
+      saveActiveWorkspaceProfileId(profile.id);
+      applyWorkspaceBackup(profile.backup);
+      renderWorkspaceProfiles();
+      renderSnapshotComparison(null);
+      renderDocumentLibrary();
+      renderEvidenceLibrary();
+      renderSnapshotHistoryList();
+      renderWorkspace();
+      renderClaimTree();
+      renderHealthPanel();
+      renderWorkspaceActivity();
+      if (wsProfileName) wsProfileName.value = "";
+      if (wsProfileNotes) wsProfileNotes.value = "";
+      alert(`Created and loaded ${profile.name}.`);
+    });
+  }
+
   if (wsActivityClear) {
     wsActivityClear.addEventListener("click", () => {
       saveWorkspaceActivity([]);
@@ -6549,6 +8636,7 @@ async function init() {
   // Workspace buttons
   const wsExport = document.getElementById("wsExport");
   const wsExportAll = document.getElementById("wsExportAll");
+  const wsPrintPacket = document.getElementById("wsPrintPacket");
   const wsExportAudience = document.getElementById("wsExportAudience");
   const wsClear = document.getElementById("wsClear");
   const wsShowTips = document.getElementById("wsShowTips");
@@ -6569,23 +8657,7 @@ async function init() {
 
   if (wsExport) {
     wsExport.addEventListener("click", () => {
-      const st = loadWorkspaceState();
-      const primary = st.primaryId ? CONDITIONS.find(c => c.id === st.primaryId) : null;
-      const secondaries = st.links
-        .filter(l => l.from === st.primaryId)
-        .map(s => CONDITIONS.find(c => c.id === s.to))
-        .filter(Boolean);
-      const unassigned = st.nodes
-        .filter(id => id !== st.primaryId && !st.links.some(l => l.from === st.primaryId && l.to === id))
-        .map(id => CONDITIONS.find(c => c.id === id))
-        .filter(Boolean);
-
-      const ordered = [
-        ...(primary ? [primary] : []),
-        ...secondaries,
-        ...unassigned
-      ];
-
+      const ordered = orderedWorkspaceItemsForExport();
       const audience = wsExportAudience?.value || "review";
       const text = buildWorkspacePacketText(ordered, { audience });
       downloadText(`claim_workspace_packet_${audience}.txt`, text);
@@ -6594,23 +8666,18 @@ async function init() {
 
   if (wsExportAll) {
     wsExportAll.addEventListener("click", () => {
-      const st = loadWorkspaceState();
-      const primary = st.primaryId ? CONDITIONS.find(c => c.id === st.primaryId) : null;
-      const secondaries = st.links
-        .filter(l => l.from === st.primaryId)
-        .map(s => CONDITIONS.find(c => c.id === s.to))
-        .filter(Boolean);
-      const unassigned = st.nodes
-        .filter(id => id !== st.primaryId && !st.links.some(l => l.from === st.primaryId && l.to === id))
-        .map(id => CONDITIONS.find(c => c.id === id))
-        .filter(Boolean);
-      const ordered = [ ...(primary ? [primary] : []), ...secondaries, ...unassigned ];
-
+      const ordered = orderedWorkspaceItemsForExport();
       ["review", "veteran", "representative"].forEach((audience) => {
         const text = buildWorkspacePacketText(ordered, { audience });
         downloadText(`claim_workspace_packet_${audience}.txt`, text);
       });
       alert("All packet versions exported.");
+    });
+  }
+
+  if (wsPrintPacket) {
+    wsPrintPacket.addEventListener("click", () => {
+      openPrintablePacket(wsExportAudience?.value || "review");
     });
   }
 
@@ -6968,11 +9035,30 @@ if (typeof document !== "undefined" && document.addEventListener) {
 
 if (typeof module !== "undefined") {
   module.exports = {
+    analyzeEvidenceConflicts,
     analyzeTimelineConflicts,
+    analyzeRecordToClaimMapper,
+    buildAssembledPacketText,
+    buildEvidenceLibraryCsv,
     buildNexusDraft,
+    buildPacketReviewSnapshot,
+    buildPrintablePacketHtml,
+    buildSubmissionPrepSnapshot,
+    buildSymptomFormSummary,
+    buildMilestonesCsv,
+    buildCoverageStarter,
+    computeEvidenceCoverageMatrix,
+    computeActionEngine,
     createEvidenceLibraryRecord,
     createDocumentRecord,
+    conditionSpecificCoaching,
+    computeConditionReadinessSnapshot,
     estimateScenarioSnapshot,
     filterWorkspaceItems,
+    getConditionGuidedFormSchema,
+    parseEvidenceCsv,
+    scoreTheoryRecord,
+    suggestEvidenceTargets,
+    workspaceProfileSummary,
   };
 }
