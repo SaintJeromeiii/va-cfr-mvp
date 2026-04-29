@@ -14,6 +14,21 @@
       Educational tool to map common conditions to 38 CFR rating references (not legal advice / not representation).
     </p>
 
+    <section class="launchNotice" aria-label="Safety and privacy notice">
+      <div>
+        <strong>Before you use this with real claim details</strong>
+        <p>
+          This app is educational only. It is not legal advice, medical advice, VA representation, or a substitute for
+          an accredited VSO, attorney, or claims agent. Avoid entering sensitive medical record details unless you are
+          comfortable with the storage described below.
+        </p>
+      </div>
+      <div class="launchNoticeActions">
+        <button id="privacyNoticeOpen" class="miniBtn" type="button">Privacy & Safety</button>
+        <button id="feedbackOpen" class="miniBtn" type="button">Report issue / feedback</button>
+      </div>
+    </section>
+
     <section class="workflowHero" aria-label="Guided claim workflow">
       <div>
         <p class="eyebrow">Suggested workflow</p>
@@ -306,8 +321,56 @@
       <small>
         Sources are linked directly to eCFR / Cornell Law CFR pages. <span id="sourceFreshness">Always verify current language.</span>
       </small>
+      <div class="footerActions">
+        <button id="privacyNoticeFooter" class="linkButton" type="button">Privacy & Safety</button>
+        <button id="feedbackFooter" class="linkButton" type="button">Report incorrect CFR info</button>
+      </div>
     </footer>
   </main>
+
+  <div id="privacyModal" class="modalOverlay hidden" role="dialog" aria-modal="true" aria-labelledby="privacyModalTitle">
+    <section class="modalCard">
+      <button id="privacyModalClose" class="modalClose" type="button" aria-label="Close privacy and safety notice">×</button>
+      <h2 id="privacyModalTitle">Privacy & Safety Notice</h2>
+      <p><strong>Educational use only.</strong> VA CFR Finder does not provide legal advice, medical advice, representation, or a guarantee of claim outcomes.</p>
+      <ul>
+        <li><strong>Local data:</strong> claim packets, notes, timelines, evidence links, and task state may be saved in this browser.</li>
+        <li><strong>Signed-in sync:</strong> account users sync claim packet data to this app server. Do not paste highly sensitive medical details unless you understand that risk.</li>
+        <li><strong>No document upload review:</strong> evidence links are references you provide; the app does not verify private records.</li>
+        <li><strong>Verify sources:</strong> always check current eCFR/VA guidance and consider an accredited representative.</li>
+      </ul>
+      <div class="modalActions">
+        <button id="privacyAcknowledge" class="miniBtn" type="button">I understand</button>
+        <button id="privacyDownloadData" class="miniBtn" type="button">Download my local data</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="feedbackModal" class="modalOverlay hidden" role="dialog" aria-modal="true" aria-labelledby="feedbackModalTitle">
+    <section class="modalCard">
+      <button id="feedbackModalClose" class="modalClose" type="button" aria-label="Close feedback form">×</button>
+      <h2 id="feedbackModalTitle">Report incorrect CFR info or share feedback</h2>
+      <p class="small">Please do not include SSNs, claim numbers, full medical records, or other private identifiers.</p>
+      <label class="fieldLabel">
+        Topic
+        <select id="feedbackType">
+          <option value="Incorrect CFR info">Incorrect CFR info</option>
+          <option value="Missing condition">Missing condition</option>
+          <option value="UX problem">UX problem</option>
+          <option value="General feedback">General feedback</option>
+        </select>
+      </label>
+      <label class="fieldLabel">
+        Message
+        <textarea id="feedbackMessage" rows="6" placeholder="Describe the issue, source link, or suggestion. Do not include private claim details."></textarea>
+      </label>
+      <div class="modalActions">
+        <button id="feedbackCopy" class="miniBtn" type="button">Copy feedback</button>
+        <a id="feedbackEmail" class="miniBtn" href="mailto:?subject=VA%20CFR%20Finder%20feedback">Open email</a>
+      </div>
+      <p class="small">This MVP copies/opens your feedback so you choose where to send it; it does not silently submit private data.</p>
+    </section>
+  </div>
 
   <script src="/app.js"></script>
   <script src="/js/intelligence.js"></script>

@@ -693,6 +693,49 @@ function clearAllLocalClaimData() {
   showNotification("Local claim data cleared.");
 }
 
+function openLaunchSafetyModal() {
+  document.getElementById("launchSafetyModal")?.classList.remove("hidden");
+  document.getElementById("launchSafetyClose")?.focus();
+}
+
+function closeLaunchSafetyModal() {
+  document.getElementById("launchSafetyModal")?.classList.add("hidden");
+}
+
+function collectFeedbackPayload() {
+  const type = document.getElementById("feedbackType")?.value || "general";
+  const message = (document.getElementById("feedbackText")?.value || "").trim();
+  const includeContext = !!document.getElementById("feedbackIncludeContext")?.checked;
+  return {
+    type,
+    message,
+    url: includeContext ? window.location.href : "",
+    activeProject: includeContext ? (getActiveProject(loadProjectStore())?.name || "") : "",
+    createdAt: new Date().toISOString()
+  };
+}
+
+async function submitFeedback() {
+  const payload = collectFeedbackPayload();
+  if (!payload.message) return showNotification("Please enter feedback before sending.");
+  try {
+    const res = await fetch("/api/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const input = document.getElementById("feedbackText");
+    if (input) input.value = "";
+    showNotification("Feedback received. Thank you!");
+  } catch (err) {
+    console.warn("feedback failed", err && err.message);
+    const subject = encodeURIComponent(`VA CFR Finder feedback: ${payload.type}`);
+    const body = encodeURIComponent(`${payload.message}\n\nContext: ${payload.url || "(not included)"}`);
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  }
+}
+
 function refreshWorkspaceViews() {
   renderWorkspace();
   renderClaimTree();

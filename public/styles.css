@@ -1084,3 +1084,101 @@ input[type="radio"]:focus {
   cursor: pointer;
   color: #b8c4d6;
 }
+
+.launchNotice {
+  margin: 16px 0;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 196, 0, 0.24);
+  background: rgba(255, 196, 0, 0.08);
+}
+
+.launchNotice h2 {
+  margin: 0 0 6px;
+}
+
+.noticeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.noticeCard {
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.12);
+}
+
+.noticeActions,
+.feedbackActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.feedbackPanel {
+  margin: 18px 0;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(122,183,255,0.18);
+  background: rgba(122,183,255,0.06);
+}
+
+.feedbackPanel textarea,
+.feedbackPanel input,
+.feedbackPanel select {
+  width: 100%;
+  margin-top: 8px;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.05);
+  color: inherit;
+}
+
+.feedbackPanel textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0,0,0,0.68);
+}
+
+.modalBackdrop.hidden {
+  display: none;
+}
+
+.modalCard {
+  max-width: 720px;
+  width: min(720px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.16);
+  background: #0f1622;
+  box-shadow: 0 20px 70px rgba(0,0,0,0.45);
+}
+
+.modalCard h2 {
+  margin-top: 0;
+}
+
+.modalActions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
