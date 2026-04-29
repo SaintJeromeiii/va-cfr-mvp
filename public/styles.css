@@ -16,6 +16,91 @@ body.dark-mode {
   padding: 24px;
 }
 
+.hero {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.workflowSteps {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.workflowStep {
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+  color: #d7e5f7;
+  font-size: 0.9rem;
+}
+
+.workflowStep span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-right: 6px;
+  border-radius: 999px;
+  background: #1d4ed8;
+  color: #fff;
+  font-weight: 700;
+}
+
+.sectionTabs {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  gap: 8px;
+  margin: 12px 0 16px;
+  padding: 8px;
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 16px;
+  background: rgba(11, 15, 20, 0.92);
+  backdrop-filter: blur(10px);
+  overflow-x: auto;
+}
+
+.tabBtn {
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.05);
+  color: inherit;
+  border-radius: 999px;
+  padding: 8px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.tabBtn.active {
+  background: #2563eb;
+  border-color: #60a5fa;
+  color: #fff;
+}
+
+.appSection[hidden] {
+  display: none !important;
+}
+
+.sectionIntro {
+  padding: 10px 12px;
+  margin: 0 0 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(122,183,255,0.18);
+  background: rgba(122,183,255,0.08);
+}
+
+.sourceFreshness {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 6px;
+  color: #b8c4d6;
+}
+
 h1 {
   margin: 0 0 8px;
 }

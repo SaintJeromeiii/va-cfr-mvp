@@ -251,6 +251,7 @@ function initAuthUI() {
       const b = await res.json().catch(() => ({}));
       showNotification(`Logged in as ${b.username || u}`);
       await refreshAuthState();
+      if (window.vaCfrWorkspaceSync) await window.vaCfrWorkspaceSync();
     } catch (e) {
       console.warn('login error', e && e.message);
       showNotification('Login error');
@@ -273,6 +274,7 @@ function initAuthUI() {
       const b = await res.json().catch(() => ({}));
       showNotification(`Registered and signed in as ${b.username || u}`);
       await refreshAuthState();
+      if (window.vaCfrWorkspaceSync) await window.vaCfrWorkspaceSync();
     } catch (e) {
       console.warn('register error', e && e.message);
       showNotification('Register error');
@@ -285,6 +287,7 @@ function initAuthUI() {
       if (!res.ok) return showNotification('Logout failed');
       showNotification('Signed out');
       await refreshAuthState();
+      if (window.vaCfrWorkspaceSync) await window.vaCfrWorkspaceSync();
     } catch (e) {
       console.warn('logout error', e && e.message);
       showNotification('Logout error');
@@ -315,7 +318,7 @@ function taskClearDone(state) {
 }
 
 function renderTasks() {
-  const host = document.getElementById("wsList");
+  const host = document.getElementById("taskList") || document.getElementById("wsList");
   if (!host) return;
 
   // expose as a list for assistive tech

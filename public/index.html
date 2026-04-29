@@ -14,6 +14,27 @@
       Educational tool to map common conditions to 38 CFR rating references (not legal advice / not representation).
     </p>
 
+    <section class="workflowHero" aria-label="Guided claim workflow">
+      <div>
+        <p class="eyebrow">Suggested workflow</p>
+        <h2>Build a claim packet one step at a time</h2>
+        <p class="small">Search a condition, add it to a claim workspace, attach evidence, then generate a packet you can review.</p>
+      </div>
+      <ol class="workflowSteps">
+        <li><span>1</span>Search</li>
+        <li><span>2</span>Review CFR</li>
+        <li><span>3</span>Add evidence</li>
+        <li><span>4</span>Export packet</li>
+      </ol>
+    </section>
+
+    <nav class="appNav" aria-label="Application sections">
+      <button class="navTab active" type="button" data-panel-target="searchPanel">Search</button>
+      <button class="navTab" type="button" data-panel-target="workspace">Claim Workspace</button>
+      <button class="navTab" type="button" data-panel-target="dashboard">Tasks</button>
+      <button class="navTab" type="button" data-panel-target="detail">Condition Detail</button>
+    </nav>
+
     <!-- Auth form (styled) -->
     <div id="auth" class="auth">
       <div class="auth-left">
@@ -28,9 +49,9 @@
       </form>
     </div>
 
-    <div class="search">
+    <div id="searchPanel" class="search appPanel active">
       <div class="controls">
-  <input id="q" placeholder="Search: tinnitus, 8520, 4.124a, PTSD..." />
+  <input id="q" placeholder="Search: tinnitus, ringing ears, sciatica, 8520, 4.124a, PTSD..." />
   <select id="systemFilter">
     <option value="">All body systems</option>
   </select>
@@ -54,7 +75,7 @@
     </section>
 
     <!-- Dashboard panel -->
-    <section id="dashboard" class="dashboard">
+    <section id="dashboard" class="dashboard appPanel">
       <h2>Dashboard</h2>
       <div class="progress">
         <label for="taskProgress">Task Completion:</label>
@@ -99,10 +120,11 @@
         <h3>Recent Activity</h3>
         <ul></ul>
       </div>
+      <div id="taskList" class="task-list" aria-live="polite"></div>
     </section>
 
     <!-- Workspace panel -->
-    <section id="workspace" class="workspace">
+    <section id="workspace" class="workspace appPanel">
       <div class="wsHead">
         <h2 style="margin:0">Claim Workspace</h2>
         <div class="wsBtns">
@@ -111,6 +133,17 @@
           <button id="wsClear" class="miniBtn danger" type="button">Clear Workspace</button>
           <button id="exportPdfBtn">Export to PDF</button>
         </div>
+      </div>
+
+      <div class="projectBar" aria-label="Claim project controls">
+        <label>
+          Claim project
+          <select id="claimProjectSelect"></select>
+        </label>
+        <input id="claimProjectName" placeholder="New project name (e.g., PTSD increase)" />
+        <button id="claimProjectAdd" class="miniBtn" type="button">Create project</button>
+        <button id="claimProjectRename" class="miniBtn" type="button">Rename current</button>
+        <span id="workspaceSyncStatus" class="syncStatus">Saved locally</span>
       </div>
 
       <div class="small" id="wsScore">Evidence Readiness: 0/0 (0%)</div>
@@ -128,8 +161,8 @@
       <div id="wsHealth" class="healthBox"></div>
 
       <div class="healthBtns">
-        <button id="wsFixOrphans" class="miniBtn" type="button">Fix: Link all orphans to Primary</button>
-        <button id="wsFixDisconnected" class="miniBtn" type="button">Fix: Attach disconnected to Primary</button>
+        <button id="wsFixOrphans" class="miniBtn" type="button">Attach unlinked items to Primary</button>
+        <button id="wsFixDisconnected" class="miniBtn" type="button">Reconnect items to Primary</button>
         <button id="wsHealthExport" class="miniBtn" type="button">Export Health Report</button>
       </div>
 
@@ -187,7 +220,7 @@
       <h3 style="margin:10px 0 6px">📎 Workspace Evidence Binder</h3>
 
       <div class="healthBtns">
-        <button id="wsBinderBtn" class="miniBtn" type="button">Generate Binder</button>
+        <button id="wsBinderBtn" class="miniBtn" type="button">Create Evidence Summary</button>
         <button id="wsBinderCopy" class="miniBtn" type="button">Copy Binder</button>
         <button id="wsBinderDownload" class="miniBtn" type="button">Download Binder (.txt)</button>
 
@@ -230,7 +263,7 @@
       <h3 style="margin:10px 0 6px">🕸️ Evidence Relationship Graph</h3>
 
       <div class="healthBtns">
-        <button id="wsGraphBuild" class="miniBtn" type="button">Build Graph</button>
+        <button id="wsGraphBuild" class="miniBtn" type="button">Show Evidence Graph</button>
         <button id="wsGraphFit" class="miniBtn" type="button">Fit to Screen</button>
 
         <label class="small" style="display:flex;align-items:center;gap:6px">
@@ -253,11 +286,11 @@
     </section>
 
     <!-- Detail view (ONLY ONE) -->
-    <section id="detail" class="detail hidden"></section>
+    <section id="detail" class="detail hidden appPanel"></section>
 
     <footer class="footer">
       <small>
-        Sources are linked directly to eCFR / Cornell Law CFR pages. Always verify current language.
+        Sources are linked directly to eCFR / Cornell Law CFR pages. <span id="sourceFreshness">Always verify current language.</span>
       </small>
     </footer>
   </main>

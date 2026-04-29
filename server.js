@@ -222,6 +222,71 @@ function userTasksPath(username) {
 function loadTasksForUser(username) { ensureDataDirs(); const p = userTasksPath(username); try { if (!fs.existsSync(p)) fs.writeFileSync(p, JSON.stringify([], null, 2), 'utf8'); return JSON.parse(fs.readFileSync(p, 'utf8') || '[]'); } catch { return []; } }
 function saveTasksForUser(username, tasks) { ensureDataDirs(); const p = userTasksPath(username); fs.writeFileSync(p, JSON.stringify(tasks || [], null, 2), 'utf8'); }
 
+function userWorkspacesPath(username) {
+  if (!username) return path.join(DATA_DIR, 'workspaces.json');
+  const dir = path.join(USERS_DIR, username);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  return path.join(dir, 'workspaces.json');
+}
+
+function emptyWorkspaceStore() {
+  return { version: 1, activeProjectId: 'default', projects: [] };
+}
+
+function normalizeWorkspaceStore(input) {
+  const base = emptyWorkspaceStore();
+  if (!input || typeof input !== 'object') return base;
+  const projects = Array.isArray(input.projects) ? input.projects : [];
+  const cleanProjects = projects
+    .filter(p => p && typeof p === 'object')
+    .slice(0, 50)
+    .map((p, idx) => {
+      const id = String(p.id || `claim-${idx + 1}`).slice(0, 100);
+      const name = String(p.name || 'Claim Packet').slice(0, 120);
+      const workspace = p.workspace && typeof p.workspace === 'object' ? p.workspace : {};
+      const nodes = Array.isArray(workspace.nodes) ? workspace.nodes.filter(x => typeof x === 'string').slice(0, 200) : [];
+      const primaryId = typeof workspace.primaryId === 'string' ? workspace.primaryId : '';
+      const links = Array.isArray(workspace.links)
+        ? workspace.links
+          .filter(l => l && typeof l.from === 'string' && typeof l.to === 'string')
+          .slice(0, 400)
+          .map(l => ({
+            from: l.from,
+            to: l.to,
+            type: typeof l.type === 'string' ? l.type.slice(0, 80) : 'Secondary to'
+          }))
+        : [];
+      return {
+        id,
+        name,
+        updatedAt: typeof p.updatedAt === 'string' ? p.updatedAt : new Date().toISOString(),
+        workspace: { nodes, primaryId, links }
+      };
+    });
+  return {
+    version: 1,
+    activeProjectId: typeof input.activeProjectId === 'string' ? input.activeProjectId : (cleanProjects[0] && cleanProjects[0].id) || 'default',
+    projects: cleanProjects
+  };
+}
+
+function loadWorkspacesForUser(username) {
+  ensureDataDirs();
+  const p = userWorkspacesPath(username);
+  try {
+    if (!fs.existsSync(p)) fs.writeFileSync(p, JSON.stringify(emptyWorkspaceStore(), null, 2), 'utf8');
+    return normalizeWorkspaceStore(JSON.parse(fs.readFileSync(p, 'utf8') || '{}'));
+  } catch {
+    return emptyWorkspaceStore();
+  }
+}
+
+function saveWorkspacesForUser(username, store) {
+  ensureDataDirs();
+  const p = userWorkspacesPath(username);
+  fs.writeFileSync(p, JSON.stringify(normalizeWorkspaceStore(store), null, 2), 'utf8');
+}
+
 // --- Server-side validation helpers ---
 function isIsoDateString(s) {
   if (!s || typeof s !== 'string') return false;
@@ -358,6 +423,29 @@ app.put('/api/tasks', (req, res) => {
   } catch (e) {
     console.error('Could not overwrite tasks', e);
     return res.status(500).json({ error: 'Could not persist tasks' });
+  }
+});
+
+// Claim workspace endpoints. Authenticated users get account-level sync; guests
+// may still use localStorage in the browser and receive 401 here.
+app.get('/api/workspaces', (req, res) => {
+  const token = sidFromReq(req) || (req.get('authorization') || '').replace(/^Bearer\s+/, '');
+  const user = getUserByToken(token);
+  if (!user) return res.status(401).json({ error: 'unauthenticated' });
+  return res.json(loadWorkspacesForUser(user.username));
+});
+
+app.put('/api/workspaces', (req, res) => {
+  const token = sidFromReq(req) || (req.get('authorization') || '').replace(/^Bearer\s+/, '');
+  const user = getUserByToken(token);
+  if (!user) return res.status(401).json({ error: 'unauthenticated' });
+  const body = normalizeWorkspaceStore(req.body || {});
+  try {
+    saveWorkspacesForUser(user.username, body);
+    return res.json({ success: true, ...body });
+  } catch (e) {
+    console.error('Could not persist workspaces', e);
+    return res.status(500).json({ error: 'Could not persist workspaces' });
   }
 });
 

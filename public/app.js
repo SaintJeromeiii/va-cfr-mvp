@@ -1,5 +1,11 @@
 let CONDITIONS = [];
 
+const DATA_LAST_REVIEWED = "2026-04-29";
+const WORKSPACE_STORE_KEY = "vaCfrWorkspaceStore:v1";
+let activeProjectId = "default";
+let workspaceSyncTimer = null;
+let workspaceSyncStatus = "Saved locally";
+
 function normalize(s) {
   return (s || "").toLowerCase().trim();
 }
@@ -224,6 +230,14 @@ const REL_TYPES = [
 ];
 
 function loadWorkspaceState() {
+  if (localStorage.getItem(WORKSPACE_STORE_KEY)) {
+    try {
+      return normalizeWorkspaceShape(currentWorkspaceState());
+    } catch {
+      // Fall through to the legacy localStorage parser below.
+    }
+  }
+
   try {
     const raw = localStorage.getItem(WORKSPACE_KEY);
     if (!raw) return { nodes: [], primaryId: "", links: [] };
@@ -273,8 +287,283 @@ function loadWorkspaceState() {
   }
 }
 
-function saveWorkspaceState(st) {
-  localStorage.setItem(WORKSPACE_KEY, JSON.stringify(st || { nodes: [], primaryId: "", links: [] }));
+function emptyWorkspace() {
+  return { nodes: [], primaryId: "", links: [] };
+}
+
+function createProject(name = "Claim Packet", workspace = null) {
+  return {
+    id: `claim-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
+    name,
+    updatedAt: new Date().toISOString(),
+    workspace: workspace || emptyWorkspace()
+  };
+}
+
+function normalizeWorkspaceProjectStore(store) {
+  const fallbackProject = createProject("Default Claim Packet", loadWorkspaceState());
+  if (!store || typeof store !== "object") {
+    return { version: 1, activeProjectId: fallbackProject.id, projects: [fallbackProject] };
+  }
+  let projects = Array.isArray(store.projects) ? store.projects : [];
+  projects = projects
+    .filter(p => p && typeof p === "object")
+    .map((p, idx) => ({
+      id: String(p.id || `claim-${idx + 1}`),
+      name: String(p.name || "Claim Packet"),
+      updatedAt: p.updatedAt || new Date().toISOString(),
+      workspace: normalizeWorkspaceShape(p.workspace)
+    }));
+  if (!projects.length) projects = [fallbackProject];
+  const active = projects.some(p => p.id === store.activeProjectId) ? store.activeProjectId : projects[0].id;
+  return { version: 1, activeProjectId: active, projects };
+}
+
+function normalizeWorkspaceShape(workspace) {
+  const raw = workspace && typeof workspace === "object" ? workspace : emptyWorkspace();
+  const nodes = Array.isArray(raw.nodes) ? raw.nodes.filter(x => typeof x === "string") : [];
+  const primaryId = typeof raw.primaryId === "string" ? raw.primaryId : "";
+  const links = Array.isArray(raw.links)
+    ? raw.links
+      .filter(l => l && typeof l.from === "string" && typeof l.to === "string")
+      .map(l => ({ from: l.from, to: l.to, type: typeof l.type === "string" ? l.type : "Secondary to" }))
+    : [];
+  return { nodes, primaryId, links };
+}
+
+function loadProjectStore() {
+  try {
+    const raw = localStorage.getItem(WORKSPACE_STORE_KEY);
+    if (raw) return normalizeWorkspaceProjectStore(JSON.parse(raw));
+  } catch {
+    // fall back to legacy workspace state below
+  }
+  return normalizeWorkspaceProjectStore(null);
+}
+
+function saveProjectStore(store, { sync = true } = {}) {
+  const clean = normalizeWorkspaceProjectStore(store);
+  activeProjectId = clean.activeProjectId;
+  localStorage.setItem(WORKSPACE_STORE_KEY, JSON.stringify(clean));
+  if (sync) queueWorkspaceSync();
+  return clean;
+}
+
+function getActiveProject(store = loadProjectStore()) {
+  return store.projects.find(p => p.id === store.activeProjectId) || store.projects[0];
+}
+
+function currentWorkspaceState() {
+  return getActiveProject(loadProjectStore()).workspace;
+}
+
+function saveWorkspaceState(st, options = {}) {
+  const store = loadProjectStore();
+  const project = getActiveProject(store);
+  project.workspace = normalizeWorkspaceShape(st || emptyWorkspace());
+  project.updatedAt = new Date().toISOString();
+  saveProjectStore(store, options);
+  localStorage.setItem(WORKSPACE_KEY, JSON.stringify(project.workspace));
+}
+
+function migrateLegacyWorkspaceIfNeeded() {
+  if (localStorage.getItem(WORKSPACE_STORE_KEY)) return;
+  const legacy = loadWorkspaceState();
+  const project = createProject("Default Claim Packet", legacy);
+  saveProjectStore({ version: 1, activeProjectId: project.id, projects: [project] }, { sync: false });
+}
+
+function setWorkspaceSyncStatus(text) {
+  workspaceSyncStatus = text;
+  const el = document.getElementById("workspaceSyncStatus");
+  if (el) el.textContent = text;
+}
+
+function queueWorkspaceSync() {
+  clearTimeout(workspaceSyncTimer);
+  workspaceSyncTimer = setTimeout(syncWorkspaceStoreToServer, 600);
+}
+
+async function syncWorkspaceStoreToServer() {
+  try {
+    setWorkspaceSyncStatus("Saving locally; syncing account...");
+    const store = loadProjectStore();
+    const res = await fetch("/api/workspaces", {
+      method: "PUT",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(store)
+    });
+    if (res.status === 401) {
+      setWorkspaceSyncStatus("Saved locally. Sign in to sync across devices.");
+      return;
+    }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    setWorkspaceSyncStatus("Synced to account");
+  } catch (err) {
+    console.warn("workspace sync failed", err && err.message);
+    setWorkspaceSyncStatus("Saved locally; sync failed");
+  }
+}
+
+async function hydrateWorkspaceStoreFromServer() {
+  try {
+    const res = await fetch("/api/workspaces", { credentials: "include" });
+    if (res.status === 401) {
+      setWorkspaceSyncStatus("Saved locally. Sign in to sync across devices.");
+      return;
+    }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const remote = normalizeWorkspaceProjectStore(await res.json());
+    const local = loadProjectStore();
+    const localHasContent = local.projects.some(p => (p.workspace.nodes || []).length);
+    const remoteHasContent = remote.projects.some(p => (p.workspace.nodes || []).length);
+    if (remoteHasContent || !localHasContent) {
+      saveProjectStore(remote, { sync: false });
+      saveWorkspaceState(getActiveProject(remote).workspace, { sync: false });
+      setWorkspaceSyncStatus("Synced to account");
+    } else {
+      queueWorkspaceSync();
+    }
+  } catch (err) {
+    console.warn("workspace hydrate failed", err && err.message);
+    setWorkspaceSyncStatus("Saved locally; account sync unavailable");
+  }
+}
+
+function switchProject(projectId) {
+  const store = loadProjectStore();
+  if (!store.projects.some(p => p.id === projectId)) return;
+  store.activeProjectId = projectId;
+  saveProjectStore(store);
+  saveWorkspaceState(getActiveProject(store).workspace);
+  renderProjectSelector();
+  refreshWorkspaceViews();
+}
+
+function addProject() {
+  const name = prompt("Name this claim packet:", "New Claim Packet");
+  if (!name || !name.trim()) return;
+  const store = loadProjectStore();
+  const project = createProject(name.trim());
+  store.projects.push(project);
+  store.activeProjectId = project.id;
+  saveProjectStore(store);
+  saveWorkspaceState(project.workspace);
+  renderProjectSelector();
+  refreshWorkspaceViews();
+}
+
+function renameActiveProject() {
+  const store = loadProjectStore();
+  const project = getActiveProject(store);
+  const name = prompt("Rename claim packet:", project.name);
+  if (!name || !name.trim()) return;
+  project.name = name.trim();
+  project.updatedAt = new Date().toISOString();
+  saveProjectStore(store);
+  renderProjectSelector();
+}
+
+function renderProjectSelector() {
+  const select = document.getElementById("claimProjectSelect");
+  if (!select) return;
+  const store = loadProjectStore();
+  select.innerHTML = store.projects
+    .map(p => `<option value="${escapeHtml(p.id)}" ${p.id === store.activeProjectId ? "selected" : ""}>${escapeHtml(p.name)}</option>`)
+    .join("");
+  const active = getActiveProject(store);
+  const nameEl = document.getElementById("activeProjectName");
+  if (nameEl) nameEl.textContent = active.name;
+  setWorkspaceSyncStatus(workspaceSyncStatus);
+}
+
+function refreshWorkspaceViews() {
+  renderWorkspace();
+  renderClaimTree();
+  renderHealthPanel();
+  renderBinderViewer({ scope: "all", sortMode: "date", viewMode: "flat" });
+}
+
+function initializeGuidedTabs() {
+  const tabs = Array.from(document.querySelectorAll(".sectionTab[data-section-target]"));
+  if (!tabs.length) return;
+
+  function activate(targetId) {
+    tabs.forEach(tab => {
+      const active = tab.dataset.sectionTarget === targetId;
+      tab.classList.toggle("active", active);
+      tab.setAttribute("aria-selected", active ? "true" : "false");
+    });
+
+    document.querySelectorAll("[data-app-section]").forEach(section => {
+      section.classList.toggle("sectionHidden", section.id !== targetId);
+    });
+  }
+
+  tabs.forEach(tab => {
+    tab.addEventListener("click", () => activate(tab.dataset.sectionTarget));
+  });
+
+  activate(tabs[0].dataset.sectionTarget);
+}
+
+function renderSourceFreshness() {
+  const footer = document.getElementById("sourceFreshness");
+  if (footer) {
+    footer.textContent = `Condition data last reviewed: ${DATA_LAST_REVIEWED}. Always verify current CFR language before filing.`;
+  }
+}
+
+function getChecklistGuidance(item, state) {
+  const checklist = item.evidence_checklist || [];
+  if (!checklist.length) {
+    return "No condition-specific checklist is available yet. Add diagnosis, symptom, nexus, and functional-impact evidence manually.";
+  }
+  const done = checklist.reduce((sum, _, idx) => sum + (state[idx] ? 1 : 0), 0);
+  if (done === 0) return "Start with proof of a current diagnosis, then add records that show onset, severity, and service connection.";
+  if (done < checklist.length) return "Good start. Focus next on the unchecked items so the packet explains diagnosis, nexus, severity, and impact.";
+  return "Checklist complete for this condition. Review notes, dates, and source links before exporting the packet.";
+}
+
+function setupGuidedNavigation() {
+  const navBtns = Array.from(document.querySelectorAll(".navTab[data-target]"));
+  if (!navBtns.length) return;
+  const sections = Array.from(document.querySelectorAll(".appSection"));
+  function activate(targetId) {
+    navBtns.forEach(btn => btn.classList.toggle("active", btn.dataset.target === targetId));
+    sections.forEach(section => section.classList.toggle("active", section.id === targetId));
+    const active = document.getElementById(targetId);
+    if (active) active.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  navBtns.forEach(btn => btn.addEventListener("click", () => activate(btn.dataset.target)));
+}
+
+function initAppNavigation() {
+  const tabs = [...document.querySelectorAll(".navTab")];
+  const sections = [...document.querySelectorAll(".appSection")];
+  if (!tabs.length || !sections.length) return;
+
+  function activate(target) {
+    tabs.forEach(tab => tab.classList.toggle("active", tab.dataset.target === target));
+    sections.forEach(section => section.classList.toggle("active", section.id === target));
+  }
+
+  tabs.forEach(tab => {
+    tab.addEventListener("click", () => activate(tab.dataset.target));
+  });
+
+  document.querySelectorAll("[data-jump-section]").forEach(btn => {
+    btn.addEventListener("click", () => activate(btn.dataset.jumpSection));
+  });
+}
+
+function initProjectControls() {
+  migrateLegacyWorkspaceIfNeeded();
+  renderProjectSelector();
+  document.getElementById("claimProjectSelect")?.addEventListener("change", e => switchProject(e.target.value));
+  document.getElementById("claimProjectNew")?.addEventListener("click", addProject);
+  document.getElementById("claimProjectRename")?.addEventListener("click", renameActiveProject);
 }
 
 function buildAdjacencyFromLinks(links) {
@@ -710,10 +999,28 @@ function workspaceCompletion(conditions) {
 
 function buildWorkspacePacketText(items) {
   const lines = [];
-  lines.push("VA CFR Finder — Claim Workspace Packet");
-  lines.push(new Date().toLocaleString());
+  const project = getActiveProject(loadProjectStore());
+  const st = loadWorkspaceState();
+  const primary = st.primaryId ? CONDITIONS.find(c => c.id === st.primaryId) : null;
+  const completion = workspaceCompletion(items);
+  const evidenceTotal = items.reduce((sum, item) => sum + loadEvidenceLinks(item.id).length, 0);
+  const timelineTotal = items.reduce((sum, item) => sum + loadTimeline(item.id).length, 0);
+
+  lines.push("VA CFR Finder - Claim Workspace Packet");
+  lines.push(`Packet: ${project.name}`);
+  lines.push(`Generated: ${new Date().toLocaleString()}`);
+  lines.push(`Condition data last reviewed: ${DATA_LAST_REVIEWED}`);
   lines.push("");
+  lines.push("IMPORTANT");
+  lines.push("Educational draft only. Not legal advice, not representation, and not a VA submission form.");
+  lines.push("Always verify current CFR language and consult an accredited representative for claim-specific guidance.");
+  lines.push("");
+  lines.push("COVER SUMMARY");
   lines.push(`Conditions in workspace: ${items.length}`);
+  lines.push(`Primary condition: ${primary ? primary.name : "(not set)"}`);
+  lines.push(`Evidence readiness: ${completion.done}/${completion.total} (${completion.pct}%)`);
+  lines.push(`Evidence links indexed: ${evidenceTotal}`);
+  lines.push(`Timeline entries indexed: ${timelineTotal}`);
   lines.push("");
 
   items.forEach((item, i) => {
@@ -768,9 +1075,38 @@ function buildWorkspacePacketText(items) {
     const notes = (loadNotes(item.id) || "").trim();
     lines.push(notes ? notes : "(none)");
     lines.push("");
+
+    const timeline = sortTimeline(loadTimeline(item.id));
+    lines.push("Timeline Entries:");
+    if (timeline.length) {
+      timeline.forEach(e => lines.push(`- ${e.date || "Date?"} | ${e.type || "Other"} | ${e.note || ""}`));
+    } else {
+      lines.push("(none)");
+    }
+    lines.push("");
+
+    const evidenceLinks = loadEvidenceLinks(item.id);
+    lines.push("Evidence Links:");
+    if (evidenceLinks.length) {
+      evidenceLinks.forEach(e => {
+        lines.push(`- ${e.label || "Evidence"}${e.date ? ` (${e.date})` : ""}${e.type ? ` | ${e.type}` : ""}`);
+        lines.push(`  ${e.url || "(no URL)"}`);
+        if (e.note) lines.push(`  Notes: ${e.note}`);
+      });
+    } else {
+      lines.push("(none)");
+    }
+    lines.push("");
   });
 
   lines.push("============================================================");
+  lines.push("NEXT STEPS CHECKLIST");
+  lines.push("[ ] Verify all CFR links against current official sources.");
+  lines.push("[ ] Confirm each claimed condition has current diagnosis evidence.");
+  lines.push("[ ] Confirm nexus/relationship evidence for secondary or aggravated claims.");
+  lines.push("[ ] Attach dated evidence and page references where possible.");
+  lines.push("[ ] Review with an accredited representative before submitting.");
+  lines.push("");
   lines.push("Disclaimer: Educational only. Not legal advice/representation.");
   return lines.join("\n");
 }
@@ -1328,7 +1664,27 @@ function renderResults(list) {
   el.innerHTML = "";
 
   if (!list || !list.length) {
-    el.innerHTML = `<div class="small">No matches. Try “8520”, “5260”, “8100”, or “ptsd”.</div>`;
+    el.innerHTML = `
+      <div class="emptyState">
+        <strong>No matches found</strong>
+        <p>Try a diagnostic code, body part, symptom phrase, or common shorthand.</p>
+        <div class="hintGrid">
+          <button class="miniBtn searchHint" type="button" data-query="8520">Sciatic nerve / 8520</button>
+          <button class="miniBtn searchHint" type="button" data-query="ptsd">PTSD</button>
+          <button class="miniBtn searchHint" type="button" data-query="ringing ears">Ringing ears</button>
+          <button class="miniBtn searchHint" type="button" data-query="4.124a">38 CFR 4.124a</button>
+        </div>
+      </div>`;
+    el.querySelectorAll(".searchHint").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const input = document.getElementById("q");
+        if (input) {
+          input.value = btn.dataset.query || "";
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+          input.focus();
+        }
+      });
+    });
     return;
   }
 
@@ -1348,13 +1704,19 @@ function renderResults(list) {
     div.className = `result ${systemClassName(sys)}`;
     div.tabIndex = 0;
 
+    const ratingSummary = item.rating_logic?.summary || "Review CFR references and evidence guidance for this condition.";
+    const checklistTotal = (item.evidence_checklist || []).length;
+
     div.innerHTML = `
-      <div class="metaRow">
-        ${sys ? `<span class="systemBadge ${systemClassName(sys)}">${escapeHtml(sys)}</span>` : ""}
-        ${dc ? `<span class="dcBadge">${highlight(`DC ${dc}`, q)}</span>` : ""}
+      <div class="resultTop">
+        <div class="metaRow">
+          ${sys ? `<span class="systemBadge ${systemClassName(sys)}">${escapeHtml(sys)}</span>` : ""}
+          ${dc ? `<span class="dcBadge">${highlight(`DC ${dc}`, q)}</span>` : ""}
+        </div>
+        <span class="resultActionHint">View details</span>
       </div>
 
-      <div><strong>${nameHTML}</strong></div>
+      <div class="resultTitle"><strong>${nameHTML}</strong></div>
 
       ${cfrHTML
         ? `<div class="cfrLine">
@@ -1367,10 +1729,16 @@ function renderResults(list) {
 
       ${(q || "").trim() ? `<div class="matchNote">Matched: <strong>${escapeHtml(reason)}</strong></div>` : ""}
 
+      <div class="small resultSummary">${escapeHtml(ratingSummary)}</div>
+
       <div class="small">Aliases: ${aliasesHTML}${(item.aliases || []).length > 3 ? "…" : ""}</div>
 
-      <div style="margin-top:8px">
-        <button class="miniBtn" data-add="${escapeHtml(item.id)}" type="button">+ Add to Workspace</button>
+      <div class="resultFooter">
+        <span class="small">${checklistTotal ? `${checklistTotal} evidence prompts` : "Checklist pending"}</span>
+        <div>
+          <button class="miniBtn" data-open="${escapeHtml(item.id)}" type="button">View</button>
+          <button class="miniBtn" data-add="${escapeHtml(item.id)}" type="button">Add to Workspace</button>
+        </div>
       </div>
     `;
 
@@ -1386,6 +1754,14 @@ function renderResults(list) {
       });
     }
 
+    const openBtn = div.querySelector("button[data-open]");
+    if (openBtn) {
+      openBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        showDetail(item.id, true, document.getElementById("q")?.value || "");
+      });
+    }
+
     // Add to workspace button
     const addBtn = div.querySelector("button[data-add]");
     if (addBtn) {
@@ -1393,7 +1769,7 @@ function renderResults(list) {
         e.stopPropagation();
         try {
           ensureNode(item.id);
-          renderWorkspace();
+          refreshWorkspaceViews();
           showNotification('Added to workspace!');
         } catch (err) {
           console.error(err);
@@ -1578,6 +1954,7 @@ if (item.strategy && item.strategy.length) {
 
   const evidenceState = loadEvidenceState(item.id);
   const evidenceItems = item.evidence_checklist || [];
+  const guidance = getChecklistGuidance(completedCount, evidenceItems.length);
 
   const evidenceChecksHTML = evidenceItems
     .map((text, idx) => {
@@ -1652,6 +2029,7 @@ ${strategyHTML}
     <div class="evScoreRow">
       <div class="evBar"><div id="evBarFill" class="evBarFill"></div></div>
       <div class="small"><span id="evScoreText">0/0</span> complete</div>
+      <div id="evGuidance" class="readinessHint ${guidance.className}">${escapeHtml(guidance.text)}</div>
     </div>
 
     <button id="packetCopy" class="miniBtn" type="button">Copy Claim Packet</button>
@@ -1688,6 +2066,7 @@ ${strategyHTML}
     <button id="notesClear" class="miniBtn danger" type="button">Clear notes</button>
   </div>
   <div class="small">Notes are stored in your browser (localStorage) for this device.</div>
+  <div class="small">Tip: sign in to sync claim packets across devices; notes/evidence links still remain browser-local in this version.</div>
 </div>
 
 <hr/>
@@ -1954,7 +2333,6 @@ if (secBtn && secList) {
   const evLinksDate = document.getElementById("evLinksDate");
   const evLinksNote = document.getElementById("evLinksNote");
   const evLinksAdd = document.getElementById("evLinksAdd");
-  const evLinksList = document.getElementById("evLinksList");
   const evLinksExport = document.getElementById("evLinksExport");
 
   function renderEvidenceLinks() {
@@ -2124,10 +2502,10 @@ if (secBtn && secList) {
   }
 
   function highlightActiveRelRow() {
-    if (!evList) return;
-    evList.querySelectorAll(".evRow").forEach(row => row.classList.remove("activeRel"));
+    if (!evLinksList) return;
+    evLinksList.querySelectorAll(".evRow").forEach(row => row.classList.remove("activeRel"));
     if (!currentRelFromRowId) return;
-    const r = evList.querySelector(`[data-evid="${CSS.escape(currentRelFromRowId)}"]`);
+    const r = evLinksList.querySelector(`[data-evid="${CSS.escape(currentRelFromRowId)}"]`);
     if (r) r.classList.add("activeRel");
   }
 
@@ -2156,18 +2534,17 @@ if (secBtn && secList) {
         .join("");
   }
 
-  // DOM references needed by evidence renderers
-  const evList = document.getElementById("evList");
+  // DOM references needed by checklist and evidence renderers
   const evCountEl = document.getElementById("evCount");
 
   function renderEvidenceLinksWithRelated() {
-    if (!evList) return;
+    if (!evLinksList) return;
 
     const idx = buildWorkspaceEvidenceIndex("all");
     const links = loadEvidenceLinks(item.id);
 
     if (!links.length) {
-      evList.innerHTML = `<div class="small">(No evidence links yet.)</div>`;
+      evLinksList.innerHTML = `<div class="emptyState compact"><strong>No evidence links yet</strong><p>Add medical records, DBQs, lay statements, or service records with a short note about what each item proves.</p></div>`;
       hideRelPanel();
       return;
     }
@@ -2179,7 +2556,7 @@ if (secBtn && secList) {
       return (a.label || "").localeCompare(b.label || "");
     });
 
-    evList.innerHTML = sorted.map(l => {
+    evLinksList.innerHTML = sorted.map(l => {
       const relKeys = relatedEvidenceKeys(l.url);
       const relList = relKeys.map(k => idx.get(k)).filter(Boolean).slice(0, 4);
 
@@ -2222,7 +2599,7 @@ if (secBtn && secList) {
     }).join("");
 
     // Remove
-    evList.querySelectorAll("button[data-evrm]").forEach(b => {
+    evLinksList.querySelectorAll("button[data-evrm]").forEach(b => {
       b.addEventListener("click", () => {
         removeEvidenceLink(item.id, b.dataset.evrm);
         renderEvidenceLinksWithRelated();
@@ -2231,7 +2608,7 @@ if (secBtn && secList) {
     });
 
     // Relate… (per-row)
-    evList.querySelectorAll("button[data-relfrom]").forEach(b => {
+    evLinksList.querySelectorAll("button[data-relfrom]").forEach(b => {
       b.addEventListener("click", () => {
         const rowId = b.dataset.relfrom;
         const myLinks = loadEvidenceLinks(item.id);
@@ -2244,7 +2621,7 @@ if (secBtn && secList) {
     });
 
     // Unlink related evidence
-    evList.querySelectorAll("button[data-unrel-from][data-unrel-to]").forEach(b => {
+    evLinksList.querySelectorAll("button[data-unrel-from][data-unrel-to]").forEach(b => {
       b.addEventListener("click", () => {
         const fromUrl = b.dataset.unrelFrom || "";
         const toUrl = b.dataset.unrelTo || "";
@@ -2308,6 +2685,7 @@ if (secBtn && secList) {
       st[idx] = cb.checked;
       saveEvidenceState(item.id, st);
       updateEvCount();
+      updateChecklistGuidance(item);
       renderWorkspace();
     });
   }
@@ -3658,6 +4036,14 @@ async function init() {
     return;
   }
 
+  migrateLegacyWorkspaceIfNeeded();
+  renderProjectSelector();
+  await hydrateWorkspaceStoreFromServer();
+  renderProjectSelector();
+  refreshWorkspaceViews();
+  renderSourceFreshness();
+  initializeGuidedTabs();
+
   // Auto-import workspace from share link
   const params = new URLSearchParams(window.location.search);
   const wsToken = params.get("ws");
@@ -3674,6 +4060,8 @@ async function init() {
       history.replaceState({}, "", clean.toString());
 
       alert("Workspace imported from link!");
+      renderProjectSelector();
+      refreshWorkspaceViews();
     } catch (e) {
       console.error(e);
       alert("Could not import workspace from link (bad or corrupted token).");
@@ -3683,6 +4071,19 @@ async function init() {
   const input = document.getElementById("q");
   const filter = document.getElementById("systemFilter");
   const clearBtn = document.getElementById("clearBtn");
+
+  migrateLegacyWorkspaceIfNeeded();
+  initializeGuidedTabs();
+  renderSourceFreshness();
+  renderProjectSelector();
+  hydrateWorkspaceStoreFromServer().then(() => {
+    renderProjectSelector();
+    refreshWorkspaceViews();
+  });
+
+  document.getElementById("claimProjectSelect")?.addEventListener("change", (e) => switchProject(e.target.value));
+  document.getElementById("claimProjectAdd")?.addEventListener("click", addProject);
+  document.getElementById("claimProjectRename")?.addEventListener("click", renameActiveProject);
 
   // Prevent default submit on auth form (moved from inline HTML to satisfy CSP)
   const authForm = document.getElementById('authForm');
@@ -3806,6 +4207,7 @@ async function init() {
       renderWorkspace();
       renderClaimTree();
       renderHealthPanel();
+      renderProjectSelector();
     });
   }
 
@@ -3832,6 +4234,13 @@ async function init() {
       downloadText(`claim_workspace_packet.txt`, text);
     });
   }
+
+  const claimProjectSelect = document.getElementById("claimProjectSelect");
+  const claimProjectNew = document.getElementById("claimProjectNew");
+  const claimProjectRename = document.getElementById("claimProjectRename");
+  if (claimProjectSelect) claimProjectSelect.addEventListener("change", () => switchProject(claimProjectSelect.value));
+  if (claimProjectNew) claimProjectNew.addEventListener("click", addProject);
+  if (claimProjectRename) claimProjectRename.addEventListener("click", renameActiveProject);
 
   // Health panel buttons
   const wsFixOrphans = document.getElementById("wsFixOrphans");
