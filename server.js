@@ -97,6 +97,9 @@ const GLOBAL_TASKS = path.join(DATA_DIR, 'tasks.json');
 const USERS_DIR = path.join(DATA_DIR, 'users');
 const USERS_FILE = path.join(USERS_DIR, 'users.json');
 const SESSIONS_FILE = path.join(USERS_DIR, 'sessions.json');
+const FEEDBACK_FILE = path.join(DATA_DIR, 'feedback.jsonl');
+const ANALYTICS_FILE = path.join(DATA_DIR, 'analytics.jsonl');
+const STARTED_AT = new Date().toISOString();
 
 function ensureDataDirs() {
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -106,6 +109,106 @@ function ensureDataDirs() {
   if (!fs.existsSync(SESSIONS_FILE)) fs.writeFileSync(SESSIONS_FILE, JSON.stringify({}, null, 2));
 }
 ensureDataDirs();
+
+function appendJsonl(filePath, entry) {
+  ensureDataDirs();
+  fs.appendFileSync(filePath, JSON.stringify(entry) + '\n', 'utf8');
+}
+
+function readJsonl(filePath, limit = 100) {
+  try {
+    if (!fs.existsSync(filePath)) return [];
+    const lines = fs.readFileSync(filePath, 'utf8').split('\n').filter(Boolean);
+    return lines.slice(-limit).map(line => {
+      try { return JSON.parse(line); } catch { return null; }
+    }).filter(Boolean).reverse();
+  } catch {
+    return [];
+  }
+}
+
+function productionWarnings() {
+  const warnings = [];
+  if (process.env.NODE_ENV === 'production') {
+    if (!process.env.ADMIN_SECRET) warnings.push('ADMIN_SECRET is not set');
+    if (!process.env.TRUST_PROXY && !app.get('trust proxy')) warnings.push('TRUST_PROXY is not enabled for secure proxy deployments');
+    if (!process.env.SESSION_ROTATE_ON_LOGIN) warnings.push('SESSION_ROTATE_ON_LOGIN is not explicitly configured');
+  }
+  if (!fs.existsSync(CONDITIONS_PATH)) warnings.push('conditions.json is missing');
+  return warnings;
+}
+
+function dataFileStatus(filePath, fallback = null) {
+  try {
+    if (!fs.existsSync(filePath)) {
+      if (fallback !== null) fs.writeFileSync(filePath, fallback, 'utf8');
+      else return { ok: false, exists: false };
+    }
+    fs.accessSync(filePath, fs.constants.R_OK | fs.constants.W_OK);
+    return { ok: true, exists: true };
+  } catch (e) {
+    return { ok: false, exists: fs.existsSync(filePath), error: e && e.message };
+  }
+}
+
+function productionReadinessChecks() {
+  const checks = [];
+  const add = (name, ok, message) => checks.push({ name, ok: !!ok, message });
+  add('node_env_production', process.env.NODE_ENV === 'production', 'Set NODE_ENV=production for launch.');
+  add('trust_proxy', process.env.TRUST_PROXY === '1' || process.env.NODE_ENV === 'production', 'Set TRUST_PROXY=1 behind HTTPS reverse proxies.');
+  add('admin_secret', !!process.env.ADMIN_SECRET && String(process.env.ADMIN_SECRET).length >= 24, 'Set a strong ADMIN_SECRET (24+ chars).');
+  add('cors_origin', !!process.env.CORS_ORIGIN, 'Set CORS_ORIGIN to the production origin if cross-origin requests are needed.');
+  add('users_file_writable', dataFileStatus(USERS_FILE, '{}').ok, 'User store must be readable/writable.');
+  add('sessions_file_writable', dataFileStatus(SESSIONS_FILE, '{}').ok, 'Session store must be readable/writable.');
+  add('tasks_file_writable', dataFileStatus(GLOBAL_TASKS, '[]').ok, 'Task store must be readable/writable.');
+  add('feedback_file_writable', dataFileStatus(FEEDBACK_FILE, '').ok, 'Feedback log must be readable/writable.');
+  add('analytics_file_writable', dataFileStatus(ANALYTICS_FILE, '').ok, 'Analytics log must be readable/writable.');
+  return checks;
+}
+
+function appendJsonLine(filePath, entry) {
+  ensureDataDirs();
+  fs.appendFileSync(filePath, JSON.stringify(entry) + '\n', 'utf8');
+}
+
+function readJsonLines(filePath, limit = 100) {
+  try {
+    if (!fs.existsSync(filePath)) return [];
+    const lines = fs.readFileSync(filePath, 'utf8').split('\n').filter(Boolean);
+    return lines.slice(-limit).map(line => {
+      try { return JSON.parse(line); } catch { return null; }
+    }).filter(Boolean).reverse();
+  } catch {
+    return [];
+  }
+}
+
+const ALLOWED_ANALYTICS_EVENTS = new Set([
+  'app_loaded',
+  'onboarding_shown',
+  'onboarding_skipped',
+  'onboarding_completed',
+  'search',
+  'condition_opened',
+  'workspace_add',
+  'project_created',
+  'packet_export',
+  'feedback_opened',
+  'feedback_submitted'
+]);
+
+function sanitizeAnalyticsPayload(body) {
+  const event = String((body && body.event) || '').slice(0, 80);
+  if (!ALLOWED_ANALYTICS_EVENTS.has(event)) return null;
+  const rawMeta = body && body.meta && typeof body.meta === 'object' ? body.meta : {};
+  const meta = {};
+  ['system', 'conditionId', 'source', 'mode', 'resultCount'].forEach(key => {
+    if (typeof rawMeta[key] === 'string' || typeof rawMeta[key] === 'number') {
+      meta[key] = String(rawMeta[key]).slice(0, 120);
+    }
+  });
+  return { event, meta };
+}
 
 function loadConditions() {
   const raw = fs.readFileSync(CONDITIONS_PATH, 'utf8');
@@ -396,6 +499,42 @@ function validateTask(t) {
 }
 
 // API routes
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    app: 'va-cfr-mvp',
+    startedAt: STARTED_AT,
+    uptimeSeconds: Math.round(process.uptime())
+  });
+});
+
+app.get('/api/ready', (req, res) => {
+  const checks = productionReadinessChecks();
+  const critical = checks.filter(c => ['users_file_writable', 'sessions_file_writable', 'tasks_file_writable', 'feedback_file_writable', 'analytics_file_writable'].includes(c.name));
+  const ready = critical.every(c => c.ok);
+  res.status(ready ? 200 : 503).json({
+    status: ready ? 'ready' : 'not_ready',
+    warnings: productionWarnings(),
+    checks
+  });
+});
+
+app.post('/api/analytics', (req, res) => {
+  const payload = sanitizeAnalyticsPayload(req.body || {});
+  if (!payload) return res.status(400).json({ error: 'invalid analytics event' });
+  try {
+    appendJsonLine(ANALYTICS_FILE, {
+      ts: new Date().toISOString(),
+      event: payload.event,
+      meta: payload.meta
+    });
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error('Could not save analytics', e);
+    return res.status(500).json({ error: 'Could not save analytics' });
+  }
+});
+
 app.get('/api/conditions', (req, res) => {
   const conditions = loadConditions();
   res.json(conditions);

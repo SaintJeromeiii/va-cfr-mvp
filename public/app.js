@@ -5,6 +5,27 @@ const WORKSPACE_STORE_KEY = "vaCfrWorkspaceStore:v1";
 let activeProjectId = "default";
 let workspaceSyncTimer = null;
 let workspaceSyncStatus = "Saved locally";
+const ANALYTICS_SESSION_ID = (() => {
+  const makeId = () => {
+    if (crypto.randomUUID) return crypto.randomUUID();
+    const bytes = new Uint32Array(4);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes, n => n.toString(16).padStart(8, "0")).join("-");
+  };
+  try {
+    const key = "vaCfrAnalyticsSession:v1";
+    let id = sessionStorage.getItem(key);
+    if (!id) {
+      id = makeId();
+      sessionStorage.setItem(key, id);
+    }
+    return id;
+  } catch {
+    return makeId();
+  }
+})();
+let analyticsTimer = null;
+let lastSearchAnalytics = "";
 
 function normalize(s) {
   return (s || "").toLowerCase().trim();
@@ -777,13 +798,75 @@ function initializeLaunchModals() {
         body: JSON.stringify(payload)
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      trackEvent("feedback_submitted", { type: payload.type });
       if (status) status.textContent = "Thank you. Feedback saved.";
       const msg = document.getElementById("feedbackMessage");
       if (msg) msg.value = "";
+      trackEvent("feedback_submitted", { type: payload.type });
     } catch (err) {
       console.warn("feedback submit failed", err && err.message);
       if (status) status.textContent = "Could not submit. Please copy or email your feedback.";
     }
+  });
+}
+
+function trackEvent(name, meta = {}) {
+  const safeName = String(name || "").slice(0, 80);
+  if (!safeName) return;
+  const safeMeta = {};
+  Object.entries(meta || {}).forEach(([key, value]) => {
+    if (value == null) return;
+    safeMeta[String(key).slice(0, 40)] = String(value).slice(0, 120);
+  });
+  const payload = JSON.stringify({ event: safeName, meta: safeMeta });
+  if (navigator.sendBeacon) {
+    const blob = new Blob([payload], { type: "application/json" });
+    if (navigator.sendBeacon("/api/analytics", blob)) return;
+  }
+  fetch("/api/analytics", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: payload,
+    keepalive: true
+  }).catch(() => {});
+}
+
+function initializeBetaOnboarding() {
+  const modal = document.getElementById("onboardingModal");
+  if (!modal) return;
+  const open = () => modal.classList.remove("hidden");
+  const close = () => modal.classList.add("hidden");
+  const doneKey = "vaCfrOnboardingComplete:v1";
+  const typeSelect = document.getElementById("onboardingClaimType");
+  const primaryInput = document.getElementById("onboardingCondition");
+  const packetNameInput = document.getElementById("onboardingPacketName");
+
+  if (!localStorage.getItem(doneKey)) {
+    setTimeout(open, 500);
+    trackEvent("onboarding_shown");
+  }
+
+  document.getElementById("onboardingSkip")?.addEventListener("click", () => {
+    localStorage.setItem(doneKey, "skipped");
+    close();
+    trackEvent("onboarding_skipped");
+  });
+
+  document.getElementById("onboardingStart")?.addEventListener("click", () => {
+    localStorage.setItem(doneKey, "complete");
+    close();
+    const type = typeSelect?.value || "new";
+    const primary = (primaryInput?.value || "").trim();
+    const packetName = (packetNameInput?.value || "").trim();
+    if (packetName) addProject(packetName);
+    trackEvent("onboarding_completed", { mode: type, conditionId: primary ? "provided" : "none" });
+    const q = document.getElementById("q");
+    if (q && primary) {
+      q.value = primary;
+      q.dispatchEvent(new Event("input", { bubbles: true }));
+      q.focus();
+    }
+    document.querySelector(".navTab[data-panel-target='searchPanel']")?.click();
   });
 }
 
@@ -4305,6 +4388,8 @@ async function init() {
   renderSourceFreshness();
   initializeGuidedTabs();
   initializeLaunchModals();
+  initializeBetaOnboarding();
+  trackEvent("app_loaded");
 
   // Auto-import workspace from share link
   const params = new URLSearchParams(window.location.search);
@@ -4334,8 +4419,6 @@ async function init() {
   const filter = document.getElementById("systemFilter");
   const clearBtn = document.getElementById("clearBtn");
 
-  initializeGuidedTabs();
-  renderSourceFreshness();
   hydrateWorkspaceStoreFromServer().then(() => {
     renderProjectSelector();
     refreshWorkspaceViews();
