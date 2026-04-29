@@ -1,0 +1,911 @@
+[
+  {
+    "id": "tinnitus",
+    "name": "Tinnitus",
+    "body_system": "Ear",
+    "aliases": [
+      "ringing in ears",
+      "buzzing ears"
+    ],
+    "summary": "Perception of ringing, buzzing, or similar noise without an external source.",
+    "notes": "Commonly claimed after hazardous noise exposure. Usually assigned a single 10 percent evaluation regardless of whether one or both ears are affected.",
+    "cfr": [
+      {
+        "title": "Schedule of ratings - ear",
+        "section": "38 CFR § 4.87",
+        "diagnostic_code": "6260",
+        "url": "https://www.ecfr.gov/current/title-38/section-4.87"
+      }
+    ],
+    "rating_logic": [
+      "10%: recurrent tinnitus."
+    ],
+    "evidence_checklist": [
+      "Noise exposure history during service",
+      "Current ringing/buzzing symptoms",
+      "Onset timeline",
+      "Any audiology evaluations"
+    ],
+    "common_secondary_ids": [
+      "hearing-loss",
+      "vertigo"
+    ],
+    "why_common": "Frequent starter claim because veterans often report persistent ringing after service-related noise exposure."
+  },
+  {
+    "id": "hearing-loss",
+    "name": "Hearing Loss",
+    "body_system": "Ear",
+    "aliases": [
+      "bilateral hearing loss",
+      "sensorineural hearing loss"
+    ],
+    "summary": "Reduced hearing acuity measured through controlled speech discrimination and puretone testing.",
+    "notes": "Requires audiometric testing under VA rules. Often appears alongside tinnitus and noise exposure claims.",
+    "cfr": [
+      {
+        "title": "Schedule of ratings - ear",
+        "section": "38 CFR § 4.85",
+        "diagnostic_code": "6100",
+        "url": "https://www.ecfr.gov/current/title-38/section-4.85"
+      }
+    ],
+    "rating_logic": [
+      "Rated mechanically from Maryland CNC speech discrimination scores and puretone threshold averages."
+    ],
+    "evidence_checklist": [
+      "Audiogram or hearing examination",
+      "Functional impact on conversation or work",
+      "Noise exposure history",
+      "Onset timeline"
+    ],
+    "common_secondary_ids": [
+      "tinnitus",
+      "vertigo"
+    ],
+    "why_common": "Often paired with tinnitus and occupational noise exposure patterns."
+  },
+  {
+    "id": "vertigo",
+    "name": "Vertigo / Dizziness",
+    "body_system": "Ear",
+    "aliases": [
+      "dizziness",
+      "balance issues"
+    ],
+    "summary": "Episodes of dizziness or spinning sensation that may affect balance and mobility.",
+    "notes": "Severity often depends on frequency, gait disturbance, and documented vestibular findings.",
+    "cfr": [
+      {
+        "title": "Schedule of ratings - ear",
+        "section": "38 CFR § 4.87",
+        "diagnostic_code": "6204",
+        "url": "https://www.ecfr.gov/current/title-38/section-4.87"
+      }
+    ],
+    "rating_logic": [
+      "10%: occasional dizziness.",
+      "30%: dizziness and occasional staggering."
+    ],
+    "evidence_checklist": [
+      "Frequency of episodes",
+      "Falls, staggering, or balance disruption",
+      "ENT or vestibular evaluation",
+      "Impact on driving, walking, or work"
+    ],
+    "common_secondary_ids": [
+      "tinnitus",
+      "hearing-loss"
+    ],
+    "why_common": "Often connected to ear-related claims and functional impact concerns."
+  },
+  {
+    "id": "ptsd",
+    "name": "Posttraumatic Stress Disorder (PTSD)",
+    "body_system": "Mental Disorders",
+    "aliases": [
+      "post traumatic stress",
+      "trauma disorder"
+    ],
+    "summary": "Trauma-related mental health condition evaluated under the general rating formula for mental disorders.",
+    "notes": "Severity turns heavily on occupational and social impairment, symptom frequency, treatment history, and functional examples.",
+    "cfr": [
+      {
+        "title": "Schedule of ratings - mental disorders",
+        "section": "38 CFR § 4.130",
+        "diagnostic_code": "9411",
+        "url": "https://www.ecfr.gov/current/title-38/section-4.130"
+      }
+    ],
+    "rating_logic": [
+      "0%, 10%, 30%, 50%, 70%, 100% based on level of occupational and social impairment and symptom picture."
+    ],
+    "evidence_checklist": [
+      "Diagnosis or mental health treatment records",
+      "Stressors or trauma history",
+      "Symptoms such as nightmares, hypervigilance, avoidance, panic, or mood changes",
+      "Examples of occupational and social impact"
+    ],
+    "common_secondary_ids": [
+      "insomnia",
+      "migraines",
+      "sleep-apnea"
+    ],
+    "why_common": "One of the most common VA claim paths and often connects to sleep, headache, and functioning issues."
+  },
+  {
+    "id": "anxiety",
+    "name": "Anxiety Disorder",
+    "body_system": "Mental Disorders",
+    "aliases": [
+      "generalized anxiety",
+      "anxious mood"
+    ],
+    "summary": "Persistent anxiety symptoms rated under the general mental disorders formula.",
+    "notes": "Like other mental health ratings, the key issue is functional impairment rather than a simple symptom count.",
+    "cfr": [
+      {
+        "title": "Schedule of ratings - mental disorders",
+        "section": "38 CFR § 4.130",
+        "diagnostic_code": "9400",
+        "url": "https://www.ecfr.gov/current/title-38/section-4.130"
+      }
+    ],
+    "rating_logic": [
+      "0%, 10%, 30%, 50%, 70%, 100% based on occupational and social impairment."
+    ],
+    "evidence_checklist": [
+      "Mental health diagnosis or treatment records",
+      "Symptom frequency and severity",
+      "Examples of work and relationship impact",
+      "Medication or therapy history"
+    ],
+    "common_secondary_ids": [
+      "insomnia",
+      "migraines",
+      "gerd"
+    ],
+    "why_common": "Common standalone claim and also often appears alongside sleep or headache complaints."
+  },
+  {
+    "id": "depression",
+    "name": "Depressive Disorder",
+    "body_system": "Mental Disorders",
+    "aliases": [
+      "major depressive disorder",
+      "depression"
+    ],
+    "summary": "Depressive symptoms rated under the general mental disorders formula.",
+    "notes": "Evidence is strongest when it shows mood symptoms plus concrete work, motivation, concentration, or relationship effects.",
+    "cfr": [
+      {
+        "title": "Schedule of ratings - mental disorders",
+        "section": "38 CFR § 4.130",
+        "diagnostic_code": "9434",
+        "url": "https://www.ecfr.gov/current/title-38/section-4.130"
+      }
+    ],
+    "rating_logic": [
+      "0%, 10%, 30%, 50%, 70%, 100% based on occupational and social impairment."
+    ],
+    "evidence_checklist": [
+      "Diagnosis or counseling records",
+      "Low mood, motivation, isolation, or concentration problems",
+      "Occupational and social examples",
+      "Medication and therapy history"
+    ],
+    "common_secondary_ids": [
+      "insomnia",
+      "migraines",
+      "erectile-dysfunction"
+    ],
+    "why_common": "Frequently claimed directly or alongside other chronic service-connected problems."
+  },
+  {
+    "id": "insomnia",
+    "name": "Insomnia / Chronic Sleep Impairment",
+    "body_system": "Mental Disorders",
+    "aliases": [
+      "sleep problems",
+      "sleep impairment"
+    ],
+    "summary": "Persistent sleep disturbance that often appears within mental health evaluations or as part of related symptom patterns.",
+    "notes": "Sleep impairment often matters as severity/support evidence even when not separately rated.",
+    "cfr": [
+      {
+        "title": "Schedule of ratings - mental disorders",
+        "section": "38 CFR § 4.130",
+        "diagnostic_code": "9499-9413",
+        "url": "https://www.ecfr.gov/current/title-38/section-4.130"
+      }
+    ],
+    "rating_logic": [
+      "Typically evaluated under the general mental disorders formula when service connected as a mental health condition."
+    ],
+    "evidence_checklist": [
+      "Sleep onset or sleep maintenance problems",
+      "Frequency and duration",
+      "Daytime fatigue or concentration impact",
+      "Treatment attempts or sleep hygiene notes"
+    ],
+    "common_secondary_ids": [
+      "ptsd",
+      "anxiety",
+      "depression"
+    ],
+    "why_common": "Very common supporting issue in mental health and chronic pain claim patterns."
+  },
+  {
+    "id": "adjustment-disorder",
+    "name": "Adjustment Disorder",
+    "body_system": "Mental Disorders",
+    "aliases": [
+      "adjustment disorder with anxiety",
+      "adjustment disorder with depressed mood"
+    ],
+    "summary": "Stress-related mental health condition rated under the general mental disorders formula.",
+    "notes": "The rating focus is still occupational and social impairment, not just the diagnosis label.",
+    "cfr": [
+      {
+        "title": "Schedule of ratings - mental disorders",
+        "section": "38 CFR § 4.130",
+        "diagnostic_code": "9440",
+        "url": "https://www.ecfr.gov/current/title-38/section-4.130"
+      }
+    ],
+    "rating_logic": [
+      "0%, 10%, 30%, 50%, 70%, 100% based on occupational and social impairment."
+    ],
+    "evidence_checklist": [
+      "Diagnosis or counseling records",
+      "Stress-related triggers and onset",
+      "Functional impairment examples",
+      "Symptom severity over time"
+    ],
+    "common_secondary_ids": [
+      "insomnia",
+      "anxiety",
+      "depression"
+    ],
+    "why_common": "Shows up often when symptoms are documented but diagnostic labels vary across providers."
+  },
+  {
+    "id": "migraines",
+    "name": "Migraines",
+    "body_system": "Neurological",
+    "aliases": [
+      "migraine headaches",
+      "headaches"
+    ],
+    "summary": "Headache condition where rating often turns on frequency, severity, and economic impact.",
+    "notes": "Prostrating attacks and the effect on work are especially important.",
+    "cfr": [
+      {
+        "title": "Schedule of ratings - neurological conditions",
+        "section": "38 CFR § 4.124a",
+        "diagnostic_code": "8100",
+        "url": "https://www.ecfr.gov/current/title-38/section-4.124a"
+      }
+    ],
+    "rating_logic": [
+      "0%: less frequent attacks.",
+      "10%: characteristic prostrating attacks averaging one in 2 months over last several months.",
+      "30%: characteristic prostrating attacks occurring on average once a month over last several months.",
+      "50%: very frequent completely prostrating and prolonged attacks productive of severe economic inadaptability."
+    ],
+    "evidence_checklist": [
+      "Frequency of attacks",
+      "Whether attacks are prostrating",
+      "Duration and symptoms",
+      "Missed work or economic impact"
+    ],
+    "common_secondary_ids": [
+      "ptsd",
+      "anxiety",
+      "sleep-apnea"
+    ],
+    "why_common": "A high-interest claim because rating turns on detailed symptom patterns the app can help organize."
+  },
+  {
+    "id": "peripheral-neuropathy",
+    "name": "Peripheral Neuropathy",
+    "body_system": "Neurological",
+    "aliases": [
+      "neuropathy",
+      "nerve pain"
+    ],
+    "summary": "Nerve-related symptoms such as numbness, tingling, or pain often evaluated by affected nerve and severity.",
+    "notes": "Needs clear identification of the affected extremity/nerve and the degree of impairment.",
+    "cfr": [
+      {
+        "title": "Schedule of ratings - neurological conditions",
+        "section": "38 CFR § 4.124a",
+        "diagnostic_code": "8520",
+        "url": "https://www.ecfr.gov/current/title-38/section-4.124a"
+      }
+    ],
+    "rating_logic": [
+      "Varies by nerve and whether impairment is mild, moderate, moderately severe, severe, or complete."
+    ],
+    "evidence_checklist": [
+      "Affected nerve or extremity",
+      "Sensory changes and pain",
+      "Weakness or reflex changes",
+      "Functional impact like walking, standing, or hand use"
+    ],
+    "common_secondary_ids": [
+      "lumbar-strain",
+      "cervical-strain",
+      "sciatica"
+    ],
+    "why_common": "Frequently appears as a secondary or associated neurological issue with spine claims."
+  },
+  {
+    "id": "sciatica",
+    "name": "Sciatica / Radiculopathy",
+    "body_system": "Neurological",
+    "aliases": [
+      "radiculopathy",
+      "sciatic nerve pain"
+    ],
+    "summary": "Radiating pain or nerve symptoms from the spine into the extremities, commonly rated by nerve severity.",
+    "notes": "Often linked to lumbar or cervical spine conditions and needs side-specific functional evidence.",
+    "cfr": [
+      {
+        "title": "Schedule of ratings - neurological conditions",
+        "section": "38 CFR § 4.124a",
+        "diagnostic_code": "8520",
+        "url": "https://www.ecfr.gov/current/title-38/section-4.124a"
+      }
+    ],
+    "rating_logic": [
+      "Varies by severity of incomplete paralysis or complete paralysis of the affected nerve."
+    ],
+    "evidence_checklist": [
+      "Left/right side involvement",
+      "Pain, numbness, tingling, weakness",
+      "Neurological exam findings",
+      "Impact on standing, walking, sitting, or lifting"
+    ],
+    "common_secondary_ids": [
+      "lumbar-strain",
+      "cervical-strain"
+    ],
+    "why_common": "Very common secondary path from service-connected back or neck conditions."
+  },
+  {
+    "id": "lumbar-strain",
+    "name": "Lumbar Strain / Low Back Condition",
+    "body_system": "Musculoskeletal",
+    "aliases": [
+      "low back pain",
+      "lumbosacral strain",
+      "back strain"
+    ],
+    "summary": "Low back condition typically rated under the general rating formula for the spine.",
+    "notes": "Range of motion, flare-ups, painful motion, and functional loss are central.",
+    "cfr": [
+      {
+        "title": "Schedule of ratings - musculoskeletal system",
+        "section": "38 CFR § 4.71a",
+        "diagnostic_code": "5237",
+        "url": "https://www.ecfr.gov/current/title-38/section-4.71a"
+      }
+    ],
+    "rating_logic": [
+      "Generally rated based on thoracolumbar range of motion, guarding/spasm, ankylosis, and functional loss."
+    ],
+    "evidence_checklist": [
+      "Range of motion findings",
+      "Flare-up descriptions",
+      "Pain with standing, walking, sitting, bending, or lifting",
+      "Associated radiculopathy or neurological symptoms"
+    ],
+    "common_secondary_ids": [
+      "sciatica",
+      "depression",
+      "insomnia"
+    ],
+    "why_common": "One of the most common orthopedic claims and often drives secondary pain-related issues."
+  },
+  {
+    "id": "cervical-strain",
+    "name": "Cervical Strain / Neck Condition",
+    "body_system": "Musculoskeletal",
+    "aliases": [
+      "neck pain",
+      "cervical spine condition"
+    ],
+    "summary": "Neck condition rated under the general rating formula for the spine.",
+    "notes": "Range of motion, flare-ups, and associated upper-extremity nerve symptoms matter most.",
+    "cfr": [
+      {
+        "title": "Schedule of ratings - musculoskeletal system",
+        "section": "38 CFR § 4.71a",
+        "diagnostic_code": "5237",
+        "url": "https://www.ecfr.gov/current/title-38/section-4.71a"
+      }
+    ],
+    "rating_logic": [
+      "Generally rated based on cervical range of motion, guarding/spasm, ankylosis, and functional loss."
+    ],
+    "evidence_checklist": [
+      "Range of motion findings",
+      "Pain and stiffness pattern",
+      "Flare-up impact",
+      "Arm numbness, tingling, or weakness if present"
+    ],
+    "common_secondary_ids": [
+      "peripheral-neuropathy",
+      "migraines",
+      "insomnia"
+    ],
+    "why_common": "Common orthopedic claim that often connects to headaches or upper-extremity symptoms."
+  },
+  {
+    "id": "knee-flexion",
+    "name": "Knee Limitation of Flexion",
+    "body_system": "Musculoskeletal",
+    "aliases": [
+      "knee flexion",
+      "limited knee motion"
+    ],
+    "summary": "Knee condition evaluated by limitation of flexion and functional loss.",
+    "notes": "Painful motion, flare-ups, instability, and separate extension issues may all matter.",
+    "cfr": [
+      {
+        "title": "Schedule of ratings - musculoskeletal system",
+        "section": "38 CFR § 4.71a",
+        "diagnostic_code": "5260",
+        "url": "https://www.ecfr.gov/current/title-38/section-4.71a"
+      }
+    ],
+    "rating_logic": [
+      "0%, 10%, 20%, 30% depending on degree of limited flexion."
+    ],
+    "evidence_checklist": [
+      "Range of motion findings",
+      "Flare-up details",
+      "Instability, swelling, or locking if present",
+      "Impact on stairs, kneeling, squatting, standing, or walking"
+    ],
+    "common_secondary_ids": [
+      "knee-extension",
+      "plantar-fasciitis"
+    ],
+    "why_common": "A very common claim area where detailed functional examples improve the record."
+  },
+  {
+    "id": "knee-extension",
+    "name": "Knee Limitation of Extension",
+    "body_system": "Musculoskeletal",
+    "aliases": [
+      "knee extension",
+      "limited knee extension"
+    ],
+    "summary": "Knee condition evaluated by limitation of extension and functional loss.",
+    "notes": "Can sometimes be rated separately from limitation of flexion when supported.",
+    "cfr": [
+      {
+        "title": "Schedule of ratings - musculoskeletal system",
+        "section": "38 CFR § 4.71a",
+        "diagnostic_code": "5261",
+        "url": "https://www.ecfr.gov/current/title-38/section-4.71a"
+      }
+    ],
+    "rating_logic": [
+      "0%, 10%, 20%, 30%, 40%, 50% depending on degree of limited extension."
+    ],
+    "evidence_checklist": [
+      "Extension measurements",
+      "Painful motion and flare-up evidence",
+      "Functional loss with walking, stairs, or standing",
+      "Associated instability or brace use"
+    ],
+    "common_secondary_ids": [
+      "knee-flexion",
+      "plantar-fasciitis"
+    ],
+    "why_common": "Often paired with other knee findings and useful in more complete orthopedic theories."
+  },
+  {
+    "id": "shoulder-limitation",
+    "name": "Shoulder Limitation of Motion",
+    "body_system": "Musculoskeletal",
+    "aliases": [
+      "shoulder pain",
+      "limited shoulder motion"
+    ],
+    "summary": "Shoulder condition often rated by limitation of arm movement and functional loss.",
+    "notes": "Dominant versus non-dominant arm may matter for percentages.",
+    "cfr": [
+      {
+        "title": "Schedule of ratings - musculoskeletal system",
+        "section": "38 CFR § 4.71a",
+        "diagnostic_code": "5201",
+        "url": "https://www.ecfr.gov/current/title-38/section-4.71a"
+      }
+    ],
+    "rating_logic": [
+      "Percentages vary by whether motion is limited at shoulder level, midway, or to 25 degrees from side, and by dominant arm."
+    ],
+    "evidence_checklist": [
+      "Range of motion findings",
+      "Dominant arm",
+      "Pain with reaching or lifting",
+      "Functional loss at work or with daily tasks"
+    ],
+    "common_secondary_ids": [
+      "insomnia"
+    ],
+    "why_common": "A common motion-based orthopedic claim where concrete use limitations matter."
+  },
+  {
+    "id": "ankle-limitation",
+    "name": "Ankle Limitation of Motion",
+    "body_system": "Musculoskeletal",
+    "aliases": [
+      "ankle pain",
+      "limited ankle motion"
+    ],
+    "summary": "Ankle condition rated by severity of motion loss and functional impact.",
+    "notes": "Pain with walking, standing, or uneven surfaces often strengthens severity evidence.",
+    "cfr": [
+      {
+        "title": "Schedule of ratings - musculoskeletal system",
+        "section": "38 CFR § 4.71a",
+        "diagnostic_code": "5271",
+        "url": "https://www.ecfr.gov/current/title-38/section-4.71a"
+      }
+    ],
+    "rating_logic": [
+      "10%: moderate limitation of motion.",
+      "20%: marked limitation of motion."
+    ],
+    "evidence_checklist": [
+      "Range of motion findings",
+      "Instability or brace use",
+      "Pain with walking or standing",
+      "Flare-up details"
+    ],
+    "common_secondary_ids": [
+      "plantar-fasciitis"
+    ],
+    "why_common": "A frequent lower-extremity claim with clear functional examples."
+  },
+  {
+    "id": "plantar-fasciitis",
+    "name": "Plantar Fasciitis",
+    "body_system": "Musculoskeletal",
+    "aliases": [
+      "foot pain",
+      "heel pain"
+    ],
+    "summary": "Foot condition often involving heel or arch pain with standing and walking.",
+    "notes": "Treatment response, orthotics, and whether symptoms remain despite treatment can matter.",
+    "cfr": [
+      {
+        "title": "Schedule of ratings - musculoskeletal system",
+        "section": "38 CFR § 4.71a",
+        "diagnostic_code": "5269",
+        "url": "https://www.ecfr.gov/current/title-38/section-4.71a"
+      }
+    ],
+    "rating_logic": [
+      "10%, 20%, 30% depending on unilateral/bilateral severity and response to treatment."
+    ],
+    "evidence_checklist": [
+      "Pain with standing and walking",
+      "Orthotics or treatment history",
+      "Whether symptoms improve with treatment",
+      "Functional impact on work or mobility"
+    ],
+    "common_secondary_ids": [
+      "knee-flexion",
+      "ankle-limitation"
+    ],
+    "why_common": "Very common functional pain claim, especially when standing and walking are limited."
+  },
+  {
+    "id": "sleep-apnea",
+    "name": "Sleep Apnea",
+    "body_system": "Respiratory",
+    "aliases": [
+      "obstructive sleep apnea",
+      "OSA"
+    ],
+    "summary": "Sleep-disordered breathing often evaluated by sleep study results and treatment needs.",
+    "notes": "CPAP requirement is a major rating marker.",
+    "cfr": [
+      {
+        "title": "Schedule of ratings - respiratory system",
+        "section": "38 CFR § 4.97",
+        "diagnostic_code": "6847",
+        "url": "https://www.ecfr.gov/current/title-38/section-4.97"
+      }
+    ],
+    "rating_logic": [
+      "0%: asymptomatic but documented sleep disorder breathing.",
+      "30%: persistent daytime hypersomnolence.",
+      "50%: requires use of breathing assistance device such as CPAP.",
+      "100%: chronic respiratory failure with carbon dioxide retention or cor pulmonale, or tracheostomy."
+    ],
+    "evidence_checklist": [
+      "Sleep study or diagnosis",
+      "CPAP or other device use",
+      "Daytime fatigue or hypersomnolence",
+      "Relationship theory if claimed secondary"
+    ],
+    "common_secondary_ids": [
+      "ptsd",
+      "insomnia",
+      "hypertension"
+    ],
+    "why_common": "A frequent target for secondary theories and device-based rating discussions."
+  },
+  {
+    "id": "asthma",
+    "name": "Asthma",
+    "body_system": "Respiratory",
+    "aliases": [
+      "reactive airway disease"
+    ],
+    "summary": "Respiratory condition rated using pulmonary function testing and treatment intensity.",
+    "notes": "Frequency of attacks and steroid use can matter alongside PFTs.",
+    "cfr": [
+      {
+        "title": "Schedule of ratings - respiratory system",
+        "section": "38 CFR § 4.97",
+        "diagnostic_code": "6602",
+        "url": "https://www.ecfr.gov/current/title-38/section-4.97"
+      }
+    ],
+    "rating_logic": [
+      "Ratings vary by PFT results, frequency of exacerbations, physician visits, and steroid treatment."
+    ],
+    "evidence_checklist": [
+      "Pulmonary function testing",
+      "Medication or inhaler use",
+      "Frequency of attacks or flare-ups",
+      "Impact on exertion and activity"
+    ],
+    "common_secondary_ids": [
+      "sinusitis",
+      "rhinitis"
+    ],
+    "why_common": "Respiratory symptom claims often overlap with sinus and rhinitis evidence."
+  },
+  {
+    "id": "sinusitis",
+    "name": "Sinusitis",
+    "body_system": "Respiratory",
+    "aliases": [
+      "chronic sinusitis",
+      "sinus infections"
+    ],
+    "summary": "Sinus condition where rating often turns on episode frequency, antibiotic treatment, and symptoms like headaches or pain.",
+    "notes": "Documentation of incapacitating or non-incapacitating episodes helps a lot.",
+    "cfr": [
+      {
+        "title": "Schedule of ratings - respiratory system",
+        "section": "38 CFR § 4.97",
+        "diagnostic_code": "6510",
+        "url": "https://www.ecfr.gov/current/title-38/section-4.97"
+      }
+    ],
+    "rating_logic": [
+      "0%, 10%, 30%, 50% based on frequency and severity of episodes and surgical history."
+    ],
+    "evidence_checklist": [
+      "Frequency of episodes",
+      "Antibiotic treatment history",
+      "Pain, headaches, discharge, or crusting",
+      "Imaging or ENT records"
+    ],
+    "common_secondary_ids": [
+      "rhinitis",
+      "asthma",
+      "migraines"
+    ],
+    "why_common": "Common upper-airway claim with good room for timeline and treatment evidence."
+  },
+  {
+    "id": "rhinitis",
+    "name": "Rhinitis",
+    "body_system": "Respiratory",
+    "aliases": [
+      "allergic rhinitis",
+      "chronic rhinitis"
+    ],
+    "summary": "Nasal condition often rated based on obstruction and presence of polyps.",
+    "notes": "Objective findings like obstruction or polyps are especially useful.",
+    "cfr": [
+      {
+        "title": "Schedule of ratings - respiratory system",
+        "section": "38 CFR § 4.97",
+        "diagnostic_code": "6522",
+        "url": "https://www.ecfr.gov/current/title-38/section-4.97"
+      }
+    ],
+    "rating_logic": [
+      "10%: no polyps, but with greater than 50 percent obstruction of nasal passages on both sides or complete obstruction on one side.",
+      "30%: with polyps."
+    ],
+    "evidence_checklist": [
+      "Obstruction findings",
+      "Polyps if present",
+      "Medication history",
+      "Functional symptoms like congestion or breathing disruption"
+    ],
+    "common_secondary_ids": [
+      "sinusitis",
+      "sleep-apnea"
+    ],
+    "why_common": "Often paired with sinus and breathing complaints and common in presumptive discussions."
+  },
+  {
+    "id": "gerd",
+    "name": "GERD / Reflux Symptoms",
+    "body_system": "Digestive",
+    "aliases": [
+      "acid reflux",
+      "gastroesophageal reflux disease"
+    ],
+    "summary": "Digestive symptoms such as reflux, regurgitation, or heartburn often evaluated by analogy.",
+    "notes": "Severity evidence is stronger when it shows frequency, sleep disruption, diet impact, and medication use.",
+    "cfr": [
+      {
+        "title": "Schedule of ratings - digestive system",
+        "section": "38 CFR § 4.114",
+        "diagnostic_code": "7346",
+        "url": "https://www.ecfr.gov/current/title-38/section-4.114"
+      }
+    ],
+    "rating_logic": [
+      "Often rated by analogy to hiatal hernia criteria based on symptom severity and health impairment."
+    ],
+    "evidence_checklist": [
+      "Frequency of reflux or regurgitation",
+      "Medication use",
+      "Sleep disruption or diet changes",
+      "Impact on overall health or daily functioning"
+    ],
+    "common_secondary_ids": [
+      "anxiety",
+      "depression",
+      "ibs"
+    ],
+    "why_common": "A frequent chronic symptom claim, especially where medication and sleep impact are documented."
+  },
+  {
+    "id": "ibs",
+    "name": "Irritable Bowel Syndrome (IBS)",
+    "body_system": "Digestive",
+    "aliases": [
+      "bowel issues",
+      "irritable colon syndrome"
+    ],
+    "summary": "Digestive condition rated by severity of bowel disturbance and abdominal distress.",
+    "notes": "Frequency and severity details matter more than a short label alone.",
+    "cfr": [
+      {
+        "title": "Schedule of ratings - digestive system",
+        "section": "38 CFR § 4.114",
+        "diagnostic_code": "7319",
+        "url": "https://www.ecfr.gov/current/title-38/section-4.114"
+      }
+    ],
+    "rating_logic": [
+      "0%: mild.",
+      "10%: moderate; frequent episodes of bowel disturbance with abdominal distress.",
+      "30%: severe; diarrhea, or alternating diarrhea and constipation, with more or less constant abdominal distress."
+    ],
+    "evidence_checklist": [
+      "Frequency of diarrhea/constipation",
+      "Abdominal distress pattern",
+      "Diet changes or treatment",
+      "Work/travel/daily-life impact"
+    ],
+    "common_secondary_ids": [
+      "anxiety",
+      "ptsd",
+      "gerd"
+    ],
+    "why_common": "Often benefits from a strong symptom log and is common in chronic stress-related claim patterns."
+  },
+  {
+    "id": "hypertension",
+    "name": "Hypertension",
+    "body_system": "Cardiovascular",
+    "aliases": [
+      "high blood pressure"
+    ],
+    "summary": "High blood pressure claim typically evaluated by predominantly elevated readings and medication history.",
+    "notes": "Longitudinal blood pressure evidence helps more than isolated readings.",
+    "cfr": [
+      {
+        "title": "Schedule of ratings - cardiovascular system",
+        "section": "38 CFR § 4.104",
+        "diagnostic_code": "7101",
+        "url": "https://www.ecfr.gov/current/title-38/section-4.104"
+      }
+    ],
+    "rating_logic": [
+      "10%, 20%, 40%, 60% based on predominantly elevated systolic/diastolic readings and medication history."
+    ],
+    "evidence_checklist": [
+      "Serial blood pressure readings",
+      "Medication history",
+      "Diagnosis records",
+      "Any secondary relationship theory if applicable"
+    ],
+    "common_secondary_ids": [
+      "sleep-apnea",
+      "ptsd"
+    ],
+    "why_common": "Often appears in chronic-condition reviews and benefits from organized longitudinal readings."
+  },
+  {
+    "id": "erectile-dysfunction",
+    "name": "Erectile Dysfunction",
+    "body_system": "Genitourinary",
+    "aliases": [
+      "ED"
+    ],
+    "summary": "Condition often raised as a secondary issue related to mental health, medication, or other service-connected conditions.",
+    "notes": "Often important for secondary theory and special monthly compensation discussions.",
+    "cfr": [
+      {
+        "title": "Schedule of ratings - genitourinary system",
+        "section": "38 CFR § 4.115b",
+        "diagnostic_code": "7522",
+        "url": "https://www.ecfr.gov/current/title-38/section-4.115b"
+      }
+    ],
+    "rating_logic": [
+      "May involve schedular criteria plus consideration of SMC depending on facts."
+    ],
+    "evidence_checklist": [
+      "Diagnosis or treatment evidence",
+      "Medication side effects if relevant",
+      "Relationship to primary service-connected condition",
+      "Functional impact and chronology"
+    ],
+    "common_secondary_ids": [
+      "ptsd",
+      "depression",
+      "hypertension"
+    ],
+    "why_common": "A frequent secondary issue tied to medication side effects and chronic-condition theories."
+  },
+  {
+    "id": "scars",
+    "name": "Painful or Unstable Scars",
+    "body_system": "Skin",
+    "aliases": [
+      "scar",
+      "surgical scar"
+    ],
+    "summary": "Scar claims often turn on pain, instability, size, and number of scars.",
+    "notes": "Photos and descriptions of pain or instability can be helpful.",
+    "cfr": [
+      {
+        "title": "Schedule of ratings - skin",
+        "section": "38 CFR § 4.118",
+        "diagnostic_code": "7804",
+        "url": "https://www.ecfr.gov/current/title-38/section-4.118"
+      }
+    ],
+    "rating_logic": [
+      "10%, 20%, 30% based on number of painful or unstable scars, with possible additional considerations."
+    ],
+    "evidence_checklist": [
+      "Location and number of scars",
+      "Pain or instability",
+      "Size or measurements if relevant",
+      "Photos or treatment notes"
+    ],
+    "common_secondary_ids": [],
+    "why_common": "A common residual issue where good descriptive evidence can quickly strengthen the file."
+  }
+]

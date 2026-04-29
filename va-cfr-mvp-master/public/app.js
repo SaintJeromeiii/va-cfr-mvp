@@ -9073,8 +9073,11 @@ async function showDetail(id, pushState = true, jumpHint = "") {
     history.pushState({ id, jump: hint }, "", url);
   }
 
-  const res = await fetch(`/api/conditions/${id}`);
-  const item = await res.json();
+  const item = await loadConditionById(id);
+  if (!item) {
+    alert("Could not load that condition right now.");
+    return;
+  }
 
   renderDetail(item);
 
@@ -10385,9 +10388,44 @@ function binderStats(scope = "all") {
   return { total, unique: uniq.size };
 }
 
+async function loadConditions() {
+  const sources = ["/api/conditions", "/data/conditions.json"];
+
+  for (const source of sources) {
+    try {
+      const res = await fetch(source);
+      if (!res.ok) continue;
+      const items = await res.json();
+      if (Array.isArray(items) && items.length) {
+        return items;
+      }
+    } catch (error) {
+      console.warn(`Conditions load failed for ${source}`, error);
+    }
+  }
+
+  throw new Error("Could not load conditions from either the API or bundled data.");
+}
+
+async function loadConditionById(id) {
+  try {
+    const res = await fetch(`/api/conditions/${id}`);
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (error) {
+    console.warn(`Condition detail API load failed for ${id}`, error);
+  }
+
+  if (!Array.isArray(CONDITIONS) || !CONDITIONS.length) {
+    CONDITIONS = await loadConditions();
+  }
+
+  return CONDITIONS.find((item) => item.id === id) || null;
+}
+
 async function init() {
-  const res = await fetch("/api/conditions");
-  CONDITIONS = await res.json();
+  CONDITIONS = await loadConditions();
   renderQuickStartPlans();
 
   // Auto-import workspace from share link
@@ -11681,8 +11719,21 @@ function tryLoadFromPath() {
   }
 }
 
+async function registerServiceWorker() {
+  if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
+    return;
+  }
+
+  try {
+    await navigator.serviceWorker.register("/sw.js");
+  } catch (error) {
+    console.error("Service worker registration failed.", error);
+  }
+}
+
 if (typeof document !== "undefined" && document.addEventListener) {
   document.addEventListener("DOMContentLoaded", () => {
+    registerServiceWorker();
     init();
   });
 }

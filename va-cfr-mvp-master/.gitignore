@@ -19,6 +19,12 @@ node_modules/
 # Build output
 dist/
 build/
+android/.gradle/
+android/.idea/
+android/app/build/
+android/build/
+android/captures/
+android/local.properties
 
 # IDE-specific files
 .vscode/

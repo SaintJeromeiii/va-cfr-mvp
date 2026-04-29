@@ -17,6 +17,17 @@ The active app lives at the repository root:
 - `npm start` starts the production server.
 - `npm test` runs the automated test suite.
 - `npm run format` formats the repo with Prettier.
+- `npm run cap:copy` copies the current web app into a Capacitor shell.
+- `npm run cap:sync` syncs web and plugin changes into the Capacitor shell.
+- `npm run cap:add:android` creates the Android project after Capacitor packages are installed.
+- `npm run cap:open:android` opens the Android project in Android Studio after it exists.
+
+## Testing and Launch Prep
+
+- Use [TESTING_CHECKLIST.md](/Users/jeromeanderson/va-cfr-mvp/va-cfr-mvp-master/TESTING_CHECKLIST.md) for structured manual QA before wider testing.
+- See [PLAY_CONSOLE_NOTES.md](/Users/jeromeanderson/va-cfr-mvp/va-cfr-mvp-master/PLAY_CONSOLE_NOTES.md) for the difference between web testing and Google Play testing.
+- The app now includes a service worker at [public/sw.js](/Users/jeromeanderson/va-cfr-mvp/va-cfr-mvp-master/public/sw.js), an offline fallback at [public/offline.html](/Users/jeromeanderson/va-cfr-mvp/va-cfr-mvp-master/public/offline.html), and Capacitor config in [capacitor.config.json](/Users/jeromeanderson/va-cfr-mvp/va-cfr-mvp-master/capacitor.config.json) to support Android packaging work.
+- The generated Android shell now lives in [android/](/Users/jeromeanderson/va-cfr-mvp/va-cfr-mvp-master/android), so the project is ready for Android Studio, signing setup, and Play testing preparation.
 
 ## Improvements Added
 

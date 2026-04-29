@@ -1,0 +1,21 @@
+{
+  "name": "VA Claim Strategy Workspace",
+  "short_name": "VA Claim Strategy",
+  "id": "/",
+  "description": "Organize VA disability claim theory, evidence, timelines, and rating references in one workspace.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f3efe7",
+  "theme_color": "#f3efe7",
+  "categories": ["medical", "productivity", "education"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

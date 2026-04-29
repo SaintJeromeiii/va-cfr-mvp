@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title>VA Claim Strategy Workspace</title>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#1f5f8b"/>
+      <stop offset="100%" stop-color="#153f5d"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#bg)"/>
+  <path d="M18 18h18l10 10v18H18z" fill="#fdfaf5" opacity=".96"/>
+  <path d="M36 18v10h10" fill="none" stroke="#d7c9b1" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M25 37h14M25 44h10" stroke="#1f5f8b" stroke-width="4" stroke-linecap="round"/>
+</svg>
