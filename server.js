@@ -185,6 +185,8 @@ function readJsonLines(filePath, limit = 100) {
 
 const ALLOWED_ANALYTICS_EVENTS = new Set([
   'app_loaded',
+  'onboarding_shown',
+  'onboarding_skipped',
   'onboarding_completed',
   'search',
   'condition_opened',
