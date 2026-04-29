@@ -5,6 +5,21 @@ const WORKSPACE_STORE_KEY = "vaCfrWorkspaceStore:v1";
 let activeProjectId = "default";
 let workspaceSyncTimer = null;
 let workspaceSyncStatus = "Saved locally";
+const ANALYTICS_SESSION_ID = (() => {
+  try {
+    const key = "vaCfrAnalyticsSession:v1";
+    let id = sessionStorage.getItem(key);
+    if (!id) {
+      id = (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`);
+      sessionStorage.setItem(key, id);
+    }
+    return id;
+  } catch {
+    return `${Date.now()}-${Math.random()}`;
+  }
+})();
+let analyticsTimer = null;
+let lastSearchAnalytics = "";
 
 function normalize(s) {
   return (s || "").toLowerCase().trim();
@@ -777,13 +792,95 @@ function initializeLaunchModals() {
         body: JSON.stringify(payload)
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      trackEvent("feedback_submitted", { type: payload.type });
       if (status) status.textContent = "Thank you. Feedback saved.";
       const msg = document.getElementById("feedbackMessage");
       if (msg) msg.value = "";
+      trackEvent("feedback_submitted", { type: payload.type });
     } catch (err) {
       console.warn("feedback submit failed", err && err.message);
       if (status) status.textContent = "Could not submit. Please copy or email your feedback.";
     }
+  });
+}
+
+function initializeBetaOnboarding() {
+  const modal = document.getElementById("onboardingModal");
+  if (!modal) return;
+  const open = () => modal.classList.remove("hidden");
+  const close = () => modal.classList.add("hidden");
+  const doneKey = "vaCfrOnboardingComplete:v1";
+  const typeSelect = document.getElementById("onboardingClaimType");
+  const primaryInput = document.getElementById("onboardingPrimary");
+
+  if (!localStorage.getItem(doneKey)) {
+    setTimeout(open, 500);
+  }
+
+  document.getElementById("onboardingSkip")?.addEventListener("click", () => {
+    localStorage.setItem(doneKey, "skipped");
+    close();
+    trackEvent("onboarding_skipped");
+  });
+
+  document.getElementById("onboardingStart")?.addEventListener("click", () => {
+    localStorage.setItem(doneKey, "complete");
+    close();
+    const type = typeSelect?.value || "new";
+    const primary = (primaryInput?.value || "").trim();
+    trackEvent("onboarding_completed", { type, hasPrimary: primary ? "true" : "false" });
+    const q = document.getElementById("q");
+    if (q && primary) {
+      q.value = primary;
+      q.dispatchEvent(new Event("input", { bubbles: true }));
+      q.focus();
+    }
+    document.querySelector(".navTab[data-panel-target='searchPanel']")?.click();
+  });
+}
+
+function trackEvent(name, meta = {}) {
+  const safeName = String(name || "").slice(0, 80);
+  if (!safeName) return;
+  const safeMeta = {};
+  Object.entries(meta || {}).forEach(([key, value]) => {
+    if (value == null) return;
+    safeMeta[String(key).slice(0, 40)] = String(value).slice(0, 120);
+  });
+  if (navigator.sendBeacon) {
+    const blob = new Blob([JSON.stringify({ event: safeName, meta: safeMeta })], { type: "application/json" });
+    if (navigator.sendBeacon("/api/analytics", blob)) return;
+  }
+  fetch("/api/analytics", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ event: safeName, meta: safeMeta }),
+    keepalive: true
+  }).catch(() => {});
+}
+
+function initializeBetaOnboarding() {
+  const modal = document.getElementById("onboardingModal");
+  if (!modal) return;
+  const key = "vaCfrBetaOnboardingSeen:v1";
+  const close = () => {
+    localStorage.setItem(key, "1");
+    modal.classList.add("hidden");
+  };
+  if (!localStorage.getItem(key)) {
+    modal.classList.remove("hidden");
+    trackEvent("onboarding_shown");
+  }
+  document.getElementById("onboardingStart")?.addEventListener("click", () => {
+    const goal = document.getElementById("onboardingGoal")?.value || "undisclosed";
+    const storage = document.getElementById("onboardingStorage")?.value || "undisclosed";
+    localStorage.setItem("vaCfrBetaOnboarding:v1", JSON.stringify({ goal, storage, at: new Date().toISOString() }));
+    trackEvent("onboarding_completed", { goal, storage });
+    close();
+  });
+  document.getElementById("onboardingSkip")?.addEventListener("click", () => {
+    trackEvent("onboarding_skipped");
+    close();
   });
 }
 

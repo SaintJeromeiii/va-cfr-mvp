@@ -11,6 +11,7 @@ Use this before making the app available to a public audience.
 - `SESSION_ROTATE_ON_LOGIN=true` unless you have a reason to keep concurrent sessions
 - `MAX_SESSIONS_PER_USER` set to a small, documented value
 - `AUDIT_LOG_RETENTION_DAYS` set to your retention policy
+- `AUTH_RATE_LIMIT_MAX`, `FEEDBACK_RATE_LIMIT_MAX`, and `ANALYTICS_RATE_LIMIT_MAX` reviewed for beta traffic
 
 ## Security
 
@@ -46,6 +47,8 @@ Use this before making the app available to a public audience.
 
 ## QA
 
+- Check `/healthz` returns `ok`.
+- Check `/readyz` returns `ok` before sending beta traffic.
 - Run `node scripts/validate_conditions.js`.
 - Run `npm run test:e2e`.
 - Smoke test mobile widths for search, workspace, auth, export, and feedback.
@@ -56,4 +59,5 @@ Use this before making the app available to a public audience.
 
 - Monitor server logs for errors after launch.
 - Review `data/feedback.log` regularly for incorrect CFR reports and condition requests.
+- Review `data/analytics.log` only for aggregate usage patterns; do not treat it as user research about private claim details.
 - Keep a rollback plan: record the last known-good Git commit before deployment.

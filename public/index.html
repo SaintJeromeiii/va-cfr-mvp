@@ -373,6 +373,39 @@
     </section>
   </div>
 
+  <div id="onboardingModal" class="modalOverlay hidden" role="dialog" aria-modal="true" aria-labelledby="onboardingTitle">
+    <section class="modalCard">
+      <button id="onboardingClose" class="modalClose" type="button" aria-label="Close onboarding">×</button>
+      <p class="eyebrow">Private beta onboarding</p>
+      <h2 id="onboardingTitle">Set up your first claim packet</h2>
+      <p class="small">This quick setup is stored only in this browser unless you sign in. Do not enter private identifiers.</p>
+      <div class="onboardingSteps">
+        <label class="fieldLabel">
+          What are you working on?
+          <select id="onboardingClaimType">
+            <option value="new">New claim</option>
+            <option value="increase">Increase</option>
+            <option value="secondary">Secondary condition</option>
+            <option value="appeal">Appeal / supplemental</option>
+            <option value="research">Research only</option>
+          </select>
+        </label>
+        <label class="fieldLabel">
+          First condition or keyword
+          <input id="onboardingCondition" placeholder="e.g., tinnitus, PTSD, back pain" />
+        </label>
+        <label class="fieldLabel">
+          Packet name
+          <input id="onboardingPacketName" placeholder="e.g., PTSD increase" />
+        </label>
+      </div>
+      <div class="modalActions">
+        <button id="onboardingSkip" class="miniBtn" type="button">Skip for now</button>
+        <button id="onboardingStart" class="miniBtn" type="button">Start packet</button>
+      </div>
+    </section>
+  </div>
+
   <script src="/app.js"></script>
   <script src="/js/intelligence.js"></script>
 </body>
