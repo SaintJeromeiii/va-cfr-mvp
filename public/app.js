@@ -6,16 +6,22 @@ let activeProjectId = "default";
 let workspaceSyncTimer = null;
 let workspaceSyncStatus = "Saved locally";
 const ANALYTICS_SESSION_ID = (() => {
+  const makeId = () => {
+    if (crypto.randomUUID) return crypto.randomUUID();
+    const bytes = new Uint32Array(4);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes, n => n.toString(16).padStart(8, "0")).join("-");
+  };
   try {
     const key = "vaCfrAnalyticsSession:v1";
     let id = sessionStorage.getItem(key);
     if (!id) {
-      id = (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`);
+      id = makeId();
       sessionStorage.setItem(key, id);
     }
     return id;
   } catch {
-    return `${Date.now()}-${Math.random()}`;
+    return makeId();
   }
 })();
 let analyticsTimer = null;
