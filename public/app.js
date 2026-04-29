@@ -441,8 +441,8 @@ function switchProject(projectId) {
   refreshWorkspaceViews();
 }
 
-function addProject() {
-  const name = prompt("Name this claim packet:", "New Claim Packet");
+function addProject(nameFromInput = "") {
+  const name = nameFromInput || prompt("Name this claim packet:", "New Claim Packet");
   if (!name || !name.trim()) return;
   const store = loadProjectStore();
   const project = createProject(name.trim());
@@ -486,26 +486,29 @@ function refreshWorkspaceViews() {
 }
 
 function initializeGuidedTabs() {
-  const tabs = Array.from(document.querySelectorAll(".sectionTab[data-section-target]"));
+  const tabs = Array.from(document.querySelectorAll(".navTab[data-panel-target]"));
   if (!tabs.length) return;
 
   function activate(targetId) {
     tabs.forEach(tab => {
-      const active = tab.dataset.sectionTarget === targetId;
+      const active = tab.dataset.panelTarget === targetId;
       tab.classList.toggle("active", active);
       tab.setAttribute("aria-selected", active ? "true" : "false");
     });
 
-    document.querySelectorAll("[data-app-section]").forEach(section => {
-      section.classList.toggle("sectionHidden", section.id !== targetId);
+    document.querySelectorAll(".appPanel").forEach(section => {
+      section.classList.toggle("active", section.id === targetId);
     });
+
+    const activePanel = document.getElementById(targetId);
+    if (activePanel) activePanel.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   tabs.forEach(tab => {
-    tab.addEventListener("click", () => activate(tab.dataset.sectionTarget));
+    tab.addEventListener("click", () => activate(tab.dataset.panelTarget));
   });
 
-  activate(tabs[0].dataset.sectionTarget);
+  activate(document.querySelector(".appPanel.active")?.id || tabs[0].dataset.panelTarget);
 }
 
 function renderSourceFreshness() {
@@ -526,43 +529,15 @@ function getChecklistGuidance(item, state) {
   return "Checklist complete for this condition. Review notes, dates, and source links before exporting the packet.";
 }
 
-function setupGuidedNavigation() {
-  const navBtns = Array.from(document.querySelectorAll(".navTab[data-target]"));
-  if (!navBtns.length) return;
-  const sections = Array.from(document.querySelectorAll(".appSection"));
-  function activate(targetId) {
-    navBtns.forEach(btn => btn.classList.toggle("active", btn.dataset.target === targetId));
-    sections.forEach(section => section.classList.toggle("active", section.id === targetId));
-    const active = document.getElementById(targetId);
-    if (active) active.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-  navBtns.forEach(btn => btn.addEventListener("click", () => activate(btn.dataset.target)));
-}
-
-function initAppNavigation() {
-  const tabs = [...document.querySelectorAll(".navTab")];
-  const sections = [...document.querySelectorAll(".appSection")];
-  if (!tabs.length || !sections.length) return;
-
-  function activate(target) {
-    tabs.forEach(tab => tab.classList.toggle("active", tab.dataset.target === target));
-    sections.forEach(section => section.classList.toggle("active", section.id === target));
-  }
-
-  tabs.forEach(tab => {
-    tab.addEventListener("click", () => activate(tab.dataset.target));
-  });
-
-  document.querySelectorAll("[data-jump-section]").forEach(btn => {
-    btn.addEventListener("click", () => activate(btn.dataset.jumpSection));
-  });
-}
-
 function initProjectControls() {
   migrateLegacyWorkspaceIfNeeded();
   renderProjectSelector();
   document.getElementById("claimProjectSelect")?.addEventListener("change", e => switchProject(e.target.value));
-  document.getElementById("claimProjectNew")?.addEventListener("click", addProject);
+  document.getElementById("claimProjectAdd")?.addEventListener("click", () => {
+    const input = document.getElementById("claimProjectName");
+    addProject(input?.value || "");
+    if (input) input.value = "";
+  });
   document.getElementById("claimProjectRename")?.addEventListener("click", renameActiveProject);
 }
 
@@ -4072,18 +4047,14 @@ async function init() {
   const filter = document.getElementById("systemFilter");
   const clearBtn = document.getElementById("clearBtn");
 
-  migrateLegacyWorkspaceIfNeeded();
   initializeGuidedTabs();
   renderSourceFreshness();
-  renderProjectSelector();
   hydrateWorkspaceStoreFromServer().then(() => {
     renderProjectSelector();
     refreshWorkspaceViews();
   });
 
-  document.getElementById("claimProjectSelect")?.addEventListener("change", (e) => switchProject(e.target.value));
-  document.getElementById("claimProjectAdd")?.addEventListener("click", addProject);
-  document.getElementById("claimProjectRename")?.addEventListener("click", renameActiveProject);
+  initProjectControls();
 
   // Prevent default submit on auth form (moved from inline HTML to satisfy CSP)
   const authForm = document.getElementById('authForm');
@@ -4234,13 +4205,6 @@ async function init() {
       downloadText(`claim_workspace_packet.txt`, text);
     });
   }
-
-  const claimProjectSelect = document.getElementById("claimProjectSelect");
-  const claimProjectNew = document.getElementById("claimProjectNew");
-  const claimProjectRename = document.getElementById("claimProjectRename");
-  if (claimProjectSelect) claimProjectSelect.addEventListener("change", () => switchProject(claimProjectSelect.value));
-  if (claimProjectNew) claimProjectNew.addEventListener("click", addProject);
-  if (claimProjectRename) claimProjectRename.addEventListener("click", renameActiveProject);
 
   // Health panel buttons
   const wsFixOrphans = document.getElementById("wsFixOrphans");
