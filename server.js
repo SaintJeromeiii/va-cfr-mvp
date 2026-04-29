@@ -50,6 +50,27 @@ if (process.env.NODE_ENV === 'production') {
   } catch (e) { console.warn('rateLimit not enabled', e && e.message); }
 }
 
+let authLimiter = (req, res, next) => next();
+let feedbackLimiter = (req, res, next) => next();
+try {
+  authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: parseInt(process.env.AUTH_RATE_LIMIT_MAX || '20', 10),
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many sign-in attempts. Please wait and try again.' }
+  });
+} catch (e) { console.warn('auth rateLimit not enabled', e && e.message); }
+try {
+  feedbackLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: parseInt(process.env.FEEDBACK_RATE_LIMIT_MAX || '10', 10),
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many feedback submissions. Please wait and try again.' }
+  });
+} catch (e) { console.warn('feedback rateLimit not enabled', e && e.message); }
+
 function parseCookies(req) {
   const header = req.headers && req.headers.cookie;
   const obj = {};
@@ -462,8 +483,35 @@ app.put('/api/workspaces', (req, res) => {
   }
 });
 
+app.post('/api/feedback', feedbackLimiter, (req, res) => {
+  const type = String((req.body && req.body.type) || 'general').slice(0, 40);
+  const message = String((req.body && req.body.message) || '').trim();
+  const conditionId = String((req.body && req.body.conditionId) || '').slice(0, 120);
+  const sourceUrl = String((req.body && req.body.sourceUrl) || '').slice(0, 500);
+  if (!message || message.length < 5) return res.status(400).json({ error: 'feedback message required' });
+  if (message.length > 2000) return res.status(400).json({ error: 'feedback message too long' });
+  const token = sidFromReq(req) || (req.get('authorization') || '').replace(/^Bearer\s+/, '');
+  const user = getUserByToken(token);
+  try {
+    ensureDataDirs();
+    const entry = {
+      ts: new Date().toISOString(),
+      type,
+      conditionId,
+      sourceUrl,
+      message,
+      user: user ? user.username : null
+    };
+    fs.appendFileSync(path.join(DATA_DIR, 'feedback.log'), JSON.stringify(entry) + '\n', 'utf8');
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error('Could not save feedback', e);
+    return res.status(500).json({ error: 'Could not save feedback' });
+  }
+});
+
 // Auth endpoints
-app.post('/api/register', (req, res) => {
+app.post('/api/register', authLimiter, (req, res) => {
   const username = req.body && String(req.body.username || '').trim();
   const password = req.body && String(req.body.password || '');
   if (!username || !password) return res.status(400).json({ error: 'username and password required' });
@@ -482,7 +530,7 @@ app.post('/api/register', (req, res) => {
   res.json({ username });
 });
 
-app.post('/api/login', (req, res) => {
+app.post('/api/login', authLimiter, (req, res) => {
   const username = req.body && String(req.body.username || '').trim();
   const password = req.body && String(req.body.password || '');
   if (!username || !password) return res.status(400).json({ error: 'username and password required' });

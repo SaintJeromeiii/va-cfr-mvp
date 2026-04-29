@@ -727,6 +727,66 @@ function initializeGuidedTabs() {
   activate(document.querySelector(".appPanel.active")?.id || tabs[0].dataset.panelTarget);
 }
 
+function initializeLaunchModals() {
+  const privacyModal = document.getElementById("privacyModal");
+  const feedbackModal = document.getElementById("feedbackModal");
+  const openModal = modal => modal?.classList.remove("hidden");
+  const closeModal = modal => modal?.classList.add("hidden");
+
+  ["privacyNoticeOpen", "privacyNoticeFooter"].forEach(id => {
+    document.getElementById(id)?.addEventListener("click", () => openModal(privacyModal));
+  });
+  ["privacyModalClose", "privacyAcknowledge"].forEach(id => {
+    document.getElementById(id)?.addEventListener("click", () => closeModal(privacyModal));
+  });
+  document.getElementById("privacyDownloadData")?.addEventListener("click", exportLocalData);
+
+  ["feedbackOpen", "feedbackFooter"].forEach(id => {
+    document.getElementById(id)?.addEventListener("click", () => {
+      const status = document.getElementById("feedbackStatus");
+      if (status) status.textContent = "";
+      openModal(feedbackModal);
+    });
+  });
+  document.getElementById("feedbackModalClose")?.addEventListener("click", () => closeModal(feedbackModal));
+
+  async function feedbackPayload() {
+    const type = document.getElementById("feedbackType")?.value || "General feedback";
+    const message = (document.getElementById("feedbackMessage")?.value || "").trim();
+    return { type, message, page: window.location.pathname + window.location.search };
+  }
+
+  document.getElementById("feedbackCopy")?.addEventListener("click", async () => {
+    const payload = await feedbackPayload();
+    await navigator.clipboard.writeText(`[${payload.type}]\n${payload.message}\nPage: ${payload.page}`);
+    const status = document.getElementById("feedbackStatus");
+    if (status) status.textContent = "Feedback copied.";
+  });
+
+  document.getElementById("feedbackSubmit")?.addEventListener("click", async () => {
+    const status = document.getElementById("feedbackStatus");
+    const payload = await feedbackPayload();
+    if (!payload.message) {
+      if (status) status.textContent = "Please add a short message first.";
+      return;
+    }
+    try {
+      const res = await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (status) status.textContent = "Thank you. Feedback saved.";
+      const msg = document.getElementById("feedbackMessage");
+      if (msg) msg.value = "";
+    } catch (err) {
+      console.warn("feedback submit failed", err && err.message);
+      if (status) status.textContent = "Could not submit. Please copy or email your feedback.";
+    }
+  });
+}
+
 function renderSourceFreshness() {
   const footer = document.getElementById("sourceFreshness");
   if (footer) {
@@ -4244,6 +4304,7 @@ async function init() {
   refreshWorkspaceViews();
   renderSourceFreshness();
   initializeGuidedTabs();
+  initializeLaunchModals();
 
   // Auto-import workspace from share link
   const params = new URLSearchParams(window.location.search);
