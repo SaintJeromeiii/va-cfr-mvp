@@ -81,7 +81,9 @@ The active app lives at the repository root:
 - The browse layer now remembers recent conditions, supports pinned favorites, and offers common-secondary bundles for faster workspace scaffolding
 - Featured homepage condition cards now show common connection hints, and a first-time guided setup wizard now helps new users choose between a primary-condition path, a secondary bundle, or a quick-start plan
 - The onboarding wizard now remembers its last-used path and selections locally, and featured condition cards now explain why each condition is a common starting point
+- The onboarding wizard state is now included in full backups and workspace profiles, so the `Start Here` flow restores exactly where the user left it
 - The homepage now includes a live recommended-next-action card plus a local usage snapshot that surfaces the most-used conditions, bundles, and quick-start plans
+- Homepage favorites, recent conditions, and usage snapshot history are now included in full backups and workspace profiles so the personalized browse experience survives restores
 - Document Intake now includes a richer evidence extractor that pulls out likely providers, symptoms, diagnosis/severity/nexus phrases, and dates, with one-click actions into notes, timelines, and the evidence library
 - Document Intake now supports `.pdf` and `.docx` extraction in addition to plain-text files, so uploaded records can flow into the same intake and evidence workflow
 - The Evidence Extractor now includes an excerpt review workspace where users can edit, reject, and de-duplicate extracted phrases before applying them
@@ -95,6 +97,12 @@ The active app lives at the repository root:
 - The saved packet library can now be filtered by purpose tag and target condition, which makes larger packet sets much easier to narrow quickly
 - The saved packet library can now also be sorted by newest, target condition, or purpose tag so filtered packet sets are easier to organize
 - Important saved packets can now be pinned to the top of the library so key draft packets stay visible regardless of sort order
+- Saved packets can now be archived out of the active library view and restored later with an archived-packets view, so older drafts can be hidden without being deleted
+- The saved packet library now supports bulk selection, bulk archive/restore, and bulk apply actions so larger packet sets can be managed much faster
+- The saved packet library now also supports bulk retagging and bulk delete actions, so packet cleanup and reorganization are faster once the library grows
+- The bulk packet toolbar now includes one-click saved tag presets like `Nexus Draft`, `Rep Handoff`, `Timeline Review`, and `Severity Review` for faster packet triage
+- You can also save and delete your own custom packet tag presets locally, and they appear alongside the built-in presets in the bulk packet toolbar
+- Custom packet presets are now included in full backup exports/imports and saved workspace profiles, so your preset workflows carry across restores and profile loads
 - Extractor application history now shows which extracted phrases were applied to which condition, when, and from which source document
 - Guided condition forms now include stronger digestive-condition prompts, and Representative Handoff now includes a compact review snapshot above the full handoff text
 - Removal of the unused `public/js/intelligence.js` experimental script

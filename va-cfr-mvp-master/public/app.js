@@ -4,6 +4,15 @@ let PENDING_COVERAGE_FOCUS = null;
 let EXTRACTOR_PACKET_COMPARE_STATE = { leftId: "", rightId: "" };
 let EXTRACTOR_PACKET_FILTER_STATE = { tag: "", targetId: "" };
 let EXTRACTOR_PACKET_SORT_STATE = "newest";
+let EXTRACTOR_PACKET_SHOW_ARCHIVED = false;
+let EXTRACTOR_PACKET_SELECTION = [];
+const EXTRACTOR_PACKET_TAG_PRESETS = {
+  nexus_draft: ["nexus draft", "evidence gap review"],
+  rep_handoff: ["rep handoff candidate", "theory review"],
+  timeline_review: ["timeline-heavy", "timeline review"],
+  severity_review: ["severity-focused", "rating review"],
+};
+const EXTRACTOR_PACKET_CUSTOM_PRESETS_KEY = "vaCfrExtractorPacketCustomPresets:v1";
 const WS_RATING_STATE_KEY = "vaCfrWorkspaceRatingEstimator:v1";
 const WS_THEORY_STATE_KEY = "vaCfrWorkspaceTheories:v1";
 const WS_RATING_SCENARIOS_KEY = "vaCfrWorkspaceRatingScenarios:v1";
@@ -584,10 +593,15 @@ function buildWorkspaceBackup() {
     documentLibrary: loadDocumentLibrary(),
     evidenceLibrary: loadEvidenceLibrary(),
     extractorPacketLibrary: loadExtractorPacketLibrary(),
+    extractorPacketCustomPresets: loadExtractorPacketCustomPresets(),
     extractorHistory: loadExtractorHistory(),
     snapshots: loadWorkspaceSnapshots(),
     snapshotHistory: loadSnapshotHistory(),
     activity: loadWorkspaceActivity(),
+    recentConditions: loadRecentConditions(),
+    favoriteConditions: loadFavoriteConditions(),
+    onboardingWizardState: loadOnboardingWizardState(),
+    homeUsage: loadHomeUsageStats(),
     theme: localStorage.getItem("vaCfrTheme") || ""
   };
 }
@@ -630,10 +644,15 @@ function applyWorkspaceBackup(backup) {
   saveDocumentLibrary(Array.isArray(backup.documentLibrary) ? backup.documentLibrary : []);
   saveEvidenceLibrary(Array.isArray(backup.evidenceLibrary) ? backup.evidenceLibrary : []);
   saveExtractorPacketLibrary(Array.isArray(backup.extractorPacketLibrary) ? backup.extractorPacketLibrary : []);
+  saveExtractorPacketCustomPresets(Array.isArray(backup.extractorPacketCustomPresets) ? backup.extractorPacketCustomPresets : []);
   saveExtractorHistory(Array.isArray(backup.extractorHistory) ? backup.extractorHistory : []);
   saveWorkspaceSnapshots(Array.isArray(backup.snapshots) ? backup.snapshots : []);
   saveSnapshotHistory(Array.isArray(backup.snapshotHistory) ? backup.snapshotHistory : []);
   saveWorkspaceActivity(Array.isArray(backup.activity) ? backup.activity : []);
+  saveRecentConditions(Array.isArray(backup.recentConditions) ? backup.recentConditions : []);
+  saveFavoriteConditions(Array.isArray(backup.favoriteConditions) ? backup.favoriteConditions : []);
+  saveOnboardingWizardState(backup.onboardingWizardState && typeof backup.onboardingWizardState === "object" ? backup.onboardingWizardState : {});
+  saveHomeUsageStats(backup.homeUsage && typeof backup.homeUsage === "object" ? backup.homeUsage : { conditions: {}, bundles: {}, plans: {} });
 
   if (typeof backup.theme === "string" && backup.theme) {
     localStorage.setItem("vaCfrTheme", backup.theme);
@@ -653,10 +672,15 @@ function emptyWorkspaceBackup() {
     documentLibrary: [],
     evidenceLibrary: [],
     extractorPacketLibrary: [],
+    extractorPacketCustomPresets: [],
     extractorHistory: [],
     snapshots: [],
     snapshotHistory: [],
     activity: [],
+    recentConditions: [],
+    favoriteConditions: [],
+    onboardingWizardState: {},
+    homeUsage: { conditions: {}, bundles: {}, plans: {} },
     theme: localStorage.getItem("vaCfrTheme") || ""
   };
 }
@@ -2271,13 +2295,64 @@ function saveExtractorPacketLibrary(items) {
   localStorage.setItem(EXTRACTOR_PACKET_LIBRARY_KEY, JSON.stringify(Array.isArray(items) ? items : []));
 }
 
+function normalizeExtractorPacketTags(raw) {
+  if (Array.isArray(raw)) {
+    return raw.map((item) => String(item || "").trim()).filter(Boolean);
+  }
+  return String(raw || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function loadExtractorPacketCustomPresets() {
+  try {
+    const raw = localStorage.getItem(EXTRACTOR_PACKET_CUSTOM_PRESETS_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed)
+      ? parsed
+          .map((item) => ({
+            id: String(item?.id || "").trim(),
+            label: String(item?.label || "").trim(),
+            tags: normalizeExtractorPacketTags(item?.tags || []),
+          }))
+          .filter((item) => item.id && item.label && item.tags.length)
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveExtractorPacketCustomPresets(items) {
+  localStorage.setItem(EXTRACTOR_PACKET_CUSTOM_PRESETS_KEY, JSON.stringify(Array.isArray(items) ? items : []));
+}
+
+function buildExtractorPacketPresetOptions() {
+  const builtIns = Object.entries(EXTRACTOR_PACKET_TAG_PRESETS).map(([id, tags]) => ({
+    id,
+    label: id
+      .split("_")
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" "),
+    tags: normalizeExtractorPacketTags(tags),
+    builtIn: true,
+  }));
+  const custom = loadExtractorPacketCustomPresets().map((preset) => ({
+    ...preset,
+    id: `custom:${preset.id}`,
+    builtIn: false,
+  }));
+  return [...builtIns, ...custom];
+}
+
+function getExtractorPacketPresetTags(key) {
+  const options = buildExtractorPacketPresetOptions();
+  const match = options.find((option) => option.id === key);
+  return normalizeExtractorPacketTags(match?.tags || []);
+}
+
 function createExtractorPacketRecord(options = {}) {
-  const tags = Array.isArray(options.tags)
-    ? options.tags
-    : String(options.tags || "")
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean);
+  const tags = normalizeExtractorPacketTags(options.tags);
   return {
     id: `extractor-packet-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     targetId: (options.targetId || "").trim(),
@@ -2286,9 +2361,84 @@ function createExtractorPacketRecord(options = {}) {
     title: (options.title || "").trim() || `Extractor Draft Packet ${new Date().toLocaleString()}`,
     tags,
     pinned: !!options.pinned,
+    archived: !!options.archived,
     text: (options.text || "").trim(),
     compare: options.compare && typeof options.compare === "object" ? options.compare : {},
     createdAt: new Date().toISOString(),
+  };
+}
+
+function filterExtractorPacketSelection(allPackets = [], selectedIds = []) {
+  const validIds = new Set((allPackets || []).map((packet) => packet.id).filter(Boolean));
+  return [...new Set((selectedIds || []).filter((id) => validIds.has(id)))];
+}
+
+function buildExtractorPacketBulkActionPlan(packets = []) {
+  const selected = Array.isArray(packets) ? packets.filter(Boolean) : [];
+  return {
+    selectedCount: selected.length,
+    archivedCount: selected.filter((packet) => !!packet.archived).length,
+    activeCount: selected.filter((packet) => !packet.archived).length,
+    appliableCount: selected.filter((packet) => !!packet.targetId).length,
+  };
+}
+
+function applyExtractorPacketToCondition(packet) {
+  if (!packet?.targetId) return null;
+  const preview = buildExtractorPacketPreview(packet);
+  const plan = computeExtractorApplyNewPlan(preview, {
+    notes: loadNotes(packet.targetId),
+    timeline: loadTimeline(packet.targetId),
+    evidenceLinks: loadEvidenceLinks(packet.targetId),
+  });
+
+  if (!plan.noteSummary && !plan.timelineEntries.length && !plan.evidenceRecord) {
+    return null;
+  }
+
+  if (plan.noteSummary) {
+    const existingNotes = (loadNotes(packet.targetId) || "").trim();
+    saveNotes(packet.targetId, existingNotes ? `${existingNotes}\n\n${plan.noteSummary}` : plan.noteSummary);
+  }
+
+  if (plan.timelineEntries.length) {
+    const entries = loadTimeline(packet.targetId);
+    plan.timelineEntries.forEach((previewEntry) => {
+      entries.push({
+        id: `extractor-packet-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        date: previewEntry.date,
+        type: previewEntry.type,
+        note: previewEntry.note,
+      });
+    });
+    saveTimeline(packet.targetId, entries);
+  }
+
+  if (plan.evidenceRecord) {
+    const record = createEvidenceLibraryRecord({
+      label: plan.evidenceRecord.label,
+      type: plan.evidenceRecord.type,
+      excerpt: plan.evidenceRecord.excerpt,
+      tags: plan.evidenceRecord.tags,
+    });
+    saveEvidenceLibrary([record, ...loadEvidenceLibrary()].slice(0, 60));
+    const links = loadEvidenceLinks(packet.targetId);
+    links.unshift({
+      id: `extractor-packet-ev-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      label: record.label,
+      url: "",
+      type: record.type || "Other",
+      date: plan.evidenceRecord.date || "",
+      note: record.excerpt || "",
+      created_at: Date.now(),
+    });
+    saveEvidenceLinks(packet.targetId, links);
+  }
+
+  return {
+    noteApplied: !!plan.noteSummary,
+    timelineCount: plan.timelineEntries.length,
+    evidenceApplied: !!plan.evidenceRecord,
   };
 }
 
@@ -5042,6 +5192,7 @@ function renderExtractorPacketLibrary() {
 
   const allTags = [...new Set(allPackets.flatMap((packet) => Array.isArray(packet.tags) ? packet.tags : []))].sort();
   const allTargets = [...new Set(allPackets.map((packet) => packet.targetId).filter(Boolean))];
+  const presetOptions = buildExtractorPacketPresetOptions();
   if (EXTRACTOR_PACKET_FILTER_STATE.tag && !allTags.includes(EXTRACTOR_PACKET_FILTER_STATE.tag)) {
     EXTRACTOR_PACKET_FILTER_STATE.tag = "";
   }
@@ -5049,9 +5200,10 @@ function renderExtractorPacketLibrary() {
     EXTRACTOR_PACKET_FILTER_STATE.targetId = "";
   }
   const packets = allPackets.filter((packet) => {
+    const archiveOk = EXTRACTOR_PACKET_SHOW_ARCHIVED ? !!packet.archived : !packet.archived;
     const tagOk = !EXTRACTOR_PACKET_FILTER_STATE.tag || (packet.tags || []).includes(EXTRACTOR_PACKET_FILTER_STATE.tag);
     const targetOk = !EXTRACTOR_PACKET_FILTER_STATE.targetId || packet.targetId === EXTRACTOR_PACKET_FILTER_STATE.targetId;
-    return tagOk && targetOk;
+    return archiveOk && tagOk && targetOk;
   });
   packets.sort((a, b) => {
     if (!!a.pinned !== !!b.pinned) {
@@ -5067,6 +5219,10 @@ function renderExtractorPacketLibrary() {
     }
     return (b.createdAt || "").localeCompare(a.createdAt || "");
   });
+  EXTRACTOR_PACKET_SELECTION = filterExtractorPacketSelection(allPackets, EXTRACTOR_PACKET_SELECTION);
+  const selectedVisiblePackets = packets.filter((packet) => EXTRACTOR_PACKET_SELECTION.includes(packet.id));
+  const bulkPlan = buildExtractorPacketBulkActionPlan(selectedVisiblePackets);
+  const allVisibleSelected = packets.length > 0 && packets.every((packet) => EXTRACTOR_PACKET_SELECTION.includes(packet.id));
 
   if (!packets.length) {
     host.innerHTML = `
@@ -5094,20 +5250,35 @@ function renderExtractorPacketLibrary() {
               <option value="tag"${EXTRACTOR_PACKET_SORT_STATE === "tag" ? " selected" : ""}>Purpose tag</option>
             </select>
           </label>
+          <label class="builderField">
+            <span class="small">Archived view</span>
+            <select id="docPacketArchivedView">
+              <option value="active"${!EXTRACTOR_PACKET_SHOW_ARCHIVED ? " selected" : ""}>Active packets</option>
+              <option value="archived"${EXTRACTOR_PACKET_SHOW_ARCHIVED ? " selected" : ""}>Archived packets</option>
+            </select>
+          </label>
         </div>
         <div class="small" style="margin-top:10px">No saved packets match the current filters.</div>
       </article>
     `;
     host.querySelector("#docPacketFilterTag")?.addEventListener("change", (event) => {
       EXTRACTOR_PACKET_FILTER_STATE.tag = event.target.value || "";
+      EXTRACTOR_PACKET_SELECTION = [];
       renderExtractorPacketLibrary();
     });
     host.querySelector("#docPacketFilterTarget")?.addEventListener("change", (event) => {
       EXTRACTOR_PACKET_FILTER_STATE.targetId = event.target.value || "";
+      EXTRACTOR_PACKET_SELECTION = [];
       renderExtractorPacketLibrary();
     });
     host.querySelector("#docPacketSort")?.addEventListener("change", (event) => {
       EXTRACTOR_PACKET_SORT_STATE = event.target.value || "newest";
+      EXTRACTOR_PACKET_SELECTION = [];
+      renderExtractorPacketLibrary();
+    });
+    host.querySelector("#docPacketArchivedView")?.addEventListener("change", (event) => {
+      EXTRACTOR_PACKET_SHOW_ARCHIVED = event.target.value === "archived";
+      EXTRACTOR_PACKET_SELECTION = [];
       renderExtractorPacketLibrary();
     });
     return;
@@ -5149,20 +5320,67 @@ function renderExtractorPacketLibrary() {
             <option value="tag"${EXTRACTOR_PACKET_SORT_STATE === "tag" ? " selected" : ""}>Purpose tag</option>
           </select>
         </label>
+        <label class="builderField">
+          <span class="small">Archived view</span>
+          <select id="docPacketArchivedView">
+            <option value="active"${!EXTRACTOR_PACKET_SHOW_ARCHIVED ? " selected" : ""}>Active packets</option>
+            <option value="archived"${EXTRACTOR_PACKET_SHOW_ARCHIVED ? " selected" : ""}>Archived packets</option>
+          </select>
+        </label>
+      </div>
+      <div class="healthBtns" style="margin-top:12px">
+        <button class="miniBtn" id="docPacketSelectVisible" type="button">${allVisibleSelected ? "Clear Visible" : "Select Visible"}</button>
+        <button class="miniBtn" id="docPacketClearSelection" type="button">Clear Selected</button>
+        <button class="miniBtn" id="docPacketBulkArchive" type="button">${EXTRACTOR_PACKET_SHOW_ARCHIVED ? "Restore Selected" : "Archive Selected"}</button>
+        <button class="miniBtn" id="docPacketBulkApply" type="button">Apply Selected</button>
+        <button class="miniBtn" id="docPacketBulkAddTag" type="button">Add Tag</button>
+        <button class="miniBtn" id="docPacketBulkReplaceTags" type="button">Replace Tags</button>
+        <button class="miniBtn danger" id="docPacketBulkDelete" type="button">Delete Selected</button>
+      </div>
+      <div class="builderGrid" style="margin-top:12px">
+        <label class="builderField">
+          <span class="small">Bulk purpose tag(s)</span>
+          <input id="docPacketBulkTagInput" type="text" placeholder="nexus draft, rep handoff candidate">
+        </label>
+        <label class="builderField">
+          <span class="small">Saved preset</span>
+          <select id="docPacketBulkPreset">
+            <option value="">Choose a preset</option>
+            ${presetOptions.map((preset) => `<option value="${escapeHtml(preset.id)}">${escapeHtml(preset.label)}${preset.builtIn ? "" : " (Custom)"}</option>`).join("")}
+          </select>
+        </label>
+        <label class="builderField">
+          <span class="small">Custom preset name</span>
+          <input id="docPacketBulkPresetName" type="text" placeholder="My rep handoff set">
+        </label>
+      </div>
+      <div class="healthBtns" style="margin-top:12px">
+        <button class="miniBtn" id="docPacketBulkAddPreset" type="button">Add Preset</button>
+        <button class="miniBtn" id="docPacketBulkReplacePreset" type="button">Replace With Preset</button>
+        <button class="miniBtn" id="docPacketBulkSavePreset" type="button">Save Custom Preset</button>
+        <button class="miniBtn danger" id="docPacketBulkDeletePreset" type="button">Delete Custom Preset</button>
+      </div>
+      <div class="small" style="margin-top:8px">
+        Selected visible packets: ${bulkPlan.selectedCount}${bulkPlan.selectedCount ? ` • ready to apply: ${bulkPlan.appliableCount}` : ""}
       </div>
     </article>
   ` + packets.map((packet) => `
     <article class="builderSuggestionCard">
       <div class="builderSuggestionTop">
         <div>
+          <label class="small" style="display:inline-flex;align-items:center;gap:6px;margin-bottom:8px">
+            <input data-packet-select="${escapeHtml(packet.id)}" type="checkbox"${EXTRACTOR_PACKET_SELECTION.includes(packet.id) ? " checked" : ""}>
+            <span>Select packet</span>
+          </label>
           <strong>${escapeHtml(packet.title || "Extractor Draft Packet")}</strong>
-          <div class="small">Target: ${escapeHtml(packet.targetName || "Condition")} • Source: ${escapeHtml(packet.sourceName || "Document intake")}${packet.pinned ? " • pinned" : ""}</div>
+          <div class="small">Target: ${escapeHtml(packet.targetName || "Condition")} • Source: ${escapeHtml(packet.sourceName || "Document intake")}${packet.pinned ? " • pinned" : ""}${packet.archived ? " • archived" : ""}</div>
           ${packet.tags?.length ? `<div class="extractorHistoryChips" style="margin-top:6px">${packet.tags.map((tag) => `<span class="extractorHistoryChip">${escapeHtml(tag)}</span>`).join("")}</div>` : ""}
           <div class="small" style="margin-top:6px">${packet.createdAt ? escapeHtml(new Date(packet.createdAt).toLocaleString()) : ""}</div>
           <div class="small" style="margin-top:6px">${escapeHtml((packet.text || "").slice(0, 200))}${(packet.text || "").length > 200 ? "..." : ""}</div>
         </div>
         <div class="healthBtns" style="margin-top:0">
           <button class="miniBtn" data-packet-pin="${escapeHtml(packet.id)}" type="button">${packet.pinned ? "Unpin" : "Pin"}</button>
+          <button class="miniBtn" data-packet-archive="${escapeHtml(packet.id)}" type="button">${packet.archived ? "Restore" : "Archive"}</button>
           <button class="miniBtn" data-packet-copy="${escapeHtml(packet.id)}" type="button">Copy</button>
           <button class="miniBtn" data-packet-download="${escapeHtml(packet.id)}" type="button">Download</button>
           ${packet.targetId ? `<button class="miniBtn" data-packet-apply="${escapeHtml(packet.id)}" type="button">Apply Packet</button>` : ""}
@@ -5209,17 +5427,291 @@ function renderExtractorPacketLibrary() {
 
   host.querySelector("#docPacketFilterTag")?.addEventListener("change", (event) => {
     EXTRACTOR_PACKET_FILTER_STATE.tag = event.target.value || "";
+    EXTRACTOR_PACKET_SELECTION = [];
     renderExtractorPacketLibrary();
   });
 
   host.querySelector("#docPacketFilterTarget")?.addEventListener("change", (event) => {
     EXTRACTOR_PACKET_FILTER_STATE.targetId = event.target.value || "";
+    EXTRACTOR_PACKET_SELECTION = [];
     renderExtractorPacketLibrary();
   });
 
   host.querySelector("#docPacketSort")?.addEventListener("change", (event) => {
     EXTRACTOR_PACKET_SORT_STATE = event.target.value || "newest";
+    EXTRACTOR_PACKET_SELECTION = [];
     renderExtractorPacketLibrary();
+  });
+
+  host.querySelector("#docPacketArchivedView")?.addEventListener("change", (event) => {
+    EXTRACTOR_PACKET_SHOW_ARCHIVED = event.target.value === "archived";
+    EXTRACTOR_PACKET_SELECTION = [];
+    renderExtractorPacketLibrary();
+  });
+
+  host.querySelector("#docPacketSelectVisible")?.addEventListener("click", () => {
+    if (allVisibleSelected) {
+      const visibleIds = new Set(packets.map((packet) => packet.id));
+      EXTRACTOR_PACKET_SELECTION = EXTRACTOR_PACKET_SELECTION.filter((id) => !visibleIds.has(id));
+    } else {
+      EXTRACTOR_PACKET_SELECTION = [...new Set([...EXTRACTOR_PACKET_SELECTION, ...packets.map((packet) => packet.id)])];
+    }
+    renderExtractorPacketLibrary();
+  });
+
+  host.querySelector("#docPacketClearSelection")?.addEventListener("click", () => {
+    EXTRACTOR_PACKET_SELECTION = [];
+    renderExtractorPacketLibrary();
+  });
+
+  host.querySelector("#docPacketBulkPreset")?.addEventListener("change", (event) => {
+    const presetValue = event.target.value || "";
+    const tags = getExtractorPacketPresetTags(presetValue);
+    const input = host.querySelector("#docPacketBulkTagInput");
+    const nameInput = host.querySelector("#docPacketBulkPresetName");
+    if (input && tags.length) {
+      input.value = tags.join(", ");
+    }
+    const presetMeta = buildExtractorPacketPresetOptions().find((option) => option.id === presetValue);
+    if (nameInput) {
+      nameInput.value = presetMeta?.builtIn ? "" : (presetMeta?.label || "");
+    }
+  });
+
+  host.querySelector("#docPacketBulkAddTag")?.addEventListener("click", () => {
+    const packetsNow = loadExtractorPacketLibrary();
+    const selectedIds = new Set(EXTRACTOR_PACKET_SELECTION);
+    const selectedPackets = packetsNow.filter((packet) => selectedIds.has(packet.id));
+    if (!selectedPackets.length) {
+      return alert("Select at least one draft packet first.");
+    }
+    const tags = normalizeExtractorPacketTags(host.querySelector("#docPacketBulkTagInput")?.value || "");
+    if (!tags.length) {
+      return alert("Enter at least one purpose tag first.");
+    }
+    selectedPackets.forEach((packet) => {
+      packet.tags = [...new Set([...(Array.isArray(packet.tags) ? packet.tags : []), ...tags])];
+    });
+    saveExtractorPacketLibrary(packetsNow);
+    pushWorkspaceActivity(
+      "Extractor packet tags added",
+      `${tags.join(", ")} added to ${selectedPackets.length} draft packet${selectedPackets.length === 1 ? "" : "s"}.`
+    );
+    EXTRACTOR_PACKET_SELECTION = [];
+    renderExtractorPacketLibrary();
+    renderWorkspaceActivity();
+    alert(`Added ${tags.length === 1 ? "tag" : "tags"} to ${selectedPackets.length} draft packet${selectedPackets.length === 1 ? "" : "s"}.`);
+  });
+
+  host.querySelector("#docPacketBulkAddPreset")?.addEventListener("click", () => {
+    const packetsNow = loadExtractorPacketLibrary();
+    const selectedIds = new Set(EXTRACTOR_PACKET_SELECTION);
+    const selectedPackets = packetsNow.filter((packet) => selectedIds.has(packet.id));
+    if (!selectedPackets.length) {
+      return alert("Select at least one draft packet first.");
+    }
+    const presetKey = host.querySelector("#docPacketBulkPreset")?.value || "";
+    const tags = getExtractorPacketPresetTags(presetKey);
+    if (!tags.length) {
+      return alert("Choose a saved preset first.");
+    }
+    selectedPackets.forEach((packet) => {
+      packet.tags = [...new Set([...(Array.isArray(packet.tags) ? packet.tags : []), ...tags])];
+    });
+    saveExtractorPacketLibrary(packetsNow);
+    pushWorkspaceActivity(
+      "Extractor packet preset tags added",
+      `${tags.join(", ")} added to ${selectedPackets.length} draft packet${selectedPackets.length === 1 ? "" : "s"} from a saved preset.`
+    );
+    EXTRACTOR_PACKET_SELECTION = [];
+    renderExtractorPacketLibrary();
+    renderWorkspaceActivity();
+    alert(`Preset tags added to ${selectedPackets.length} draft packet${selectedPackets.length === 1 ? "" : "s"}.`);
+  });
+
+  host.querySelector("#docPacketBulkSavePreset")?.addEventListener("click", () => {
+    const name = String(host.querySelector("#docPacketBulkPresetName")?.value || "").trim();
+    const tags = normalizeExtractorPacketTags(host.querySelector("#docPacketBulkTagInput")?.value || "");
+    if (!name) {
+      return alert("Enter a custom preset name first.");
+    }
+    if (!tags.length) {
+      return alert("Enter at least one purpose tag first.");
+    }
+    const existing = loadExtractorPacketCustomPresets();
+    const presetId = name.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+    const next = existing.filter((item) => item.id !== presetId);
+    next.unshift({ id: presetId || `preset_${Date.now()}`, label: name, tags });
+    saveExtractorPacketCustomPresets(next.slice(0, 20));
+    pushWorkspaceActivity("Extractor packet preset saved", `${name} saved as a reusable custom packet preset.`);
+    renderExtractorPacketLibrary();
+    renderWorkspaceActivity();
+    alert("Custom preset saved.");
+  });
+
+  host.querySelector("#docPacketBulkReplaceTags")?.addEventListener("click", () => {
+    const packetsNow = loadExtractorPacketLibrary();
+    const selectedIds = new Set(EXTRACTOR_PACKET_SELECTION);
+    const selectedPackets = packetsNow.filter((packet) => selectedIds.has(packet.id));
+    if (!selectedPackets.length) {
+      return alert("Select at least one draft packet first.");
+    }
+    const tags = normalizeExtractorPacketTags(host.querySelector("#docPacketBulkTagInput")?.value || "");
+    selectedPackets.forEach((packet) => {
+      packet.tags = [...tags];
+    });
+    saveExtractorPacketLibrary(packetsNow);
+    pushWorkspaceActivity(
+      "Extractor packet tags replaced",
+      `${selectedPackets.length} draft packet${selectedPackets.length === 1 ? "" : "s"} ${tags.length ? `retagged as ${tags.join(", ")}` : "cleared of saved purpose tags"}.`
+    );
+    EXTRACTOR_PACKET_SELECTION = [];
+    renderExtractorPacketLibrary();
+    renderWorkspaceActivity();
+    alert(`${selectedPackets.length} draft packet${selectedPackets.length === 1 ? "" : "s"} retagged.`);
+  });
+
+  host.querySelector("#docPacketBulkReplacePreset")?.addEventListener("click", () => {
+    const packetsNow = loadExtractorPacketLibrary();
+    const selectedIds = new Set(EXTRACTOR_PACKET_SELECTION);
+    const selectedPackets = packetsNow.filter((packet) => selectedIds.has(packet.id));
+    if (!selectedPackets.length) {
+      return alert("Select at least one draft packet first.");
+    }
+    const presetKey = host.querySelector("#docPacketBulkPreset")?.value || "";
+    const tags = getExtractorPacketPresetTags(presetKey);
+    if (!tags.length) {
+      return alert("Choose a saved preset first.");
+    }
+    selectedPackets.forEach((packet) => {
+      packet.tags = [...tags];
+    });
+    saveExtractorPacketLibrary(packetsNow);
+    pushWorkspaceActivity(
+      "Extractor packet preset tags replaced",
+      `${selectedPackets.length} draft packet${selectedPackets.length === 1 ? "" : "s"} retagged from a saved preset: ${tags.join(", ")}.`
+    );
+    EXTRACTOR_PACKET_SELECTION = [];
+    renderExtractorPacketLibrary();
+    renderWorkspaceActivity();
+    alert(`Preset applied to ${selectedPackets.length} draft packet${selectedPackets.length === 1 ? "" : "s"}.`);
+  });
+
+  host.querySelector("#docPacketBulkDeletePreset")?.addEventListener("click", () => {
+    const presetValue = host.querySelector("#docPacketBulkPreset")?.value || "";
+    if (!presetValue.startsWith("custom:")) {
+      return alert("Choose a custom preset to delete.");
+    }
+    const presetId = presetValue.replace(/^custom:/, "");
+    const existing = loadExtractorPacketCustomPresets();
+    const preset = existing.find((item) => item.id === presetId);
+    if (!preset) {
+      return alert("That custom preset could not be found.");
+    }
+    saveExtractorPacketCustomPresets(existing.filter((item) => item.id !== presetId));
+    pushWorkspaceActivity("Extractor packet preset deleted", `${preset.label} was removed from saved custom packet presets.`);
+    renderExtractorPacketLibrary();
+    renderWorkspaceActivity();
+    alert("Custom preset deleted.");
+  });
+
+  host.querySelector("#docPacketBulkArchive")?.addEventListener("click", () => {
+    const packetsNow = loadExtractorPacketLibrary();
+    const selectedIds = new Set(EXTRACTOR_PACKET_SELECTION);
+    const selectedPackets = packetsNow.filter((packet) => selectedIds.has(packet.id));
+    if (!selectedPackets.length) {
+      return alert("Select at least one draft packet first.");
+    }
+    selectedPackets.forEach((packet) => {
+      packet.archived = !EXTRACTOR_PACKET_SHOW_ARCHIVED;
+    });
+    saveExtractorPacketLibrary(packetsNow);
+    pushWorkspaceActivity(
+      EXTRACTOR_PACKET_SHOW_ARCHIVED ? "Extractor draft packets restored" : "Extractor draft packets archived",
+      `${selectedPackets.length} draft packet${selectedPackets.length === 1 ? "" : "s"} ${EXTRACTOR_PACKET_SHOW_ARCHIVED ? "returned to" : "moved out of"} the active packet library.`
+    );
+    EXTRACTOR_PACKET_SELECTION = [];
+    renderExtractorPacketLibrary();
+    renderWorkspaceActivity();
+    alert(`${selectedPackets.length} draft packet${selectedPackets.length === 1 ? "" : "s"} ${EXTRACTOR_PACKET_SHOW_ARCHIVED ? "restored" : "archived"}.`);
+  });
+
+  host.querySelector("#docPacketBulkApply")?.addEventListener("click", () => {
+    const packetsNow = loadExtractorPacketLibrary();
+    const selectedIds = new Set(EXTRACTOR_PACKET_SELECTION);
+    const selectedPackets = packetsNow.filter((packet) => selectedIds.has(packet.id));
+    if (!selectedPackets.length) {
+      return alert("Select at least one draft packet first.");
+    }
+    const applicable = selectedPackets.filter((packet) => !!packet.targetId);
+    if (!applicable.length) {
+      return alert("None of the selected packets have a target condition to apply to.");
+    }
+
+    let noteCount = 0;
+    let timelineCount = 0;
+    let evidenceCount = 0;
+    let appliedPackets = 0;
+    applicable.forEach((packet) => {
+      const result = applyExtractorPacketToCondition(packet);
+      if (!result) return;
+      appliedPackets += 1;
+      if (result.noteApplied) noteCount += 1;
+      timelineCount += result.timelineCount;
+      if (result.evidenceApplied) evidenceCount += 1;
+    });
+
+    if (!appliedPackets) {
+      return alert("No new packet content was found for the selected conditions.");
+    }
+
+    pushWorkspaceActivity(
+      "Extractor packets applied",
+      `${appliedPackets} draft packet${appliedPackets === 1 ? "" : "s"} applied ${[
+        noteCount ? `${noteCount} note update${noteCount === 1 ? "" : "s"}` : "",
+        timelineCount ? `${timelineCount} timeline entr${timelineCount === 1 ? "y" : "ies"}` : "",
+        evidenceCount ? `${evidenceCount} evidence record${evidenceCount === 1 ? "" : "s"}` : "",
+      ].filter(Boolean).join(", ")}.`
+    );
+    EXTRACTOR_PACKET_SELECTION = [];
+    renderEvidenceLibrary();
+    renderExtractorPacketLibrary();
+    renderWorkspace();
+    renderWorkspaceActivity();
+    alert(`${appliedPackets} draft packet${appliedPackets === 1 ? "" : "s"} applied.`);
+  });
+
+  host.querySelector("#docPacketBulkDelete")?.addEventListener("click", () => {
+    const packetsNow = loadExtractorPacketLibrary();
+    const selectedIds = new Set(EXTRACTOR_PACKET_SELECTION);
+    const selectedPackets = packetsNow.filter((packet) => selectedIds.has(packet.id));
+    if (!selectedPackets.length) {
+      return alert("Select at least one draft packet first.");
+    }
+    const confirmed = window.confirm(`Delete ${selectedPackets.length} selected draft packet${selectedPackets.length === 1 ? "" : "s"}? This cannot be undone.`);
+    if (!confirmed) return;
+    saveExtractorPacketLibrary(packetsNow.filter((packet) => !selectedIds.has(packet.id)));
+    pushWorkspaceActivity(
+      "Extractor draft packets removed",
+      `${selectedPackets.length} draft packet${selectedPackets.length === 1 ? "" : "s"} removed from the packet library.`
+    );
+    EXTRACTOR_PACKET_SELECTION = [];
+    renderExtractorPacketLibrary();
+    renderWorkspaceActivity();
+    alert(`${selectedPackets.length} draft packet${selectedPackets.length === 1 ? "" : "s"} removed.`);
+  });
+
+  host.querySelectorAll("[data-packet-select]").forEach((input) => {
+    input.addEventListener("change", () => {
+      const id = input.dataset.packetSelect || "";
+      if (!id) return;
+      if (input.checked) {
+        EXTRACTOR_PACKET_SELECTION = [...new Set([...EXTRACTOR_PACKET_SELECTION, id])];
+      } else {
+        EXTRACTOR_PACKET_SELECTION = EXTRACTOR_PACKET_SELECTION.filter((item) => item !== id);
+      }
+      renderExtractorPacketLibrary();
+    });
   });
 
   host.querySelectorAll("[data-packet-pin]").forEach((button) => {
@@ -5232,6 +5724,22 @@ function renderExtractorPacketLibrary() {
       pushWorkspaceActivity(
         packet.pinned ? "Extractor draft packet pinned" : "Extractor draft packet unpinned",
         `${packet.title || "A draft packet"} was ${packet.pinned ? "pinned to the top of" : "removed from"} the packet library priority list.`
+      );
+      renderExtractorPacketLibrary();
+      renderWorkspaceActivity();
+    });
+  });
+
+  host.querySelectorAll("[data-packet-archive]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const packetsNow = loadExtractorPacketLibrary();
+      const packet = packetsNow.find((item) => item.id === button.dataset.packetArchive);
+      if (!packet) return;
+      packet.archived = !packet.archived;
+      saveExtractorPacketLibrary(packetsNow);
+      pushWorkspaceActivity(
+        packet.archived ? "Extractor draft packet archived" : "Extractor draft packet restored",
+        `${packet.title || "A draft packet"} was ${packet.archived ? "moved out of" : "returned to"} the active packet library.`
       );
       renderExtractorPacketLibrary();
       renderWorkspaceActivity();
@@ -5269,62 +5777,17 @@ function renderExtractorPacketLibrary() {
     button.addEventListener("click", () => {
       const packet = loadExtractorPacketLibrary().find((item) => item.id === button.dataset.packetApply);
       if (!packet?.targetId) return;
-      const preview = buildExtractorPacketPreview(packet);
-      const plan = computeExtractorApplyNewPlan(preview, {
-        notes: loadNotes(packet.targetId),
-        timeline: loadTimeline(packet.targetId),
-        evidenceLinks: loadEvidenceLinks(packet.targetId),
-      });
-
-      if (!plan.noteSummary && !plan.timelineEntries.length && !plan.evidenceRecord) {
+      const result = applyExtractorPacketToCondition(packet);
+      if (!result) {
         return alert("No new packet content was found for this condition.");
-      }
-
-      if (plan.noteSummary) {
-        const existingNotes = (loadNotes(packet.targetId) || "").trim();
-        saveNotes(packet.targetId, existingNotes ? `${existingNotes}\n\n${plan.noteSummary}` : plan.noteSummary);
-      }
-
-      if (plan.timelineEntries.length) {
-        const entries = loadTimeline(packet.targetId);
-        plan.timelineEntries.forEach((previewEntry) => {
-          entries.push({
-            id: `extractor-packet-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-            date: previewEntry.date,
-            type: previewEntry.type,
-            note: previewEntry.note,
-          });
-        });
-        saveTimeline(packet.targetId, entries);
-      }
-
-      if (plan.evidenceRecord) {
-        const record = createEvidenceLibraryRecord({
-          label: plan.evidenceRecord.label,
-          type: plan.evidenceRecord.type,
-          excerpt: plan.evidenceRecord.excerpt,
-          tags: plan.evidenceRecord.tags,
-        });
-        saveEvidenceLibrary([record, ...loadEvidenceLibrary()].slice(0, 60));
-        const links = loadEvidenceLinks(packet.targetId);
-        links.unshift({
-          id: `extractor-packet-ev-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-          label: record.label,
-          url: "",
-          type: record.type || "Other",
-          date: plan.evidenceRecord.date || "",
-          note: record.excerpt || "",
-          created_at: Date.now(),
-        });
-        saveEvidenceLinks(packet.targetId, links);
       }
 
       pushWorkspaceActivity(
         "Extractor packet applied",
         `${packet.title || "Draft packet"} applied ${[
-          plan.noteSummary ? "new notes" : "",
-          plan.timelineEntries.length ? `${plan.timelineEntries.length} new timeline entr${plan.timelineEntries.length === 1 ? "y" : "ies"}` : "",
-          plan.evidenceRecord ? "a new evidence record" : "",
+          result.noteApplied ? "new notes" : "",
+          result.timelineCount ? `${result.timelineCount} new timeline entr${result.timelineCount === 1 ? "y" : "ies"}` : "",
+          result.evidenceApplied ? "a new evidence record" : "",
         ].filter(Boolean).join(", ")} to ${packet.targetName || packet.targetId}.`
       );
       renderEvidenceLibrary();
@@ -11215,10 +11678,13 @@ if (typeof module !== "undefined") {
     analyzeEvidenceConflicts,
     analyzeTimelineConflicts,
     analyzeRecordToClaimMapper,
+    applyWorkspaceBackup,
     extractEvidenceSignals,
     buildAssembledPacketText,
     buildEvidenceLibraryCsv,
     buildExtractorDraftPacketText,
+    buildExtractorPacketBulkActionPlan,
+    buildWorkspaceBackup,
     buildExtractorPacketPreview,
     computeExtractorApplyNewPlan,
     compareExtractorPacketRecords,
@@ -11240,13 +11706,28 @@ if (typeof module !== "undefined") {
     createExtractorPacketRecord,
     createEvidenceLibraryRecord,
     createDocumentRecord,
+    emptyWorkspaceBackup,
     conditionSpecificCoaching,
     computeConditionReadinessSnapshot,
     estimateScenarioSnapshot,
+    filterExtractorPacketSelection,
     filterWorkspaceItems,
+    buildExtractorPacketPresetOptions,
+    getExtractorPacketPresetTags,
     getConditionGuidedFormSchema,
+    loadFavoriteConditions,
+    loadExtractorPacketCustomPresets,
+    loadHomeUsageStats,
+    loadOnboardingWizardState,
+    loadRecentConditions,
+    normalizeExtractorPacketTags,
     parseEvidenceCsv,
     pruneExtractorDraft,
+    saveFavoriteConditions,
+    saveExtractorPacketCustomPresets,
+    saveHomeUsageStats,
+    saveOnboardingWizardState,
+    saveRecentConditions,
     scoreTheoryRecord,
     suggestEvidenceTargets,
     workspaceProfileSummary,

@@ -4,12 +4,16 @@ const {
   analyzeEvidenceConflicts,
   analyzeTimelineConflicts,
   analyzeRecordToClaimMapper,
+  applyWorkspaceBackup,
   extractEvidenceSignals,
   buildAssembledPacketText,
   buildEvidenceLibraryCsv,
   buildCoverageStarter,
   buildExtractorDraftPacketText,
+  buildExtractorPacketBulkActionPlan,
+  buildExtractorPacketPresetOptions,
   buildExtractorPacketPreview,
+  buildWorkspaceBackup,
   computeExtractorApplyNewPlan,
   compareExtractorPacketRecords,
   compareExtractorPreview,
@@ -31,9 +35,23 @@ const {
   createExtractorPacketRecord,
   createEvidenceLibraryRecord,
   createDocumentRecord,
+  emptyWorkspaceBackup,
   estimateScenarioSnapshot,
+  filterExtractorPacketSelection,
+  getExtractorPacketPresetTags,
   parseEvidenceCsv,
   pruneExtractorDraft,
+  loadFavoriteConditions,
+  loadExtractorPacketCustomPresets,
+  loadHomeUsageStats,
+  loadOnboardingWizardState,
+  loadRecentConditions,
+  normalizeExtractorPacketTags,
+  saveFavoriteConditions,
+  saveExtractorPacketCustomPresets,
+  saveHomeUsageStats,
+  saveOnboardingWizardState,
+  saveRecentConditions,
   scoreTheoryRecord,
   suggestEvidenceTargets,
   workspaceProfileSummary,
@@ -561,6 +579,7 @@ describe("guided upgrade helpers", () => {
       title: "Migraines Draft Packet",
       tags: ["nexus draft", "rep handoff candidate"],
       pinned: true,
+      archived: true,
       text: "packet body",
       compare: { noteStatus: { status: "new" } },
     });
@@ -571,7 +590,180 @@ describe("guided upgrade helpers", () => {
     expect(packet.title).toBe("Migraines Draft Packet");
     expect(packet.tags).toEqual(["nexus draft", "rep handoff candidate"]);
     expect(packet.pinned).toBe(true);
+    expect(packet.archived).toBe(true);
     expect(packet.text).toBe("packet body");
+  });
+
+  test("normalizes packet selection and summarizes bulk actions", () => {
+    const packets = [
+      { id: "one", targetId: "migraines", archived: false },
+      { id: "two", targetId: "", archived: true },
+      { id: "three", targetId: "ptsd", archived: false },
+    ];
+
+    const selection = filterExtractorPacketSelection(packets, ["one", "missing", "one", "three"]);
+    const plan = buildExtractorPacketBulkActionPlan(
+      packets.filter((packet) => selection.includes(packet.id))
+    );
+
+    expect(selection).toEqual(["one", "three"]);
+    expect(plan.selectedCount).toBe(2);
+    expect(plan.activeCount).toBe(2);
+    expect(plan.archivedCount).toBe(0);
+    expect(plan.appliableCount).toBe(2);
+  });
+
+  test("normalizes extractor packet purpose tags from text or arrays", () => {
+    expect(normalizeExtractorPacketTags(" nexus draft, rep handoff candidate , ")).toEqual([
+      "nexus draft",
+      "rep handoff candidate",
+    ]);
+    expect(normalizeExtractorPacketTags([" timeline-heavy ", "", "severity-focused"])).toEqual([
+      "timeline-heavy",
+      "severity-focused",
+    ]);
+  });
+
+  test("returns saved packet tag presets as normalized tag sets", () => {
+    expect(getExtractorPacketPresetTags("nexus_draft")).toEqual([
+      "nexus draft",
+      "evidence gap review",
+    ]);
+    expect(getExtractorPacketPresetTags("rep_handoff")).toEqual([
+      "rep handoff candidate",
+      "theory review",
+    ]);
+    expect(getExtractorPacketPresetTags("missing")).toEqual([]);
+  });
+
+  test("stores custom packet presets and merges them into preset options", () => {
+    saveExtractorPacketCustomPresets([
+      {
+        id: "my_rep_set",
+        label: "My Rep Set",
+        tags: [" rep handoff candidate ", " theory review "],
+      },
+    ]);
+
+    const stored = loadExtractorPacketCustomPresets();
+    const options = buildExtractorPacketPresetOptions();
+
+    expect(stored).toEqual([
+      {
+        id: "my_rep_set",
+        label: "My Rep Set",
+        tags: ["rep handoff candidate", "theory review"],
+      },
+    ]);
+    expect(options.some((option) => option.id === "custom:my_rep_set" && option.label === "My Rep Set")).toBe(true);
+    expect(getExtractorPacketPresetTags("custom:my_rep_set")).toEqual([
+      "rep handoff candidate",
+      "theory review",
+    ]);
+  });
+
+  test("includes custom packet presets in backups and restores them", () => {
+    saveExtractorPacketCustomPresets([
+      {
+        id: "my_set",
+        label: "My Set",
+        tags: ["nexus draft", "theory review"],
+      },
+    ]);
+
+    const backup = buildWorkspaceBackup();
+    expect(backup.extractorPacketCustomPresets).toEqual([
+      {
+        id: "my_set",
+        label: "My Set",
+        tags: ["nexus draft", "theory review"],
+      },
+    ]);
+
+    saveExtractorPacketCustomPresets([]);
+    applyWorkspaceBackup({
+      ...emptyWorkspaceBackup(),
+      extractorPacketCustomPresets: backup.extractorPacketCustomPresets,
+    });
+
+    expect(loadExtractorPacketCustomPresets()).toEqual([
+      {
+        id: "my_set",
+        label: "My Set",
+        tags: ["nexus draft", "theory review"],
+      },
+    ]);
+  });
+
+  test("includes homepage favorites, recents, and usage stats in backups and restores them", () => {
+    saveRecentConditions(["migraines", "ptsd"]);
+    saveFavoriteConditions(["tinnitus", "migraines"]);
+    saveHomeUsageStats({
+      conditions: { migraines: 4 },
+      bundles: { "bundle-ptsd-chain": 2 },
+      plans: { noise_exposure: 1 },
+    });
+
+    const backup = buildWorkspaceBackup();
+    expect(backup.recentConditions).toEqual(["migraines", "ptsd"]);
+    expect(backup.favoriteConditions).toEqual(["tinnitus", "migraines"]);
+    expect(backup.homeUsage).toEqual({
+      conditions: { migraines: 4 },
+      bundles: { "bundle-ptsd-chain": 2 },
+      plans: { noise_exposure: 1 },
+    });
+
+    saveRecentConditions([]);
+    saveFavoriteConditions([]);
+    saveHomeUsageStats({ conditions: {}, bundles: {}, plans: {} });
+
+    applyWorkspaceBackup({
+      ...emptyWorkspaceBackup(),
+      recentConditions: backup.recentConditions,
+      favoriteConditions: backup.favoriteConditions,
+      homeUsage: backup.homeUsage,
+    });
+
+    expect(loadRecentConditions()).toEqual(["migraines", "ptsd"]);
+    expect(loadFavoriteConditions()).toEqual(["tinnitus", "migraines"]);
+    expect(loadHomeUsageStats()).toEqual({
+      conditions: { migraines: 4 },
+      bundles: { "bundle-ptsd-chain": 2 },
+      plans: { noise_exposure: 1 },
+    });
+  });
+
+  test("includes onboarding wizard preferences in backups and restores them", () => {
+    saveOnboardingWizardState({
+      mode: "bundle",
+      step: 2,
+      primaryId: "ptsd",
+      bundleId: "bundle-ptsd-chain",
+      planId: "noise_exposure",
+    });
+
+    const backup = buildWorkspaceBackup();
+    expect(backup.onboardingWizardState).toEqual({
+      mode: "bundle",
+      step: 2,
+      primaryId: "ptsd",
+      bundleId: "bundle-ptsd-chain",
+      planId: "noise_exposure",
+    });
+
+    saveOnboardingWizardState({});
+    applyWorkspaceBackup({
+      ...emptyWorkspaceBackup(),
+      onboardingWizardState: backup.onboardingWizardState,
+    });
+
+    expect(loadOnboardingWizardState()).toEqual({
+      mode: "bundle",
+      step: 2,
+      primaryId: "ptsd",
+      bundleId: "bundle-ptsd-chain",
+      planId: "noise_exposure",
+    });
   });
 
   test("scores structured theories with reviewer-style feedback", () => {
