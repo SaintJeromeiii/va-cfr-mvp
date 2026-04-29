@@ -256,6 +256,10 @@ const EVIDENCE_LINK_TYPES = [
 const WORKSPACE_KEY = "vaCfrWorkspace:v4";
 const WORKSPACE_SNAPSHOTS_KEY = "vaCfrWorkspaceSnapshots:v1";
 const WORKSPACE_ACTIVITY_KEY = "vaCfrWorkspaceActivity:v1";
+const RECENT_CONDITIONS_KEY = "vaCfrRecentConditions:v1";
+const FAVORITE_CONDITIONS_KEY = "vaCfrFavoriteConditions:v1";
+const ONBOARDING_WIZARD_KEY = "vaCfrOnboardingWizard:v1";
+const HOME_USAGE_KEY = "vaCfrHomeUsage:v1";
 
 const REL_TYPES = [
   "Secondary to",
@@ -314,6 +318,92 @@ function loadWorkspaceState() {
   } catch {
     return { nodes: [], primaryId: "", links: [] };
   }
+}
+
+function loadRecentConditions() {
+  try {
+    const raw = localStorage.getItem(RECENT_CONDITIONS_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter((id) => typeof id === "string") : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function saveRecentConditions(items) {
+  localStorage.setItem(RECENT_CONDITIONS_KEY, JSON.stringify(Array.isArray(items) ? items : []));
+}
+
+function pushRecentCondition(id) {
+  if (!id) return;
+  const next = [id, ...loadRecentConditions().filter((value) => value !== id)].slice(0, 10);
+  saveRecentConditions(next);
+}
+
+function loadFavoriteConditions() {
+  try {
+    const raw = localStorage.getItem(FAVORITE_CONDITIONS_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter((id) => typeof id === "string") : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function saveFavoriteConditions(items) {
+  localStorage.setItem(FAVORITE_CONDITIONS_KEY, JSON.stringify(Array.isArray(items) ? items : []));
+}
+
+function toggleFavoriteCondition(id) {
+  const current = loadFavoriteConditions();
+  if (current.includes(id)) {
+    saveFavoriteConditions(current.filter((value) => value !== id));
+    return false;
+  }
+  saveFavoriteConditions([id, ...current].slice(0, 16));
+  return true;
+}
+
+function loadOnboardingWizardState() {
+  try {
+    const raw = localStorage.getItem(ONBOARDING_WIZARD_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+function saveOnboardingWizardState(state) {
+  localStorage.setItem(ONBOARDING_WIZARD_KEY, JSON.stringify(state && typeof state === "object" ? state : {}));
+}
+
+function loadHomeUsageStats() {
+  try {
+    const raw = localStorage.getItem(HOME_USAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return parsed && typeof parsed === "object"
+      ? {
+          conditions: parsed.conditions && typeof parsed.conditions === "object" ? parsed.conditions : {},
+          bundles: parsed.bundles && typeof parsed.bundles === "object" ? parsed.bundles : {},
+          plans: parsed.plans && typeof parsed.plans === "object" ? parsed.plans : {},
+        }
+      : { conditions: {}, bundles: {}, plans: {} };
+  } catch (error) {
+    return { conditions: {}, bundles: {}, plans: {} };
+  }
+}
+
+function saveHomeUsageStats(stats) {
+  localStorage.setItem(HOME_USAGE_KEY, JSON.stringify(stats && typeof stats === "object" ? stats : { conditions: {}, bundles: {}, plans: {} }));
+}
+
+function incrementHomeUsage(group, id) {
+  if (!group || !id) return;
+  const stats = loadHomeUsageStats();
+  stats[group] = stats[group] && typeof stats[group] === "object" ? stats[group] : {};
+  stats[group][id] = Number(stats[group][id] || 0) + 1;
+  saveHomeUsageStats(stats);
 }
 
 function saveWorkspaceState(st) {
@@ -1755,6 +1845,7 @@ function applyQuickStartPlan(plan) {
     }
   });
   pushWorkspaceActivity("Quick Start applied", `${plan.title} scaffolded a starter claim chain in the workspace.`);
+  incrementHomeUsage("plans", plan.id);
 }
 
 function renderQuickStartPlans() {
@@ -3075,6 +3166,123 @@ function renderStartHereSteps() {
       }
     });
   });
+}
+
+function computeHomepageNextAction() {
+  const st = loadWorkspaceState();
+  const theories = loadTheoryState();
+  const blockers = topWorkspaceBlockers(3);
+  const review = computeWorkspaceDashboardData();
+
+  if (!st.primaryId) {
+    return {
+      title: "Choose a primary condition",
+      detail: "Start with the issue that feels most central or best documented so the rest of the claim chain has a clear anchor.",
+      cta: "Open Guided Claim Builder",
+      targetId: "start-zone",
+    };
+  }
+
+  if (!(st.links || []).length) {
+    return {
+      title: "Stage at least one related condition or claim path",
+      detail: "Use a common bundle, browse related conditions, or add a secondary issue so the workspace shows the overall theory instead of a single node.",
+      cta: "Open Browse Conditions",
+      targetId: "search-zone",
+    };
+  }
+
+  if (!theories.length) {
+    return {
+      title: "Save a structured claim theory",
+      detail: "Turn the current workspace into a clear direct, secondary, aggravation, or increase theory so exports and coaching stay aligned.",
+      cta: "Open Theory Builder",
+      targetId: "ws-theory-panel",
+    };
+  }
+
+  if (blockers.length) {
+    return {
+      title: "Work the top blocker",
+      detail: blockers[0],
+      cta: "Open Workspace Health",
+      targetId: "ws-health-panel",
+    };
+  }
+
+  if ((review.review.summary.warnings || 0) + (review.review.summary.errors || 0) > 0) {
+    return {
+      title: "Run packet review before export",
+      detail: "The workspace is close, but a final review pass can catch unsupported assumptions or weak areas before you hand it off.",
+      cta: "Open Packet Review",
+      targetId: "ws-review-panel",
+    };
+  }
+
+  return {
+    title: "Generate a handoff or packet",
+    detail: "The workspace looks reasonably staged. Generate a printable packet, submission-prep review, or representative handoff next.",
+    cta: "Open Packet Tools",
+    targetId: "ws-assembler-panel",
+  };
+}
+
+function renderHomepageNextAction() {
+  const host = document.getElementById("homeActionCard");
+  if (!host) return;
+
+  const action = computeHomepageNextAction();
+  host.innerHTML = `
+    <article class="builderSuggestionCard">
+      <div class="builderSuggestionTop">
+        <div>
+          <strong>${escapeHtml(action.title)}</strong>
+          <div class="small">${escapeHtml(action.detail)}</div>
+        </div>
+        <span class="provenanceTag prov-generated">Live guidance</span>
+      </div>
+      <div class="healthBtns" style="margin-top:12px">
+        <button id="homeActionJump" class="miniBtn" type="button">${escapeHtml(action.cta)}</button>
+      </div>
+    </article>
+  `;
+
+  document.getElementById("homeActionJump")?.addEventListener("click", () => {
+    document.getElementById(action.targetId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+}
+
+function renderHomepageUsageSummary() {
+  const host = document.getElementById("homeUsageSummary");
+  if (!host) return;
+
+  const stats = loadHomeUsageStats();
+  const topConditions = Object.entries(stats.conditions || {})
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4)
+    .map(([id, count]) => ({ name: CONDITIONS.find((item) => item.id === id)?.name || id, count }));
+  const topBundles = Object.entries(stats.bundles || {})
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([id, count]) => ({ name: commonSecondaryBundles().find((item) => item.id === id)?.title || id, count }));
+  const topPlans = Object.entries(stats.plans || {})
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([id, count]) => ({ name: quickStartPlans().find((item) => item.id === id)?.title || id, count }));
+
+  host.innerHTML = `
+    <article class="builderSuggestionCard">
+      <div class="builderSuggestionTop">
+        <div>
+          <strong>Most-used conditions</strong>
+          <div class="small">${topConditions.length ? topConditions.map((item) => `${item.name} (${item.count})`).join(" • ") : "No condition usage history yet."}</div>
+        </div>
+        <span class="provenanceTag prov-generated">Local only</span>
+      </div>
+      <div class="small" style="margin-top:10px"><strong>Most common bundles:</strong> ${topBundles.length ? topBundles.map((item) => `${item.name} (${item.count})`).join(" • ") : "none yet"}</div>
+      <div class="small" style="margin-top:6px"><strong>Most common quick-start plans:</strong> ${topPlans.length ? topPlans.map((item) => `${item.name} (${item.count})`).join(" • ") : "none yet"}</div>
+    </article>
+  `;
 }
 
 function renderTheoryBuilder() {
@@ -4505,6 +4713,8 @@ function renderWorkspace() {
   renderWorkspaceDashboard();
   renderStickyWorkspaceSummary();
   renderStartHereSteps();
+  renderHomepageNextAction();
+  renderHomepageUsageSummary();
   renderTheoryBuilder();
   renderActionEngine();
   renderClaimMilestones();
@@ -5126,6 +5336,7 @@ function renderResults(list) {
   }
 
   const q = document.getElementById("q")?.value || "";
+  const favorites = new Set(loadFavoriteConditions());
 
   list.forEach(item => {
     const div = document.createElement("div");
@@ -5204,6 +5415,19 @@ function renderResults(list) {
     const metaRow = div.querySelector('.metaRow');
     if (metaRow) metaRow.appendChild(addBtn);
 
+    const favBtn = document.createElement("button");
+    favBtn.className = "miniBtn";
+    favBtn.type = "button";
+    favBtn.dataset.favoriteCondition = item.id;
+    favBtn.textContent = favorites.has(item.id) ? "★ Favorite" : "☆ Favorite";
+    favBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const active = toggleFavoriteCondition(item.id);
+      favBtn.textContent = active ? "★ Favorite" : "☆ Favorite";
+      renderConditionBrowse();
+    });
+    if (metaRow) metaRow.appendChild(favBtn);
+
     div.addEventListener("click", () => {
       const raw = document.getElementById("q")?.value || "";
       const parsed = parseCommandQuery(raw);
@@ -5212,6 +5436,485 @@ function renderResults(list) {
     });
 
     el.appendChild(div);
+  });
+}
+
+const POPULAR_CONDITION_IDS = [
+  "ptsd",
+  "tinnitus",
+  "migraines",
+  "sleep_apnea",
+  "lumbar_strain",
+  "sciatic_nerve",
+  "depression",
+  "anxiety",
+  "sinusitis",
+  "gerd",
+  "ibs",
+  "hypertension",
+];
+
+const CONDITION_CONNECTION_HINTS = {
+  ptsd: ["depression", "anxiety", "insomnia", "migraines"],
+  depression: ["ptsd", "anxiety", "insomnia"],
+  anxiety: ["ptsd", "insomnia", "migraines"],
+  tinnitus: ["hearing_loss", "vertigo"],
+  sleep_apnea: ["ptsd", "hypertension", "insomnia"],
+  lumbar_strain: ["sciatic_nerve", "peripheral_neuropathy"],
+  sciatic_nerve: ["lumbar_strain", "peripheral_neuropathy"],
+  sinusitis: ["allergic_rhinitis", "sleep_apnea"],
+  allergic_rhinitis: ["sinusitis", "sleep_apnea"],
+  migraines: ["ptsd", "anxiety", "insomnia"],
+  gerd: ["ibs", "sleep_apnea"],
+};
+
+let ONBOARDING_WIZARD_STATE = {
+  step: 0,
+  mode: "primary",
+  primaryId: "ptsd",
+  bundleId: "bundle-ptsd-chain",
+  planId: "mental-health-chain",
+};
+
+function syncOnboardingWizardState(partial = {}) {
+  ONBOARDING_WIZARD_STATE = {
+    ...ONBOARDING_WIZARD_STATE,
+    ...partial,
+  };
+  saveOnboardingWizardState(ONBOARDING_WIZARD_STATE);
+}
+
+function commonSecondaryBundles() {
+  return [
+    {
+      id: "bundle-ptsd-chain",
+      title: "PTSD Secondary Bundle",
+      description: "Stage a common mental-health chain with mood, sleep, and migraine follow-up issues.",
+      primaryId: "ptsd",
+      links: [
+        { to: "depression", type: "Secondary to" },
+        { to: "anxiety", type: "Secondary to" },
+        { to: "insomnia", type: "Secondary to" },
+        { to: "migraines", type: "Secondary to" },
+      ],
+    },
+    {
+      id: "bundle-back-chain",
+      title: "Back Pain Bundle",
+      description: "Use a lumbar condition as the anchor and stage common radicular/nerve follow-up issues.",
+      primaryId: "lumbar_strain",
+      links: [
+        { to: "sciatic_nerve", type: "Associated with" },
+        { to: "peripheral_neuropathy", type: "Associated with" },
+      ],
+    },
+    {
+      id: "bundle-ear-chain",
+      title: "Noise / Ear Bundle",
+      description: "Start from tinnitus and stage hearing loss plus dizziness/vertigo review.",
+      primaryId: "tinnitus",
+      links: [
+        { to: "hearing_loss", type: "Associated with" },
+        { to: "vertigo", type: "Associated with" },
+      ],
+    },
+    {
+      id: "bundle-sinus-chain",
+      title: "Sinus / Breathing Bundle",
+      description: "Use chronic sinus complaints as an anchor and stage common nasal breathing follow-up issues.",
+      primaryId: "sinusitis",
+      links: [
+        { to: "allergic_rhinitis", type: "Associated with" },
+        { to: "sleep_apnea", type: "Associated with" },
+      ],
+    },
+  ];
+}
+
+function connectionHintNames(conditionId) {
+  return (CONDITION_CONNECTION_HINTS[conditionId] || [])
+    .map((id) => CONDITIONS.find((item) => item.id === id)?.name)
+    .filter(Boolean);
+}
+
+function whyConditionIsCommon(condition) {
+  const id = condition?.id || "";
+  if (["ptsd", "depression", "anxiety", "insomnia"].includes(id)) {
+    return "Often chosen because mental-health claims and secondaries commonly drive broader claim theory and daily-impact evidence.";
+  }
+  if (["tinnitus", "hearing_loss", "vertigo"].includes(id)) {
+    return "Common because noise exposure and ear-related complaints are frequent starting points with straightforward exposure narratives.";
+  }
+  if (["lumbar_strain", "sciatic_nerve", "peripheral_neuropathy"].includes(id)) {
+    return "Common because back and nerve claims often travel together and benefit from clear functional-impact notes.";
+  }
+  if (["migraines", "sleep_apnea", "sinusitis", "allergic_rhinitis"].includes(id)) {
+    return "Common because these conditions often show up in secondary theories, symptom logs, and treatment-history workflows.";
+  }
+  if (["gerd", "ibs", "hypertension"].includes(id)) {
+    return "Common because chronic symptom patterns and medication history make these claims frequent review targets.";
+  }
+  return "Common because users often start here when building a primary theory or staging likely related conditions.";
+}
+
+function applySecondaryBundle(bundle) {
+  if (!bundle) return;
+  ensureNode(bundle.primaryId);
+  setPrimary(bundle.primaryId);
+  bundle.links.forEach((link) => {
+    ensureNode(link.to);
+    try {
+      addLink(bundle.primaryId, link.to, link.type || "Secondary to");
+    } catch (error) {
+      // ignore duplicate/cycle attempts for preexisting workspace structures
+    }
+  });
+  pushWorkspaceActivity("Secondary bundle applied", `${bundle.title} was added from the browse panel.`);
+  incrementHomeUsage("bundles", bundle.id);
+  renderWorkspace();
+  renderClaimTree();
+  renderHealthPanel();
+}
+
+function renderOnboardingWizard() {
+  const host = document.getElementById("onboardingWizard");
+  if (!host) return;
+
+  const step = ONBOARDING_WIZARD_STATE.step || 0;
+  const primary = CONDITIONS.find((item) => item.id === ONBOARDING_WIZARD_STATE.primaryId) || CONDITIONS[0];
+  const bundle = commonSecondaryBundles().find((item) => item.id === ONBOARDING_WIZARD_STATE.bundleId) || commonSecondaryBundles()[0];
+  const plan = quickStartPlans().find((item) => item.id === ONBOARDING_WIZARD_STATE.planId) || quickStartPlans()[0];
+
+  const panels = [
+    `
+      <article class="builderSuggestionCard">
+        <div class="builderSuggestionTop">
+          <div>
+            <strong>Step 1 of 3: Pick a starting style</strong>
+            <div class="small">Choose the kind of help you want first. You can still use everything else later.</div>
+          </div>
+          <span class="provenanceTag prov-generated">Wizard</span>
+        </div>
+        <div class="builderGrid" style="margin-top:12px">
+          <label class="builderField">
+            <span class="small">Starting style</span>
+            <select id="wizardMode">
+              <option value="primary"${ONBOARDING_WIZARD_STATE.mode === "primary" ? " selected" : ""}>Choose one primary condition first</option>
+              <option value="bundle"${ONBOARDING_WIZARD_STATE.mode === "bundle" ? " selected" : ""}>Use a common secondary bundle</option>
+              <option value="quickstart"${ONBOARDING_WIZARD_STATE.mode === "quickstart" ? " selected" : ""}>Use a quick-start claim plan</option>
+            </select>
+          </label>
+        </div>
+      </article>
+    `,
+    ONBOARDING_WIZARD_STATE.mode === "primary"
+      ? `
+        <article class="builderSuggestionCard">
+          <div class="builderSuggestionTop">
+            <div>
+              <strong>Step 2 of 3: Pick the anchor condition</strong>
+              <div class="small">Start from the issue that feels most central or best documented.</div>
+            </div>
+          </div>
+          <div class="builderGrid" style="margin-top:12px">
+            <label class="builderField">
+              <span class="small">Primary condition</span>
+              <select id="wizardPrimary">
+                ${CONDITIONS.map((item) => `<option value="${escapeHtml(item.id)}"${item.id === primary?.id ? " selected" : ""}>${escapeHtml(item.name)}</option>`).join("")}
+              </select>
+            </label>
+          </div>
+          <div class="small" style="margin-top:10px">Common follow-up connections: ${connectionHintNames(primary?.id).join(", ") || "none suggested yet"}</div>
+        </article>
+      `
+      : ONBOARDING_WIZARD_STATE.mode === "bundle"
+        ? `
+          <article class="builderSuggestionCard">
+            <div class="builderSuggestionTop">
+              <div>
+                <strong>Step 2 of 3: Choose a common secondary bundle</strong>
+                <div class="small">This is the fastest way to scaffold a common claim chain.</div>
+              </div>
+            </div>
+            <div class="builderGrid" style="margin-top:12px">
+              <label class="builderField">
+                <span class="small">Bundle</span>
+                <select id="wizardBundle">
+                  ${commonSecondaryBundles().map((item) => `<option value="${escapeHtml(item.id)}"${item.id === bundle?.id ? " selected" : ""}>${escapeHtml(item.title)}</option>`).join("")}
+                </select>
+              </label>
+            </div>
+            <div class="small" style="margin-top:10px">${escapeHtml(bundle?.description || "")}</div>
+          </article>
+        `
+        : `
+          <article class="builderSuggestionCard">
+            <div class="builderSuggestionTop">
+              <div>
+                <strong>Step 2 of 3: Choose a quick-start claim plan</strong>
+                <div class="small">Use this if you want the app to scaffold a broader starter path.</div>
+              </div>
+            </div>
+            <div class="builderGrid" style="margin-top:12px">
+              <label class="builderField">
+                <span class="small">Quick-start plan</span>
+                <select id="wizardPlan">
+                  ${quickStartPlans().map((item) => `<option value="${escapeHtml(item.id)}"${item.id === plan?.id ? " selected" : ""}>${escapeHtml(item.title)}</option>`).join("")}
+                </select>
+              </label>
+            </div>
+            <div class="small" style="margin-top:10px">${escapeHtml(plan?.description || "")}</div>
+          </article>
+        `,
+    `
+      <article class="builderSuggestionCard">
+        <div class="builderSuggestionTop">
+          <div>
+            <strong>Step 3 of 3: Apply and continue</strong>
+            <div class="small">This will stage the starting workspace so you can move straight into evidence, notes, and theory building.</div>
+          </div>
+        </div>
+        <div class="small">
+          ${ONBOARDING_WIZARD_STATE.mode === "primary"
+            ? `Primary condition: ${escapeHtml(primary?.name || "(not selected)")}`
+            : ONBOARDING_WIZARD_STATE.mode === "bundle"
+              ? `Bundle: ${escapeHtml(bundle?.title || "(not selected)")}`
+              : `Quick-start plan: ${escapeHtml(plan?.title || "(not selected)")}`}
+        </div>
+      </article>
+    `,
+  ];
+
+  host.innerHTML = `
+    ${panels[step] || panels[0]}
+    <div class="healthBtns" style="margin-top:12px">
+      <button id="wizardBack" class="miniBtn" type="button"${step === 0 ? " disabled" : ""}>Back</button>
+      ${step < 2 ? `<button id="wizardNext" class="miniBtn" type="button">Next</button>` : `<button id="wizardApply" class="miniBtn" type="button">Apply Setup</button>`}
+      <button id="wizardSkip" class="miniBtn" type="button">Skip Wizard</button>
+    </div>
+  `;
+
+  document.getElementById("wizardMode")?.addEventListener("change", (event) => {
+    syncOnboardingWizardState({ mode: event.target.value || "primary", step: 0 });
+    renderOnboardingWizard();
+  });
+
+  document.getElementById("wizardPrimary")?.addEventListener("change", (event) => {
+    syncOnboardingWizardState({ primaryId: event.target.value || ONBOARDING_WIZARD_STATE.primaryId });
+    renderOnboardingWizard();
+  });
+
+  document.getElementById("wizardBundle")?.addEventListener("change", (event) => {
+    syncOnboardingWizardState({ bundleId: event.target.value || ONBOARDING_WIZARD_STATE.bundleId });
+    renderOnboardingWizard();
+  });
+
+  document.getElementById("wizardPlan")?.addEventListener("change", (event) => {
+    syncOnboardingWizardState({ planId: event.target.value || ONBOARDING_WIZARD_STATE.planId });
+    renderOnboardingWizard();
+  });
+
+  document.getElementById("wizardBack")?.addEventListener("click", () => {
+    syncOnboardingWizardState({ step: Math.max(0, (ONBOARDING_WIZARD_STATE.step || 0) - 1) });
+    renderOnboardingWizard();
+  });
+
+  document.getElementById("wizardNext")?.addEventListener("click", () => {
+    syncOnboardingWizardState({ step: Math.min(2, (ONBOARDING_WIZARD_STATE.step || 0) + 1) });
+    renderOnboardingWizard();
+  });
+
+  document.getElementById("wizardApply")?.addEventListener("click", () => {
+    if (ONBOARDING_WIZARD_STATE.mode === "primary") {
+      ensureNode(primary.id);
+      setPrimary(primary.id);
+      showDetail(primary.id, true);
+    } else if (ONBOARDING_WIZARD_STATE.mode === "bundle") {
+      applySecondaryBundle(bundle);
+    } else {
+      applyQuickStartPlan(plan);
+    }
+    renderWorkspace();
+    renderClaimTree();
+    renderHealthPanel();
+    syncOnboardingWizardState({ step: 2 });
+    renderHomepageNextAction();
+    renderHomepageUsageSummary();
+    alert("Guided setup applied.");
+  });
+
+  document.getElementById("wizardSkip")?.addEventListener("click", () => {
+    syncOnboardingWizardState({ step: 0 });
+    document.getElementById("search-zone")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+}
+
+function renderConditionBrowse() {
+  const popularEl = document.getElementById("popularConditions");
+  const categoriesEl = document.getElementById("browseCategories");
+  const summaryEl = document.getElementById("browseSummary");
+  const recentEl = document.getElementById("recentConditions");
+  const favoriteEl = document.getElementById("favoriteConditions");
+  const bundlesEl = document.getElementById("secondaryBundles");
+  if (!popularEl || !categoriesEl) return;
+
+  const bySystem = new Map();
+  CONDITIONS.forEach((condition) => {
+    const key = condition.body_system || "Other";
+    const rows = bySystem.get(key) || [];
+    rows.push(condition);
+    bySystem.set(key, rows);
+  });
+
+  const popular = POPULAR_CONDITION_IDS
+    .map((id) => CONDITIONS.find((item) => item.id === id))
+    .filter(Boolean);
+  const recent = loadRecentConditions()
+    .map((id) => CONDITIONS.find((item) => item.id === id))
+    .filter(Boolean);
+  const favorites = loadFavoriteConditions()
+    .map((id) => CONDITIONS.find((item) => item.id === id))
+    .filter(Boolean);
+
+  if (summaryEl) {
+    summaryEl.textContent = `${CONDITIONS.length} conditions across ${bySystem.size} body-system groups`;
+  }
+
+  if (recentEl) {
+    recentEl.innerHTML = recent.length
+      ? recent.map((item) => `
+          <button class="browseMiniChip" data-browse-condition="${escapeHtml(item.id)}" type="button">
+            ${escapeHtml(item.name)}
+          </button>
+        `).join("")
+      : `<div class="small">Open a few condition details and your recent conditions will appear here.</div>`;
+  }
+
+  if (favoriteEl) {
+    favoriteEl.innerHTML = favorites.length
+      ? favorites.map((item) => `
+          <button class="browseMiniChip" data-browse-condition="${escapeHtml(item.id)}" type="button">
+            ${escapeHtml(item.name)}
+          </button>
+        `).join("")
+      : `<div class="small">Use the star button on a search result to pin favorite conditions here.</div>`;
+  }
+
+  popularEl.innerHTML = popular.map((item) => `
+    <article class="featuredConditionCard ${systemClassName(item.body_system)}">
+      <div class="browseCategoryTop">
+        <div>
+          <strong>${escapeHtml(item.name)}</strong>
+          <div class="small">${escapeHtml(item.body_system || "Other")}</div>
+        </div>
+        <button class="miniBtn" data-browse-condition="${escapeHtml(item.id)}" type="button">Open</button>
+      </div>
+      <div class="small">${escapeHtml(item.rating_logic?.summary || "Browse this condition to review CFR context and evidence guidance.")}</div>
+      <div class="small" style="margin-top:6px"><strong>Usually connects to:</strong> ${escapeHtml(connectionHintNames(item.id).join(", ") || "no common connection hint saved yet")}</div>
+      <div class="small" style="margin-top:4px"><strong>Why this is common:</strong> ${escapeHtml(whyConditionIsCommon(item))}</div>
+    </article>
+  `).join("");
+
+  if (bundlesEl) {
+    bundlesEl.innerHTML = commonSecondaryBundles().map((bundle) => `
+      <article class="browseCategoryCard">
+        <div class="browseCategoryTop">
+          <div>
+            <strong>${escapeHtml(bundle.title)}</strong>
+            <div class="small">${escapeHtml(bundle.description)}</div>
+          </div>
+          <div class="healthBtns" style="margin-top:0">
+            <button class="miniBtn" data-bundle-preview="${escapeHtml(bundle.id)}" type="button">Preview</button>
+            <button class="miniBtn" data-bundle-apply="${escapeHtml(bundle.id)}" type="button">Add Bundle</button>
+          </div>
+        </div>
+        <div class="browseChipRow">
+          ${[bundle.primaryId, ...bundle.links.map((link) => link.to)].map((id) => {
+            const item = CONDITIONS.find((condition) => condition.id === id);
+            return item ? `<span class="popularChip ${systemClassName(item.body_system)}">${escapeHtml(item.name)}</span>` : "";
+          }).join("")}
+        </div>
+      </article>
+    `).join("");
+  }
+
+  categoriesEl.innerHTML = [...bySystem.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([system, items]) => `
+      <article class="browseCategoryCard">
+        <div class="browseCategoryTop">
+          <div>
+            <strong>${escapeHtml(system)}</strong>
+            <div class="small">${items.length} condition${items.length === 1 ? "" : "s"}</div>
+          </div>
+          <button class="miniBtn" data-browse-system="${escapeHtml(system)}" type="button">View all</button>
+        </div>
+        <div class="small">Common links: ${escapeHtml(items.slice(0, 4).flatMap((item) => connectionHintNames(item.id).slice(0, 1)).filter(Boolean).slice(0, 4).join(", ") || "browse this group to explore condition relationships")}</div>
+        <div class="browseChipRow">
+          ${items.slice(0, 6).map((item) => `
+            <button class="browseMiniChip" data-browse-condition="${escapeHtml(item.id)}" type="button">
+              ${escapeHtml(item.name)}
+            </button>
+          `).join("")}
+        </div>
+      </article>
+    `).join("");
+
+  document.querySelectorAll("[data-browse-condition]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const condition = CONDITIONS.find((item) => item.id === button.dataset.browseCondition);
+      if (!condition) return;
+      const input = document.getElementById("q");
+      const filter = document.getElementById("systemFilter");
+      if (filter) filter.value = condition.body_system || "";
+      if (input) input.value = condition.name;
+      const results = CONDITIONS
+        .filter((item) => item.body_system === condition.body_system)
+        .filter((item) => matches(item, condition.name))
+        .sort((a, b) => scoreMatch(b, condition.name) - scoreMatch(a, condition.name));
+      renderResults(results);
+      document.getElementById("results")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+
+  document.querySelectorAll("[data-bundle-preview]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const bundle = commonSecondaryBundles().find((item) => item.id === button.dataset.bundlePreview);
+      if (!bundle) return;
+      const primary = CONDITIONS.find((item) => item.id === bundle.primaryId);
+      if (!primary) return;
+      const input = document.getElementById("q");
+      const filter = document.getElementById("systemFilter");
+      if (filter) filter.value = primary.body_system || "";
+      if (input) input.value = "";
+      const ids = new Set([bundle.primaryId, ...bundle.links.map((link) => link.to)]);
+      renderResults(CONDITIONS.filter((item) => ids.has(item.id)));
+      document.getElementById("results")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+
+  document.querySelectorAll("[data-bundle-apply]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const bundle = commonSecondaryBundles().find((item) => item.id === button.dataset.bundleApply);
+      if (!bundle) return;
+      applySecondaryBundle(bundle);
+      alert(`${bundle.title} added to workspace.`);
+    });
+  });
+
+  document.querySelectorAll("[data-browse-system]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const system = button.dataset.browseSystem || "";
+      const filter = document.getElementById("systemFilter");
+      const input = document.getElementById("q");
+      if (filter) filter.value = system;
+      if (input) input.value = "";
+      const results = CONDITIONS
+        .filter((item) => !system || item.body_system === system)
+        .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+      renderResults(results);
+      document.getElementById("results")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   });
 }
 
@@ -6485,6 +7188,10 @@ function COND_EVIDENCE_DONE(condId) {
 
 async function showDetail(id, pushState = true, jumpHint = "") {
   const hint = (jumpHint || document.getElementById("q")?.value || "").trim();
+  pushRecentCondition(id);
+  incrementHomeUsage("conditions", id);
+  renderConditionBrowse();
+  renderHomepageUsageSummary();
 
   // ✅ IMPORTANT: update URL FIRST so renderDetail reads the correct ?jump=
   if (pushState) {
@@ -7942,11 +8649,22 @@ async function init() {
 
   const savedTheme = (localStorage.getItem('vaCfrTheme')) || (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
   applyThemeChoice(savedTheme);
+  const savedWizard = loadOnboardingWizardState();
+  if (savedWizard) {
+    ONBOARDING_WIZARD_STATE = {
+      ...ONBOARDING_WIZARD_STATE,
+      ...savedWizard,
+    };
+  }
   renderGuidedBuilder();
   renderDocumentIntakeResults();
   renderDocumentLibrary();
   renderEvidenceLibrary();
   renderEvidenceHub();
+  renderConditionBrowse();
+  renderOnboardingWizard();
+  renderHomepageNextAction();
+  renderHomepageUsageSummary();
   renderRatingEstimator();
   renderWorkspaceProfiles();
   renderWorkspaceDashboard();
@@ -8607,6 +9325,8 @@ async function init() {
       legend.appendChild(chip);
     });
   }
+
+  renderConditionBrowse();
 
   // --- Help tip dismiss behavior: hide tips the user has dismissed and wire close buttons ---
   (function setupHelpTips() {

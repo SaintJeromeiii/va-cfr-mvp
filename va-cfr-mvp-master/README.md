@@ -76,6 +76,12 @@ The active app lives at the repository root:
 - Workspace Snapshots now let users save and restore named claim checkpoints, including notes, timeline entries, evidence links, checklist state, and workspace relationships
 - Full Backup export/import now lets users archive or restore the entire local workspace state, including snapshots, activity history, relationships, notes, timelines, and evidence links
 - Mobile and tablet spacing has been tightened with better wrapping for navigation, dashboard cards, detail summaries, and dense workspace controls
+- The bundled condition dataset now includes a broader 30-condition starter library across mental health, auditory, neurological, musculoskeletal, respiratory, digestive, cardiovascular, skin, and genitourinary categories
+- The homepage now includes a curated condition-browsing layer with popular-condition shortcuts and category cards so users can find common claims faster without relying only on search
+- The browse layer now remembers recent conditions, supports pinned favorites, and offers common-secondary bundles for faster workspace scaffolding
+- Featured homepage condition cards now show common connection hints, and a first-time guided setup wizard now helps new users choose between a primary-condition path, a secondary bundle, or a quick-start plan
+- The onboarding wizard now remembers its last-used path and selections locally, and featured condition cards now explain why each condition is a common starting point
+- The homepage now includes a live recommended-next-action card plus a local usage snapshot that surfaces the most-used conditions, bundles, and quick-start plans
 - Removal of the unused `public/js/intelligence.js` experimental script
 - Jest coverage for parsing, validation, storage migrations, workspace export/share logic, evidence binder logic, evidence graph helpers, workspace UI helpers, detail view/interactions, timeline logic, and API behavior
 - Cleanup of inline debug code and repository metadata

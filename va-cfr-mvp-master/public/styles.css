@@ -131,6 +131,89 @@ h1 {
   gap: 10px;
 }
 
+.browsePanel {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  gap: 14px;
+}
+
+.browseSection {
+  display: grid;
+  gap: 8px;
+}
+
+.browseHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.popularConditions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.popularChip,
+.browseMiniChip {
+  border-radius: 999px;
+  border: 1px solid rgba(96,165,250,0.2);
+  background: rgba(59,130,246,0.08);
+  color: var(--text);
+  padding: 8px 12px;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.popularChip:hover,
+.browseMiniChip:hover {
+  background: rgba(59,130,246,0.16);
+}
+
+.browseCategories {
+  display: grid;
+  gap: 12px;
+}
+
+.featuredConditionCard {
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 12px;
+  background: rgba(10, 16, 26, 0.34);
+  display: grid;
+  gap: 8px;
+  min-width: 220px;
+}
+
+.browseCategoryCard {
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 12px;
+  background: rgba(10, 16, 26, 0.34);
+  display: grid;
+  gap: 10px;
+}
+
+.browseCategoryTop {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+
+.browseChipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .result {
   padding: 12px 14px;
 }

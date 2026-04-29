@@ -79,6 +79,39 @@
       <div id="startHereSteps" class="builderSuggestions"></div>
     </section>
 
+    <section class="quickStartPanel sectionAnchor">
+      <div class="quickStartHead">
+        <div>
+          <h2 style="margin:0 0 4px">First-Time Guided Setup</h2>
+          <p class="workspaceIntro" style="margin:0">Use this wizard when you want the app to guide you into the right starting path instead of deciding between search, quick-start plans, and bundles on your own.</p>
+        </div>
+        <div class="small">Best for a brand-new workspace or when helping a first-time user.</div>
+      </div>
+      <div id="onboardingWizard" class="builderSuggestions"></div>
+    </section>
+
+    <section class="quickStartPanel sectionAnchor">
+      <div class="quickStartHead">
+        <div>
+          <h2 style="margin:0 0 4px">Recommended Next Homepage Action</h2>
+          <p class="workspaceIntro" style="margin:0">Use this when you want the app to point you to the best next move from the current workspace state.</p>
+        </div>
+        <div class="small">This updates as your workspace changes.</div>
+      </div>
+      <div id="homeActionCard" class="builderSuggestions"></div>
+    </section>
+
+    <section class="quickStartPanel sectionAnchor">
+      <div class="quickStartHead">
+        <div>
+          <h2 style="margin:0 0 4px">Usage Snapshot</h2>
+          <p class="workspaceIntro" style="margin:0">A compact summary of the conditions and bundles you return to most often.</p>
+        </div>
+        <div class="small">Stored locally in this browser only.</div>
+      </div>
+      <div id="homeUsageSummary" class="builderSuggestions"></div>
+    </section>
+
     <section id="search-zone" class="search sectionAnchor">
       <div class="controls">
   <label for="q" class="sr-only">Search</label>
@@ -104,6 +137,36 @@
 
       <!-- Legend goes UNDER controls so users understand the colors -->
       <div id="legend" class="legendRow"></div>
+
+      <div id="browsePanel" class="browsePanel">
+        <div class="browseHead">
+          <div>
+            <h3 style="margin:0 0 4px">Browse Conditions</h3>
+            <div class="small">Use popular picks and category browsing when you do not want to hunt through a long list manually.</div>
+          </div>
+          <div class="small" id="browseSummary"></div>
+        </div>
+        <div class="browseSection">
+          <div class="small"><strong>Favorites</strong></div>
+          <div id="favoriteConditions" class="popularConditions"></div>
+        </div>
+        <div class="browseSection">
+          <div class="small"><strong>Recent</strong></div>
+          <div id="recentConditions" class="popularConditions"></div>
+        </div>
+        <div class="browseSection">
+          <div class="small"><strong>Popular conditions</strong></div>
+        <div id="popularConditions" class="popularConditions"></div>
+        </div>
+        <div class="browseSection">
+          <div class="small"><strong>Common secondary bundles</strong></div>
+          <div id="secondaryBundles" class="browseCategories"></div>
+        </div>
+        <div class="browseSection">
+          <div class="small"><strong>Browse by category</strong></div>
+        <div id="browseCategories" class="browseCategories"></div>
+        </div>
+      </div>
 
       <!-- Results list -->
       <div id="results" class="results"></div>
