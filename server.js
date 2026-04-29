@@ -237,7 +237,7 @@ function normalizeProjectData(input) {
   const data = input && typeof input === 'object' ? input : {};
   const objectMap = (value) => (value && typeof value === 'object' && !Array.isArray(value)) ? value : {};
   return {
-    evidenceStates: objectMap(data.evidenceStates),
+    checklists: objectMap(data.checklists || data.evidenceStates),
     notes: objectMap(data.notes),
     timelines: objectMap(data.timelines),
     evidenceLinks: objectMap(data.evidenceLinks),
@@ -273,7 +273,7 @@ function normalizeWorkspaceStore(input) {
         name,
         updatedAt: typeof p.updatedAt === 'string' ? p.updatedAt : new Date().toISOString(),
         workspace: { nodes, primaryId, links },
-        data: normalizeProjectData(p.data)
+        data: normalizeProjectData(p.data || p)
       };
     });
   return {

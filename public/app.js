@@ -22,7 +22,8 @@ function evidenceKey(conditionId) {
 
 function loadEvidenceState(conditionId) {
   const project = getActiveProjectSafe();
-  if (project?.checklists && project.checklists[conditionId]) return project.checklists[conditionId];
+  const data = normalizeProjectData(project?.data || project || {});
+  if (data.checklists[conditionId]) return data.checklists[conditionId];
   try {
     return JSON.parse(localStorage.getItem(evidenceKey(conditionId)) || "{}");
   } catch {
@@ -32,9 +33,9 @@ function loadEvidenceState(conditionId) {
 
 function saveEvidenceState(conditionId, stateObj) {
   const clean = stateObj || {};
-  updateActiveProjectData(project => {
-    project.checklists = project.checklists || {};
-    project.checklists[conditionId] = clean;
+  updateActiveProjectData(data => {
+    data.checklists = data.checklists || {};
+    data.checklists[conditionId] = clean;
   });
   localStorage.setItem(evidenceKey(conditionId), JSON.stringify(clean));
 }
@@ -45,15 +46,16 @@ function notesKey(conditionId) {
 
 function loadNotes(conditionId) {
   const project = getActiveProjectSafe();
-  if (project?.notes && typeof project.notes[conditionId] === "string") return project.notes[conditionId];
+  const data = normalizeProjectData(project?.data || project || {});
+  if (typeof data.notes[conditionId] === "string") return data.notes[conditionId];
   return localStorage.getItem(notesKey(conditionId)) || "";
 }
 
 function saveNotes(conditionId, text) {
   const clean = (text ?? "").toString();
-  updateActiveProjectData(project => {
-    project.notes = project.notes || {};
-    project.notes[conditionId] = clean;
+  updateActiveProjectData(data => {
+    data.notes = data.notes || {};
+    data.notes[conditionId] = clean;
   });
   localStorage.setItem(notesKey(conditionId), clean);
 }
@@ -64,7 +66,8 @@ function timelineKey(id) {
 
 function loadTimeline(id) {
   const project = getActiveProjectSafe();
-  if (project?.timelines && Array.isArray(project.timelines[id])) return project.timelines[id];
+  const data = normalizeProjectData(project?.data || project || {});
+  if (Array.isArray(data.timelines[id])) return data.timelines[id];
   try {
     const raw = localStorage.getItem(timelineKey(id));
     const arr = raw ? JSON.parse(raw) : [];
@@ -76,9 +79,9 @@ function loadTimeline(id) {
 
 function saveTimeline(id, entries) {
   const clean = Array.isArray(entries) ? entries : [];
-  updateActiveProjectData(project => {
-    project.timelines = project.timelines || {};
-    project.timelines[id] = clean;
+  updateActiveProjectData(data => {
+    data.timelines = data.timelines || {};
+    data.timelines[id] = clean;
   });
   localStorage.setItem(timelineKey(id), JSON.stringify(clean));
 }
@@ -246,7 +249,66 @@ const EVIDENCE_LINK_TYPES = [
 const WORKSPACE_KEY = "vaCfrWorkspace:v4";
 
 function emptyProjectData() {
-  return { notes: {}, evidenceState: {}, timelines: {}, evidenceLinks: {}, evidenceRelations: {} };
+  return { notes: {}, checklists: {}, timelines: {}, evidenceLinks: {}, evidenceRelations: {} };
+}
+
+function normalizeProjectData(data) {
+  const raw = data && typeof data === "object" ? data : {};
+  return {
+    notes: raw.notes && typeof raw.notes === "object" ? raw.notes : {},
+    checklists: raw.checklists && typeof raw.checklists === "object"
+      ? raw.checklists
+      : (raw.evidenceStates && typeof raw.evidenceStates === "object" ? raw.evidenceStates : {}),
+    timelines: raw.timelines && typeof raw.timelines === "object" ? raw.timelines : {},
+    evidenceLinks: raw.evidenceLinks && typeof raw.evidenceLinks === "object" ? raw.evidenceLinks : {},
+    evidenceRelations: raw.evidenceRelations && typeof raw.evidenceRelations === "object" ? raw.evidenceRelations : {}
+  };
+}
+
+function getActiveProjectSafe() {
+  try {
+    return getActiveProject(loadProjectStore());
+  } catch {
+    return null;
+  }
+}
+
+function getActiveProjectData(key) {
+  const project = getActiveProjectSafe();
+  const data = normalizeProjectData(project?.data || project || {});
+  return key ? data[key] : data;
+}
+
+function updateActiveProjectData(updaterOrKey, id, value) {
+  let store;
+  try {
+    store = loadProjectStore();
+  } catch {
+    return;
+  }
+  const project = getActiveProject(store);
+  if (!project) return;
+  project.data = normalizeProjectData(project.data || project);
+  if (typeof updaterOrKey === "function") {
+    updaterOrKey(project.data);
+  } else {
+    const bucket = updaterOrKey;
+    project.data[bucket] = project.data[bucket] && typeof project.data[bucket] === "object" ? project.data[bucket] : {};
+    if (bucket === "evidenceRelations" && id === "__global") project.data[bucket] = value || {};
+    else project.data[bucket][id] = value;
+  }
+  project.updatedAt = new Date().toISOString();
+  saveProjectStore(store);
+}
+
+function mirrorProjectDataToLocalStorage(project) {
+  if (!project) return;
+  const data = normalizeProjectData(project.data || project);
+  Object.entries(data.notes).forEach(([id, text]) => localStorage.setItem(notesKey(id), String(text || "")));
+  Object.entries(data.checklists).forEach(([id, state]) => localStorage.setItem(evidenceKey(id), JSON.stringify(state || {})));
+  Object.entries(data.timelines).forEach(([id, entries]) => localStorage.setItem(timelineKey(id), JSON.stringify(Array.isArray(entries) ? entries : [])));
+  Object.entries(data.evidenceLinks).forEach(([id, links]) => localStorage.setItem(evidenceLinksKey(id), JSON.stringify(Array.isArray(links) ? links : [])));
+  localStorage.setItem(evidenceRelStoreKey(), JSON.stringify(data.evidenceRelations || {}));
 }
 
 const REL_TYPES = [
@@ -341,7 +403,8 @@ function normalizeWorkspaceProjectStore(store) {
       id: String(p.id || `claim-${idx + 1}`),
       name: String(p.name || "Claim Packet"),
       updatedAt: p.updatedAt || new Date().toISOString(),
-      workspace: normalizeWorkspaceShape(p.workspace)
+      workspace: normalizeWorkspaceShape(p.workspace),
+      data: normalizeProjectData(p.data || p)
     }));
   if (!projects.length) projects = [fallbackProject];
   const active = projects.some(p => p.id === store.activeProjectId) ? store.activeProjectId : projects[0].id;
@@ -511,12 +574,13 @@ function renderProjectSelector() {
 
 function projectStats(project) {
   const workspace = normalizeWorkspaceShape(project.workspace);
+  const data = normalizeProjectData(project.data || project);
   const ids = workspace.nodes || [];
   const items = ids.map(id => CONDITIONS.find(c => c.id === id)).filter(Boolean);
   let done = 0, total = 0;
   const missing = [];
   items.forEach(item => {
-    const state = project.evidenceState?.[item.id] || loadEvidenceState(item.id);
+    const state = data.checklists?.[item.id] || loadEvidenceState(item.id);
     const checklist = item.evidence_checklist || [];
     total += checklist.length;
     done += checklist.reduce((sum, _, idx) => sum + (state[idx] ? 1 : 0), 0);
@@ -524,8 +588,8 @@ function projectStats(project) {
     unchecked.slice(0, 2).forEach(text => missing.push(`${item.name}: ${text}`));
   });
   const pct = total ? Math.round((done / total) * 100) : 0;
-  const timelineCount = Object.values(project.timelines || {}).reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0);
-  const evidenceLinkCount = Object.values(project.evidenceLinks || {}).reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0);
+  const timelineCount = Object.values(data.timelines || {}).reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0);
+  const evidenceLinkCount = Object.values(data.evidenceLinks || {}).reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0);
   return {
     conditionCount: items.length,
     readiness: { done, total, pct },
