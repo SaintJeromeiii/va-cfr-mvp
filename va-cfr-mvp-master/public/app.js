@@ -1984,6 +1984,8 @@ function applyGuidedBuilderSelection() {
     "Guided builder applied",
     `${primary.name} was set as Primary with ${relatedIds.length} guided related condition${relatedIds.length === 1 ? "" : "s"}.`
   );
+  incrementHomeUsage("conditions", primaryId);
+  relatedIds.forEach((id) => incrementHomeUsage("conditions", id));
 
   renderWorkspace();
   renderClaimTree();
