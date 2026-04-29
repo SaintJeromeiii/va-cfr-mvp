@@ -233,6 +233,18 @@ function emptyWorkspaceStore() {
   return { version: 1, activeProjectId: 'default', projects: [] };
 }
 
+function normalizeProjectData(input) {
+  const data = input && typeof input === 'object' ? input : {};
+  const objectMap = (value) => (value && typeof value === 'object' && !Array.isArray(value)) ? value : {};
+  return {
+    evidenceStates: objectMap(data.evidenceStates),
+    notes: objectMap(data.notes),
+    timelines: objectMap(data.timelines),
+    evidenceLinks: objectMap(data.evidenceLinks),
+    evidenceRelations: objectMap(data.evidenceRelations)
+  };
+}
+
 function normalizeWorkspaceStore(input) {
   const base = emptyWorkspaceStore();
   if (!input || typeof input !== 'object') return base;
@@ -260,7 +272,8 @@ function normalizeWorkspaceStore(input) {
         id,
         name,
         updatedAt: typeof p.updatedAt === 'string' ? p.updatedAt : new Date().toISOString(),
-        workspace: { nodes, primaryId, links }
+        workspace: { nodes, primaryId, links },
+        data: normalizeProjectData(p.data)
       };
     });
   return {

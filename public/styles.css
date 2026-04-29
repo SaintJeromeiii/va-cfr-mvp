@@ -1029,3 +1029,58 @@ input[type="radio"]:focus {
   opacity: 0;
   pointer-events: none;
 }
+
+.projectDashboard {
+  margin: 14px 0;
+  padding: 12px;
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 16px;
+  background: rgba(255,255,255,0.03);
+}
+
+.projectDashboardHead,
+.projectCardTop,
+.projectCardActions,
+.projectStats {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.projectCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.projectCard {
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+}
+
+.projectCard.active {
+  border-color: rgba(122,183,255,0.55);
+  box-shadow: 0 0 0 1px rgba(122,183,255,0.18) inset;
+}
+
+.projectStats {
+  justify-content: flex-start;
+  margin: 10px 0;
+  font-size: 0.85rem;
+}
+
+.projectStats span {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.06);
+}
+
+.projectGaps summary {
+  cursor: pointer;
+  color: #b8c4d6;
+}

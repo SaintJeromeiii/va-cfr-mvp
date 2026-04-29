@@ -21,6 +21,8 @@ function evidenceKey(conditionId) {
 }
 
 function loadEvidenceState(conditionId) {
+  const project = getActiveProjectSafe();
+  if (project?.checklists && project.checklists[conditionId]) return project.checklists[conditionId];
   try {
     return JSON.parse(localStorage.getItem(evidenceKey(conditionId)) || "{}");
   } catch {
@@ -29,7 +31,12 @@ function loadEvidenceState(conditionId) {
 }
 
 function saveEvidenceState(conditionId, stateObj) {
-  localStorage.setItem(evidenceKey(conditionId), JSON.stringify(stateObj || {}));
+  const clean = stateObj || {};
+  updateActiveProjectData(project => {
+    project.checklists = project.checklists || {};
+    project.checklists[conditionId] = clean;
+  });
+  localStorage.setItem(evidenceKey(conditionId), JSON.stringify(clean));
 }
 
 function notesKey(conditionId) {
@@ -37,11 +44,18 @@ function notesKey(conditionId) {
 }
 
 function loadNotes(conditionId) {
+  const project = getActiveProjectSafe();
+  if (project?.notes && typeof project.notes[conditionId] === "string") return project.notes[conditionId];
   return localStorage.getItem(notesKey(conditionId)) || "";
 }
 
 function saveNotes(conditionId, text) {
-  localStorage.setItem(notesKey(conditionId), (text ?? "").toString());
+  const clean = (text ?? "").toString();
+  updateActiveProjectData(project => {
+    project.notes = project.notes || {};
+    project.notes[conditionId] = clean;
+  });
+  localStorage.setItem(notesKey(conditionId), clean);
 }
 
 function timelineKey(id) {
@@ -49,6 +63,8 @@ function timelineKey(id) {
 }
 
 function loadTimeline(id) {
+  const project = getActiveProjectSafe();
+  if (project?.timelines && Array.isArray(project.timelines[id])) return project.timelines[id];
   try {
     const raw = localStorage.getItem(timelineKey(id));
     const arr = raw ? JSON.parse(raw) : [];
@@ -59,7 +75,12 @@ function loadTimeline(id) {
 }
 
 function saveTimeline(id, entries) {
-  localStorage.setItem(timelineKey(id), JSON.stringify(entries || []));
+  const clean = Array.isArray(entries) ? entries : [];
+  updateActiveProjectData(project => {
+    project.timelines = project.timelines || {};
+    project.timelines[id] = clean;
+  });
+  localStorage.setItem(timelineKey(id), JSON.stringify(clean));
 }
 
 function addTimelineEntry(id, entry) {
@@ -140,6 +161,7 @@ function loadEvidenceLinks(id) {
 
 function saveEvidenceLinks(id, links) {
   localStorage.setItem(evidenceLinksKey(id), JSON.stringify(links || []));
+  updateActiveProjectData("evidenceLinks", id, links || []);
 }
 
 function addEvidenceLink(id, link) {
@@ -162,6 +184,8 @@ function evidenceRelStoreKey() {
 // Stored as: { [urlKey]: [urlKey2, urlKey3...] } (undirected)
 function loadEvidenceRelations() {
   try {
+    const projectRel = getActiveProjectData("evidenceRelations");
+    if (projectRel && typeof projectRel === "object") return projectRel;
     const raw = localStorage.getItem(evidenceRelStoreKey());
     const obj = raw ? JSON.parse(raw) : {};
     return obj && typeof obj === "object" ? obj : {};
@@ -172,6 +196,7 @@ function loadEvidenceRelations() {
 
 function saveEvidenceRelations(rel) {
   localStorage.setItem(evidenceRelStoreKey(), JSON.stringify(rel || {}));
+  updateActiveProjectData("evidenceRelations", "__global", rel || {});
 }
 
 function addEvidenceRelation(urlA, urlB) {
@@ -219,6 +244,10 @@ const EVIDENCE_LINK_TYPES = [
 ];
 
 const WORKSPACE_KEY = "vaCfrWorkspace:v4";
+
+function emptyProjectData() {
+  return { notes: {}, evidenceState: {}, timelines: {}, evidenceLinks: {}, evidenceRelations: {} };
+}
 
 const REL_TYPES = [
   "Secondary to",
@@ -345,6 +374,8 @@ function saveProjectStore(store, { sync = true } = {}) {
   const clean = normalizeWorkspaceProjectStore(store);
   activeProjectId = clean.activeProjectId;
   localStorage.setItem(WORKSPACE_STORE_KEY, JSON.stringify(clean));
+  const active = getActiveProject(clean);
+  if (active) mirrorProjectDataToLocalStorage(active);
   if (sync) queueWorkspaceSync();
   return clean;
 }
@@ -478,11 +509,132 @@ function renderProjectSelector() {
   setWorkspaceSyncStatus(workspaceSyncStatus);
 }
 
+function projectStats(project) {
+  const workspace = normalizeWorkspaceShape(project.workspace);
+  const ids = workspace.nodes || [];
+  const items = ids.map(id => CONDITIONS.find(c => c.id === id)).filter(Boolean);
+  let done = 0, total = 0;
+  const missing = [];
+  items.forEach(item => {
+    const state = project.evidenceState?.[item.id] || loadEvidenceState(item.id);
+    const checklist = item.evidence_checklist || [];
+    total += checklist.length;
+    done += checklist.reduce((sum, _, idx) => sum + (state[idx] ? 1 : 0), 0);
+    const unchecked = (item.evidence_checklist || []).filter((_, idx) => !state[idx]);
+    unchecked.slice(0, 2).forEach(text => missing.push(`${item.name}: ${text}`));
+  });
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  const timelineCount = Object.values(project.timelines || {}).reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0);
+  const evidenceLinkCount = Object.values(project.evidenceLinks || {}).reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0);
+  return {
+    conditionCount: items.length,
+    readiness: { done, total, pct },
+    missing,
+    timelineCount,
+    evidenceLinkCount,
+    updatedAt: project.updatedAt || ""
+  };
+}
+
+function renderProjectDashboard() {
+  const host = document.getElementById("projectCards");
+  if (!host) return;
+  const store = loadProjectStore();
+  if (!store.projects.length) {
+    host.innerHTML = `<div class="emptyState compact"><strong>No claim projects yet</strong><p>Create a project to organize conditions, evidence, notes, and exports.</p></div>`;
+    return;
+  }
+  host.innerHTML = store.projects.map(project => {
+    const stats = projectStats(project);
+    const isActive = project.id === store.activeProjectId;
+    const missingPreview = stats.missing.length
+      ? stats.missing.slice(0, 3).map(m => `<li>${escapeHtml(m)}</li>`).join("")
+      : `<li>No checklist gaps detected yet.</li>`;
+    return `
+      <article class="projectCard ${isActive ? "active" : ""}">
+        <div class="projectCardTop">
+          <div>
+            <strong>${escapeHtml(project.name)}</strong>
+            ${isActive ? `<span class="wsBadge">Active</span>` : ""}
+          </div>
+          <span class="small">${stats.updatedAt ? `Updated ${new Date(stats.updatedAt).toLocaleString()}` : "Not saved yet"}</span>
+        </div>
+        <div class="projectStats">
+          <span>${stats.conditionCount} conditions</span>
+          <span>${stats.readiness.pct}% ready</span>
+          <span>${stats.evidenceLinkCount} evidence links</span>
+          <span>${stats.timelineCount} timeline entries</span>
+        </div>
+        <div class="evBar"><div class="evBarFill" style="width:${stats.readiness.pct}%"></div></div>
+        <details class="projectGaps">
+          <summary>Evidence gaps</summary>
+          <ul>${missingPreview}</ul>
+        </details>
+        <div class="projectCardActions">
+          <button class="miniBtn" type="button" data-project-open="${escapeHtml(project.id)}">Open</button>
+          <button class="miniBtn danger" type="button" data-project-delete="${escapeHtml(project.id)}" ${store.projects.length < 2 ? "disabled" : ""}>Delete</button>
+        </div>
+      </article>
+    `;
+  }).join("");
+
+  host.querySelectorAll("[data-project-open]").forEach(btn => {
+    btn.addEventListener("click", () => switchProject(btn.dataset.projectOpen));
+  });
+  host.querySelectorAll("[data-project-delete]").forEach(btn => {
+    btn.addEventListener("click", () => deleteProject(btn.dataset.projectDelete));
+  });
+}
+
+function deleteProject(projectId) {
+  const store = loadProjectStore();
+  if (store.projects.length < 2) return;
+  const project = store.projects.find(p => p.id === projectId);
+  if (!project) return;
+  if (!confirm(`Delete claim project "${project.name}"? This removes its local synced project data.`)) return;
+  store.projects = store.projects.filter(p => p.id !== projectId);
+  if (store.activeProjectId === projectId) store.activeProjectId = store.projects[0]?.id || "";
+  saveProjectStore(store);
+  saveWorkspaceState(getActiveProject(store).workspace);
+  renderProjectSelector();
+  refreshWorkspaceViews();
+}
+
+function collectLocalDataExport() {
+  return {
+    exportedAt: new Date().toISOString(),
+    projectStore: loadProjectStore(),
+    taskState: (() => {
+      try { return JSON.parse(localStorage.getItem("vaCfrFinderState") || "{}"); } catch { return {}; }
+    })()
+  };
+}
+
+function exportLocalData() {
+  downloadText(`va-cfr-data-export-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(collectLocalDataExport(), null, 2));
+}
+
+function clearAllLocalClaimData() {
+  if (!confirm("Clear all local claim packet data in this browser? This does not delete server data already synced to your account.")) return;
+  const prefixes = ["vaCfrEvidence:", "vaCfrNotes:", "vaCfrTimeline:", "vaCfrEvidenceLinks:"];
+  Object.keys(localStorage).forEach(key => {
+    if (prefixes.some(prefix => key.startsWith(prefix))) localStorage.removeItem(key);
+  });
+  localStorage.removeItem(WORKSPACE_KEY);
+  localStorage.removeItem(WORKSPACE_STORE_KEY);
+  localStorage.removeItem(evidenceRelStoreKey());
+  migrateLegacyWorkspaceIfNeeded();
+  renderProjectSelector();
+  refreshWorkspaceViews();
+  showNotification("Local claim data cleared.");
+}
+
 function refreshWorkspaceViews() {
   renderWorkspace();
   renderClaimTree();
   renderHealthPanel();
   renderBinderViewer({ scope: "all", sortMode: "date", viewMode: "flat" });
+  renderProjectDashboard();
 }
 
 function initializeGuidedTabs() {
@@ -532,6 +684,7 @@ function getChecklistGuidance(item, state) {
 function initProjectControls() {
   migrateLegacyWorkspaceIfNeeded();
   renderProjectSelector();
+  renderProjectDashboard();
   document.getElementById("claimProjectSelect")?.addEventListener("change", e => switchProject(e.target.value));
   document.getElementById("claimProjectAdd")?.addEventListener("click", () => {
     const input = document.getElementById("claimProjectName");
@@ -539,6 +692,8 @@ function initProjectControls() {
     if (input) input.value = "";
   });
   document.getElementById("claimProjectRename")?.addEventListener("click", renameActiveProject);
+  document.getElementById("localDataExport")?.addEventListener("click", exportLocalData);
+  document.getElementById("localDataClear")?.addEventListener("click", clearAllLocalClaimData);
 }
 
 function buildAdjacencyFromLinks(links) {
@@ -2206,7 +2361,10 @@ if (secBtn && secList) {
       let t;
       notesEl.addEventListener("input", () => {
         clearTimeout(t);
-        t = setTimeout(() => saveNotes(item.id, notesEl.value), 200);
+        t = setTimeout(() => {
+          saveNotes(item.id, notesEl.value);
+          renderProjectDashboard();
+        }, 200);
       });
     }
 
@@ -2214,6 +2372,7 @@ if (secBtn && secList) {
       notesClearBtn.addEventListener("click", () => {
         saveNotes(item.id, "");
         if (notesEl) notesEl.value = "";
+        renderProjectDashboard();
       });
     }
 
@@ -2250,6 +2409,7 @@ if (secBtn && secList) {
       b.addEventListener("click", () => {
         removeTimelineEntry(item.id, b.dataset.tlrm);
         renderTimelineList();
+        renderProjectDashboard();
       });
     });
   }
@@ -2292,6 +2452,7 @@ if (secBtn && secList) {
       if (tlDate) tlDate.value = "";
       if (tlNote) tlNote.value = "";
       renderTimelineList();
+      renderProjectDashboard();
     });
   }
 
@@ -2662,6 +2823,7 @@ if (secBtn && secList) {
       updateEvCount();
       updateChecklistGuidance(item);
       renderWorkspace();
+      renderProjectDashboard();
     });
   }
 

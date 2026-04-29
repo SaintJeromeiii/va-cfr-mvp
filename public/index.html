@@ -146,6 +146,20 @@
         <span id="workspaceSyncStatus" class="syncStatus">Saved locally</span>
       </div>
 
+      <div class="projectDashboard">
+        <div class="projectDashboardHead">
+          <div>
+            <h3 style="margin:0">Claim Packet Dashboard</h3>
+            <div class="small">Track readiness and jump between packets.</div>
+          </div>
+          <div class="healthBtns">
+            <button id="localDataExport" class="miniBtn" type="button">Download My Data</button>
+            <button id="localDataClear" class="miniBtn danger" type="button">Clear Local Data</button>
+          </div>
+        </div>
+        <div id="projectCards" class="projectCards"></div>
+      </div>
+
       <div class="small" id="wsScore">Evidence Readiness: 0/0 (0%)</div>
       <div class="small" id="wsOrphans">Orphans: 0</div>
       <div class="evBar"><div id="wsBarFill" class="evBarFill"></div></div>
