@@ -1,11 +1,16 @@
 let CONDITIONS = [];
 let LAST_INTAKE_ANALYSIS = null;
 let PENDING_COVERAGE_FOCUS = null;
+let EXTRACTOR_PACKET_COMPARE_STATE = { leftId: "", rightId: "" };
+let EXTRACTOR_PACKET_FILTER_STATE = { tag: "", targetId: "" };
+let EXTRACTOR_PACKET_SORT_STATE = "newest";
 const WS_RATING_STATE_KEY = "vaCfrWorkspaceRatingEstimator:v1";
 const WS_THEORY_STATE_KEY = "vaCfrWorkspaceTheories:v1";
 const WS_RATING_SCENARIOS_KEY = "vaCfrWorkspaceRatingScenarios:v1";
 const DOC_LIBRARY_KEY = "vaCfrDocumentLibrary:v1";
 const EVIDENCE_LIBRARY_KEY = "vaCfrEvidenceLibrary:v1";
+const EXTRACTOR_HISTORY_KEY = "vaCfrExtractorHistory:v1";
+const EXTRACTOR_PACKET_LIBRARY_KEY = "vaCfrExtractorPacketLibrary:v1";
 const WS_SNAPSHOT_HISTORY_KEY = "vaCfrWorkspaceSnapshotHistory:v1";
 const WS_PANEL_STATE_KEY = "vaCfrWorkspacePanelState:v1";
 const WS_PROFILES_KEY = "vaCfrWorkspaceProfiles:v1";
@@ -578,6 +583,8 @@ function buildWorkspaceBackup() {
     claimMilestones: loadClaimMilestones(),
     documentLibrary: loadDocumentLibrary(),
     evidenceLibrary: loadEvidenceLibrary(),
+    extractorPacketLibrary: loadExtractorPacketLibrary(),
+    extractorHistory: loadExtractorHistory(),
     snapshots: loadWorkspaceSnapshots(),
     snapshotHistory: loadSnapshotHistory(),
     activity: loadWorkspaceActivity(),
@@ -622,6 +629,8 @@ function applyWorkspaceBackup(backup) {
   saveClaimMilestones(Array.isArray(backup.claimMilestones) ? backup.claimMilestones : []);
   saveDocumentLibrary(Array.isArray(backup.documentLibrary) ? backup.documentLibrary : []);
   saveEvidenceLibrary(Array.isArray(backup.evidenceLibrary) ? backup.evidenceLibrary : []);
+  saveExtractorPacketLibrary(Array.isArray(backup.extractorPacketLibrary) ? backup.extractorPacketLibrary : []);
+  saveExtractorHistory(Array.isArray(backup.extractorHistory) ? backup.extractorHistory : []);
   saveWorkspaceSnapshots(Array.isArray(backup.snapshots) ? backup.snapshots : []);
   saveSnapshotHistory(Array.isArray(backup.snapshotHistory) ? backup.snapshotHistory : []);
   saveWorkspaceActivity(Array.isArray(backup.activity) ? backup.activity : []);
@@ -643,6 +652,8 @@ function emptyWorkspaceBackup() {
     claimMilestones: [],
     documentLibrary: [],
     evidenceLibrary: [],
+    extractorPacketLibrary: [],
+    extractorHistory: [],
     snapshots: [],
     snapshotHistory: [],
     activity: [],
@@ -719,6 +730,18 @@ function getConditionGuidedFormSchema(item) {
         { key: "cpap", label: "CPAP / treatment use", placeholder: "Prescribed, tolerated, difficulties, etc." },
         { key: "daytime", label: "Daytime impact", placeholder: "Fatigue, naps, driving risk, concentration, etc." },
         { key: "worsening", label: "Worsening pattern", placeholder: "How symptoms changed over time" },
+      ],
+    };
+  }
+
+  if (/gerd|reflux|heartburn|ibs|bowel/.test(name) || /digestive/.test(body)) {
+    return {
+      title: "Digestive Condition Form",
+      fields: [
+        { key: "frequency", label: "Frequency of episodes", placeholder: "How often reflux, urgency, diarrhea, constipation, etc. happen" },
+        { key: "triggerFoods", label: "Food / trigger pattern", placeholder: "Meals, stress, meds, nighttime symptoms, etc." },
+        { key: "functionalImpact", label: "Functional impact", placeholder: "Sleep interruption, bathroom urgency, missed work, diet restrictions, etc." },
+        { key: "treatment", label: "Treatment / medication", placeholder: "GI meds, diet changes, scopes, specialist visits, etc." },
       ],
     };
   }
@@ -869,6 +892,29 @@ function buildRepresentativeHandoffText() {
   lines.push("");
   lines.push("Use this workspace as a representative-facing summary only. Verify dates, records, CFR references, and rating assumptions before filing or advising.");
   return lines.join("\n");
+}
+
+function renderRepresentativeReviewSummary() {
+  const host = document.getElementById("wsRepReviewSummary");
+  if (!host) return;
+
+  const dashboard = computeWorkspaceDashboardData();
+  const conflicts = analyzeEvidenceConflicts();
+  host.innerHTML = `
+    <article class="builderSuggestionCard">
+      <div class="builderSuggestionTop">
+        <div>
+          <strong>Representative Review Snapshot</strong>
+          <div class="small">Use this as a quick triage layer before generating the full handoff text.</div>
+        </div>
+        <span class="provenanceTag prov-generated">Review mode</span>
+      </div>
+      <div class="small" style="margin-top:10px"><strong>Strongest issues:</strong> ${dashboard.strongest.length ? escapeHtml(dashboard.strongest.map((row) => row.item.name).join(", ")) : "none staged yet"}</div>
+      <div class="small" style="margin-top:6px"><strong>Weakest issues:</strong> ${dashboard.weakest.length ? escapeHtml(dashboard.weakest.map((row) => row.item.name).join(", ")) : "none obvious yet"}</div>
+      <div class="small" style="margin-top:6px"><strong>Evidence conflicts:</strong> ${conflicts.length ? escapeHtml(conflicts.slice(0, 2).map((item) => item.title).join(" | ")) : "none obvious"}</div>
+      <div class="small" style="margin-top:6px"><strong>Top review items:</strong> ${dashboard.topActions.length ? escapeHtml(dashboard.topActions.map((item) => item.text).join(" | ")) : "no urgent blockers detected"}</div>
+    </article>
+  `;
 }
 
 function computeActionEngine() {
@@ -2211,6 +2257,77 @@ function saveEvidenceLibrary(items) {
   localStorage.setItem(EVIDENCE_LIBRARY_KEY, JSON.stringify(Array.isArray(items) ? items : []));
 }
 
+function loadExtractorPacketLibrary() {
+  try {
+    const raw = localStorage.getItem(EXTRACTOR_PACKET_LIBRARY_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveExtractorPacketLibrary(items) {
+  localStorage.setItem(EXTRACTOR_PACKET_LIBRARY_KEY, JSON.stringify(Array.isArray(items) ? items : []));
+}
+
+function createExtractorPacketRecord(options = {}) {
+  const tags = Array.isArray(options.tags)
+    ? options.tags
+    : String(options.tags || "")
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+  return {
+    id: `extractor-packet-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    targetId: (options.targetId || "").trim(),
+    targetName: (options.targetName || "").trim() || "Condition",
+    sourceName: (options.sourceName || "").trim() || "Document intake",
+    title: (options.title || "").trim() || `Extractor Draft Packet ${new Date().toLocaleString()}`,
+    tags,
+    pinned: !!options.pinned,
+    text: (options.text || "").trim(),
+    compare: options.compare && typeof options.compare === "object" ? options.compare : {},
+    createdAt: new Date().toISOString(),
+  };
+}
+
+function loadExtractorHistory() {
+  try {
+    const raw = localStorage.getItem(EXTRACTOR_HISTORY_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveExtractorHistory(items) {
+  localStorage.setItem(EXTRACTOR_HISTORY_KEY, JSON.stringify(Array.isArray(items) ? items : []));
+}
+
+function createExtractorHistoryEntry(options = {}) {
+  const selected = options.selected && typeof options.selected === "object" ? options.selected : {};
+  return {
+    id: `extractor-history-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    action: (options.action || "notes").trim(),
+    targetId: (options.targetId || "").trim(),
+    targetName: (options.targetName || "").trim() || "Condition",
+    sourceName: (options.sourceName || "").trim() || "Document intake",
+    providers: Array.isArray(selected.providers) ? selected.providers : [],
+    symptoms: Array.isArray(selected.symptoms) ? selected.symptoms : [],
+    dates: Array.isArray(selected.dates) ? selected.dates : [],
+    diagnosisPhrases: Array.isArray(selected.diagnosisPhrases) ? selected.diagnosisPhrases : [],
+    severityPhrases: Array.isArray(selected.severityPhrases) ? selected.severityPhrases : [],
+    nexusPhrases: Array.isArray(selected.nexusPhrases) ? selected.nexusPhrases : [],
+    createdAt: new Date().toISOString(),
+  };
+}
+
+function pushExtractorHistory(entry) {
+  saveExtractorHistory([entry, ...loadExtractorHistory()].slice(0, 30));
+}
+
 function loadSnapshotHistory() {
   try {
     const raw = localStorage.getItem(WS_SNAPSHOT_HISTORY_KEY);
@@ -2393,7 +2510,7 @@ function buildNexusDraft(options = {}) {
   return lines.join("\n");
 }
 
-function createDocumentRecord({ name, type, tags, text }) {
+function createDocumentRecord({ name, type, tags, text, sourceType, sourceName, fileName }) {
   const normalizedTags = Array.isArray(tags)
     ? tags
     : String(tags || "")
@@ -2405,7 +2522,9 @@ function createDocumentRecord({ name, type, tags, text }) {
     id: `doc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     name: (name || "").trim() || `Document ${new Date().toLocaleString()}`,
     type: (type || "").trim() || "General",
-    sourceType: "user-entered",
+    sourceType: (sourceType || "").trim() || "user-entered",
+    sourceName: (sourceName || "").trim(),
+    fileName: (fileName || "").trim(),
     tags: normalizedTags,
     text: (text || "").trim(),
     createdAt: new Date().toISOString()
@@ -3592,6 +3711,425 @@ function analyzeRecordToClaimMapper(rawText, workspaceItems = CONDITIONS) {
   };
 }
 
+function extractEvidenceSignals(rawText, workspaceItems = CONDITIONS) {
+  const text = (rawText || "").trim();
+  if (!text) {
+    return {
+      text: "",
+      dates: [],
+      providers: [],
+      symptoms: [],
+      diagnosisPhrases: [],
+      severityPhrases: [],
+      nexusPhrases: [],
+      likelyTargets: [],
+    };
+  }
+
+  const sentences = text.split(/(?<=[.!?])\s+/).filter(Boolean);
+  const dates = [...new Set((text.match(/\b(?:19|20)\d{2}(?:-\d{2}(?:-\d{2})?)?\b/g) || []).slice(0, 12))];
+  const providerMatches = text.match(/\b(?:Dr\.?\s+[A-Z][a-z]+|[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?\s+(?:Clinic|Medical Center|Hospital|Neurology|Psychiatry|Audiology|ENT|Primary Care|Sleep Medicine))\b/g) || [];
+  const providers = [...new Set(providerMatches.map((item) => item.trim()))].slice(0, 8);
+
+  const symptomTerms = [
+    "pain", "headache", "migraine", "insomnia", "sleep disruption", "nightmares", "panic", "anxiety",
+    "depression", "fatigue", "numbness", "tingling", "weakness", "dizziness", "congestion", "reflux",
+    "heartburn", "diarrhea", "constipation", "missed work", "flare", "prostrating", "shortness of breath",
+  ];
+  const lower = text.toLowerCase();
+  const symptoms = symptomTerms.filter((term) => lower.includes(term)).slice(0, 10);
+
+  const diagnosisPhrases = sentences.filter((sentence) => /\bdiagnos|assessment|impression|dbq|examiner diagnosed|medical opinion\b/i.test(sentence)).slice(0, 4);
+  const severityPhrases = sentences.filter((sentence) => /\bsever|frequency|impact|functional|missed work|prostrating|flare|worsen|sleep disruption\b/i.test(sentence)).slice(0, 4);
+  const nexusPhrases = sentences.filter((sentence) => /\bdue to\b|\bcaused by\b|\bsecondary\b|\baggravat|\brelated to\b|\bworsen(?:ed|ing)? by\b/i.test(sentence)).slice(0, 4);
+
+  const mapping = analyzeRecordToClaimMapper(text, workspaceItems);
+  return {
+    text,
+    dates,
+    providers,
+    symptoms,
+    diagnosisPhrases,
+    severityPhrases,
+    nexusPhrases,
+    likelyTargets: mapping.conditions.slice(0, 4),
+  };
+}
+
+function buildExtractorNoteSummary(extractor, targetName = "Condition") {
+  const lines = [`[Extracted evidence summary for ${targetName}]`];
+  if (extractor.providers?.length) lines.push(`Providers / sources: ${extractor.providers.join(", ")}`);
+  if (extractor.dates?.length) lines.push(`Dates mentioned: ${extractor.dates.join(", ")}`);
+  if (extractor.symptoms?.length) lines.push(`Symptoms / issues: ${extractor.symptoms.join(", ")}`);
+  if (extractor.diagnosisPhrases?.length) lines.push(`Diagnosis phrases: ${extractor.diagnosisPhrases.join(" ")}`);
+  if (extractor.severityPhrases?.length) lines.push(`Severity / impact phrases: ${extractor.severityPhrases.join(" ")}`);
+  if (extractor.nexusPhrases?.length) lines.push(`Nexus / relationship phrases: ${extractor.nexusPhrases.join(" ")}`);
+  return lines.join("\n");
+}
+
+function normalizeExtractorPhrase(value) {
+  return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function dedupeExtractorValues(items = []) {
+  const seen = new Set();
+  return items
+    .map((item) => normalizeExtractorPhrase(item))
+    .filter((item) => {
+      if (!item) return false;
+      const key = item.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+function buildExtractorDraft(extractor = {}) {
+  return {
+    providers: dedupeExtractorValues(extractor.providers || []),
+    symptoms: dedupeExtractorValues(extractor.symptoms || []),
+    dates: dedupeExtractorValues(extractor.dates || []),
+    diagnosisPhrases: dedupeExtractorValues(extractor.diagnosisPhrases || []),
+    severityPhrases: dedupeExtractorValues(extractor.severityPhrases || []),
+    nexusPhrases: dedupeExtractorValues(extractor.nexusPhrases || []),
+  };
+}
+
+function pruneExtractorDraft(draft = {}) {
+  return {
+    providers: dedupeExtractorValues(draft.providers || []),
+    symptoms: dedupeExtractorValues(draft.symptoms || []),
+    dates: dedupeExtractorValues(draft.dates || []),
+    diagnosisPhrases: dedupeExtractorValues(draft.diagnosisPhrases || []),
+    severityPhrases: dedupeExtractorValues(draft.severityPhrases || []),
+    nexusPhrases: dedupeExtractorValues(draft.nexusPhrases || []),
+  };
+}
+
+function extractorReviewSummary(draft = {}) {
+  const groups = [
+    draft.providers || [],
+    draft.symptoms || [],
+    draft.dates || [],
+    draft.diagnosisPhrases || [],
+    draft.severityPhrases || [],
+    draft.nexusPhrases || [],
+  ];
+  return groups.reduce((sum, group) => sum + group.length, 0);
+}
+
+function buildExtractorTimelinePreview(extractor = {}, targetName = "Condition") {
+  const dates = Array.isArray(extractor.dates) ? extractor.dates.filter(Boolean).slice(0, 4) : [];
+  return dates.map((date) => ({
+    date,
+    type: "Other",
+    note: `Document extractor imported date for ${targetName}${extractor.providers?.[0] ? ` (${extractor.providers[0]})` : ""}.`,
+  }));
+}
+
+function buildExtractorEvidencePreview(extractor = {}, options = {}) {
+  const targetName = (options.targetName || "").trim();
+  const labelBase = (options.labelBase || "").trim() || "Extracted record evidence";
+  const excerpt = [
+    ...(extractor.diagnosisPhrases || []).slice(0, 1),
+    ...(extractor.severityPhrases || []).slice(0, 1),
+    ...(extractor.nexusPhrases || []).slice(0, 1),
+  ].join(" ").trim() || String(options.fallbackText || "").slice(0, 240).trim();
+
+  return {
+    label: targetName ? `${labelBase} — ${targetName}` : labelBase,
+    type: (options.type || "").trim() || "General",
+    excerpt,
+    tags: dedupeExtractorValues([
+      ...(Array.isArray(options.tags) ? options.tags : []),
+      ...((extractor.symptoms || []).slice(0, 4)),
+    ]),
+    date: (extractor.dates || [])[0] || "",
+  };
+}
+
+function compareExtractorPreview(preview = {}, existing = {}) {
+  const existingNotes = normalizeExtractorPhrase(existing.notes || "");
+  const noteSummary = normalizeExtractorPhrase(preview.noteSummary || "");
+  const noteStatus = !noteSummary
+    ? { status: "empty", detail: "No note summary will be generated." }
+    : existingNotes.toLowerCase().includes(noteSummary.toLowerCase())
+      ? { status: "duplicate", detail: "This summary already appears in the target notes." }
+      : { status: "new", detail: "This summary will append new note content." };
+
+  const existingTimeline = Array.isArray(existing.timeline) ? existing.timeline : [];
+  const previewTimeline = Array.isArray(preview.timelineEntries) ? preview.timelineEntries : [];
+  const duplicateTimeline = previewTimeline.filter((entry) =>
+    existingTimeline.some((saved) =>
+      normalizeExtractorPhrase(saved.date || "") === normalizeExtractorPhrase(entry.date || "") &&
+      normalizeExtractorPhrase(saved.note || "") === normalizeExtractorPhrase(entry.note || "")
+    )
+  );
+  const timelineStatus = !previewTimeline.length
+    ? { status: "empty", detail: "No timeline entries will be added." }
+    : duplicateTimeline.length
+      ? { status: "mixed", detail: `${duplicateTimeline.length} of ${previewTimeline.length} timeline entr${previewTimeline.length === 1 ? "y is" : "ies are"} already present.` }
+      : { status: "new", detail: `All ${previewTimeline.length} timeline entr${previewTimeline.length === 1 ? "y is" : "ies are"} new.` };
+
+  const evidenceRecord = preview.evidenceRecord || {};
+  const existingEvidence = Array.isArray(existing.evidenceLinks) ? existing.evidenceLinks : [];
+  const duplicateEvidence = existingEvidence.some((entry) =>
+    normalizeExtractorPhrase(entry.label || "") === normalizeExtractorPhrase(evidenceRecord.label || "") &&
+    normalizeExtractorPhrase(entry.note || "") === normalizeExtractorPhrase(evidenceRecord.excerpt || "") &&
+    normalizeExtractorPhrase(entry.date || "") === normalizeExtractorPhrase(evidenceRecord.date || "")
+  );
+  const evidenceStatus = !evidenceRecord.label && !evidenceRecord.excerpt
+    ? { status: "empty", detail: "No evidence record will be created." }
+    : duplicateEvidence
+      ? { status: "duplicate", detail: "A matching evidence link already exists on this condition." }
+      : { status: "new", detail: "This evidence record looks new for the target condition." };
+
+  return {
+    noteStatus,
+    timelineStatus,
+    evidenceStatus,
+    duplicateTimelineCount: duplicateTimeline.length,
+    duplicateTimeline,
+    duplicateEvidence,
+  };
+}
+
+function computeExtractorApplyNewPlan(preview = {}, existing = {}) {
+  const compare = compareExtractorPreview(preview, existing);
+  const newTimelineEntries = (Array.isArray(preview.timelineEntries) ? preview.timelineEntries : []).filter((entry) =>
+    !compare.duplicateTimeline.some((duplicate) =>
+      normalizeExtractorPhrase(duplicate.date || "") === normalizeExtractorPhrase(entry.date || "") &&
+      normalizeExtractorPhrase(duplicate.note || "") === normalizeExtractorPhrase(entry.note || "")
+    )
+  );
+
+  return {
+    noteSummary: compare.noteStatus.status === "new" ? String(preview.noteSummary || "").trim() : "",
+    timelineEntries: newTimelineEntries,
+    evidenceRecord: compare.evidenceStatus.status === "new" ? (preview.evidenceRecord || null) : null,
+    compare,
+  };
+}
+
+function buildExtractorDraftPacketText(preview = {}, options = {}) {
+  const targetName = preview.target?.name || options.targetName || "Condition";
+  const sourceName = (options.sourceName || "").trim() || "Document intake";
+  const lines = [];
+  lines.push(`[Extractor Draft Packet: ${targetName}]`);
+  lines.push(`Source: ${sourceName}`);
+  lines.push(`Generated: ${new Date().toLocaleString()}`);
+  lines.push("");
+  lines.push("[Notes Summary]");
+  lines.push((preview.noteSummary || "").trim() || "No notes summary generated.");
+  lines.push("");
+  lines.push("[Timeline Draft]");
+  if (Array.isArray(preview.timelineEntries) && preview.timelineEntries.length) {
+    preview.timelineEntries.forEach((entry) => {
+      lines.push(`${entry.date} • ${entry.type}`);
+      lines.push(entry.note || "");
+      lines.push("");
+    });
+  } else {
+    lines.push("No timeline entries generated.");
+    lines.push("");
+  }
+  lines.push("[Evidence Draft]");
+  const evidence = preview.evidenceRecord || {};
+  lines.push(`Label: ${evidence.label || "No evidence label"}`);
+  lines.push(`Type: ${evidence.type || "General"}`);
+  if (evidence.date) lines.push(`Date: ${evidence.date}`);
+  if (Array.isArray(evidence.tags) && evidence.tags.length) lines.push(`Tags: ${evidence.tags.join(", ")}`);
+  lines.push(`Excerpt: ${evidence.excerpt || "(no excerpt available)"}`);
+  lines.push("");
+  lines.push("[Duplicate Check]");
+  lines.push(`Notes: ${preview.compare?.noteStatus?.detail || "No comparison available."}`);
+  lines.push(`Timeline: ${preview.compare?.timelineStatus?.detail || "No comparison available."}`);
+  lines.push(`Evidence: ${preview.compare?.evidenceStatus?.detail || "No comparison available."}`);
+  return lines.join("\n");
+}
+
+function parseExtractorDraftPacketSections(text = "") {
+  const lines = String(text || "").split("\n");
+  const sections = {};
+  let current = "header";
+  sections[current] = [];
+  lines.forEach((line) => {
+    const match = line.match(/^\[(.+)\]$/);
+    if (match) {
+      current = match[1];
+      sections[current] = sections[current] || [];
+      return;
+    }
+    sections[current] = sections[current] || [];
+    sections[current].push(line);
+  });
+  return sections;
+}
+
+function compareExtractorPacketRecords(left = {}, right = {}) {
+  const leftSections = parseExtractorDraftPacketSections(left.text || "");
+  const rightSections = parseExtractorDraftPacketSections(right.text || "");
+  const sectionNames = [...new Set([...Object.keys(leftSections), ...Object.keys(rightSections)])];
+  const findings = sectionNames.map((name) => {
+    const leftText = (leftSections[name] || []).join("\n").trim();
+    const rightText = (rightSections[name] || []).join("\n").trim();
+    if (leftText === rightText) {
+      return { section: name, status: "same", detail: "No meaningful change." };
+    }
+    if (!leftText) {
+      return { section: name, status: "added", detail: `${right.title || "Right packet"} adds content in this section.` };
+    }
+    if (!rightText) {
+      return { section: name, status: "removed", detail: `${right.title || "Right packet"} removes content from this section.` };
+    }
+    return {
+      section: name,
+      status: "changed",
+      detail: `${Math.abs(leftText.length - rightText.length)} character difference and changed section content.`,
+    };
+  });
+
+  const lines = [];
+  lines.push(`[Extractor Draft Packet Compare]`);
+  lines.push(`Left: ${(left.title || "Packet A").trim()}`);
+  lines.push(`Right: ${(right.title || "Packet B").trim()}`);
+  lines.push("");
+  findings.forEach((finding) => {
+    lines.push(`${finding.section}: ${finding.detail}`);
+  });
+
+  return {
+    findings,
+    text: lines.join("\n"),
+  };
+}
+
+function parseExtractorTimelineDraft(text = "") {
+  const lines = String(text || "").split("\n");
+  const entries = [];
+  let current = null;
+  lines.forEach((line) => {
+    const trimmed = line.trim();
+    const match = trimmed.match(/^(\d{4}(?:-\d{2}(?:-\d{2})?)?)\s+•\s+(.+)$/);
+    if (match) {
+      if (current) entries.push(current);
+      current = { date: match[1], type: match[2].trim(), note: "" };
+      return;
+    }
+    if (!trimmed) {
+      if (current) {
+        entries.push(current);
+        current = null;
+      }
+      return;
+    }
+    if (current) {
+      current.note = current.note ? `${current.note}\n${trimmed}` : trimmed;
+    }
+  });
+  if (current) entries.push(current);
+  return entries;
+}
+
+function parseExtractorEvidenceDraft(text = "") {
+  const lines = String(text || "").split("\n");
+  const record = { label: "", type: "General", date: "", tags: [], excerpt: "" };
+  let excerptMode = false;
+  lines.forEach((line) => {
+    if (line.startsWith("Label: ")) {
+      record.label = line.slice(7).trim();
+      excerptMode = false;
+      return;
+    }
+    if (line.startsWith("Type: ")) {
+      record.type = line.slice(6).trim() || "General";
+      excerptMode = false;
+      return;
+    }
+    if (line.startsWith("Date: ")) {
+      record.date = line.slice(6).trim();
+      excerptMode = false;
+      return;
+    }
+    if (line.startsWith("Tags: ")) {
+      record.tags = line.slice(6).split(",").map((item) => item.trim()).filter(Boolean);
+      excerptMode = false;
+      return;
+    }
+    if (line.startsWith("Excerpt: ")) {
+      record.excerpt = line.slice(9).trim();
+      excerptMode = true;
+      return;
+    }
+    if (excerptMode && line.trim()) {
+      record.excerpt = record.excerpt ? `${record.excerpt}\n${line.trim()}` : line.trim();
+    }
+  });
+  return record;
+}
+
+function buildExtractorPacketPreview(packet = {}) {
+  const sections = parseExtractorDraftPacketSections(packet.text || "");
+  return {
+    target: { id: packet.targetId || "", name: packet.targetName || "Condition" },
+    noteSummary: ((sections["Notes Summary"] || []).join("\n")).trim(),
+    timelineEntries: parseExtractorTimelineDraft((sections["Timeline Draft"] || []).join("\n")),
+    evidenceRecord: parseExtractorEvidenceDraft((sections["Evidence Draft"] || []).join("\n")),
+    compare: packet.compare && typeof packet.compare === "object" ? packet.compare : {},
+  };
+}
+
+function selectedExtractorValues(container, name) {
+  if (!container) return [];
+  return [...container.querySelectorAll(`input[data-extractor-${name}]:checked`)]
+    .map((input) => input.value || "")
+    .filter(Boolean);
+}
+
+function extractorSourceLabel(analysis) {
+  const sourceName = (analysis?.sourceName || "").trim();
+  return sourceName || "Document intake";
+}
+
+function inferDocumentSourceType(file) {
+  const extension = `.${(file?.name || "").split(".").pop() || ""}`.toLowerCase();
+  if (extension === ".pdf" || extension === ".docx") return "inferred";
+  return "user-entered";
+}
+
+async function readFileAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === "string" ? reader.result : "";
+      const base64 = result.includes(",") ? result.split(",")[1] : result;
+      resolve(base64);
+    };
+    reader.onerror = () => reject(reader.error || new Error("Could not read that file."));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function extractStructuredDocument(file) {
+  const base64 = await readFileAsBase64(file);
+  const response = await fetch("/api/extract-document", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      filename: file.name,
+      mimeType: file.type || "",
+      base64,
+    }),
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload.error || "Could not extract that document.");
+  }
+
+  return payload;
+}
+
 function computeEvidenceCoverageMatrix(items, st = loadWorkspaceState()) {
   const rows = (items || []).map((item) => {
     const notes = (loadNotes(item.id) || "").trim();
@@ -3935,6 +4473,7 @@ function renderDocumentIntakeResults() {
   const summaryEl = document.getElementById("docIntakeSummary");
   const resultsEl = document.getElementById("docIntakeResults");
   const mapperEl = document.getElementById("docMapperResults");
+  const extractorEl = document.getElementById("docExtractorResults");
   if (!summaryEl || !resultsEl) return;
 
   const analysis = LAST_INTAKE_ANALYSIS;
@@ -3942,10 +4481,12 @@ function renderDocumentIntakeResults() {
     summaryEl.textContent = "";
     resultsEl.innerHTML = `<div class="small">No intake analysis yet.</div>`;
     if (mapperEl) mapperEl.innerHTML = `<div class="small">No record-to-claim mapping yet.</div>`;
+    if (extractorEl) extractorEl.innerHTML = `<div class="small">No evidence extractor output yet.</div>`;
+    renderExtractorHistory();
     return;
   }
 
-  summaryEl.textContent = `${analysis.matches.length} possible condition match${analysis.matches.length === 1 ? "" : "es"} detected${analysis.dates.length ? ` • dates found: ${analysis.dates.join(", ")}` : ""}`;
+  summaryEl.textContent = `${analysis.matches.length} possible condition match${analysis.matches.length === 1 ? "" : "es"} detected${analysis.dates.length ? ` • dates found: ${analysis.dates.join(", ")}` : ""}${analysis.sourceName ? ` • source: ${analysis.sourceName}` : ""}`;
   resultsEl.innerHTML = analysis.matches.length
     ? analysis.matches.map(match => `
         <article class="builderSuggestionCard">
@@ -3985,6 +4526,851 @@ function renderDocumentIntakeResults() {
       </article>
     `;
   }
+
+  if (extractorEl) {
+    const extractor = analysis.extractor || extractEvidenceSignals(analysis.text, CONDITIONS);
+    const reviewDraft = pruneExtractorDraft(analysis.extractorDraft || buildExtractorDraft(extractor));
+    analysis.extractorDraft = reviewDraft;
+    const targetOptions = extractor.likelyTargets.length
+      ? extractor.likelyTargets
+      : analysis.matches.map((match) => ({ id: match.id, name: match.name }));
+    const reviewRow = (group, value, index) => `
+      <div class="extractorReviewRow">
+        <label class="extractorCheckRow">
+          <input type="checkbox" data-extractor-${group} data-extractor-index="${index}" checked />
+          <span class="small">Keep</span>
+        </label>
+        <textarea class="extractorEditInput small" data-extractor-edit="${group}" data-extractor-index="${index}" rows="${group === "date" || group === "symptom" || group === "provider" ? 1 : 2}">${escapeHtml(value)}</textarea>
+      </div>
+    `;
+    extractorEl.innerHTML = `
+      <article class="builderSuggestionCard">
+        <div class="builderSuggestionTop">
+          <div>
+            <strong>Evidence Extractor</strong>
+            <div class="small">Review extracted details before applying them. You can trim, edit, reject, or de-duplicate phrases so only the useful excerpts move into notes, timelines, and evidence.</div>
+          </div>
+          <span class="provenanceTag prov-generated">Generated by app</span>
+        </div>
+        <div class="builderGrid" style="margin-top:12px">
+          <label class="builderField">
+            <span class="small">Apply extracted details to</span>
+            <select id="docExtractorTarget">
+              <option value="">Choose target condition</option>
+              ${targetOptions.map((item, index) => `<option value="${escapeHtml(item.id)}"${index === 0 ? " selected" : ""}>${escapeHtml(item.name)}</option>`).join("")}
+            </select>
+          </label>
+          <div class="small" style="align-self:end">Likely targets: ${extractor.likelyTargets.length ? escapeHtml(extractor.likelyTargets.map((item) => item.name).join(", ")) : "none obvious yet"}</div>
+        </div>
+        <div class="extractorReviewToolbar">
+          <div class="small"><strong>Review queue:</strong> ${extractorReviewSummary(reviewDraft)} excerpt item${extractorReviewSummary(reviewDraft) === 1 ? "" : "s"} ready</div>
+          <div class="healthBtns" style="margin-top:0">
+            <button id="docExtractorDedupe" class="miniBtn" type="button">Merge Duplicates</button>
+            <button id="docExtractorSelectAll" class="miniBtn" type="button">Keep All</button>
+            <button id="docExtractorClearAll" class="miniBtn" type="button">Reject All</button>
+          </div>
+        </div>
+        <div class="healthBtns" style="margin-top:12px">
+          <button id="docExtractorPreview" class="miniBtn" type="button">Preview Output</button>
+          <button id="docExtractorDraftPacket" class="miniBtn" type="button">Build Draft Packet</button>
+          <button id="docExtractorApplyNew" class="miniBtn" type="button">Apply Only New Items</button>
+          <button id="docExtractorNotes" class="miniBtn" type="button">Append Summary to Notes</button>
+          <button id="docExtractorTimeline" class="miniBtn" type="button">Add Dates to Timeline</button>
+          <button id="docExtractorEvidence" class="miniBtn" type="button">Save Extracted Evidence</button>
+        </div>
+        <div id="docExtractorPreviewBox" class="extractorPreviewBox hidden" style="margin-top:12px"></div>
+        <div class="extractorGrid" style="margin-top:12px">
+          <div>
+            <div class="small"><strong>Providers / sources</strong></div>
+            <div class="extractorCheckList">${reviewDraft.providers.length ? reviewDraft.providers.map((line, index) => reviewRow("provider", line, index)).join("") : `<div class="small">none clearly detected</div>`}</div>
+          </div>
+          <div>
+            <div class="small"><strong>Symptoms / issues</strong></div>
+            <div class="extractorCheckList">${reviewDraft.symptoms.length ? reviewDraft.symptoms.map((line, index) => reviewRow("symptom", line, index)).join("") : `<div class="small">none clearly detected</div>`}</div>
+          </div>
+          <div>
+            <div class="small"><strong>Dates</strong></div>
+            <div class="extractorCheckList">${reviewDraft.dates.length ? reviewDraft.dates.map((line, index) => reviewRow("date", line, index)).join("") : `<div class="small">none clearly detected</div>`}</div>
+          </div>
+          <div>
+            <div class="small"><strong>Diagnosis phrases</strong></div>
+            <div class="extractorCheckList">${reviewDraft.diagnosisPhrases.length ? reviewDraft.diagnosisPhrases.map((line, index) => reviewRow("diagnosis", line, index)).join("") : `<div class="small">none clearly detected</div>`}</div>
+          </div>
+          <div>
+            <div class="small"><strong>Severity / impact phrases</strong></div>
+            <div class="extractorCheckList">${reviewDraft.severityPhrases.length ? reviewDraft.severityPhrases.map((line, index) => reviewRow("severity", line, index)).join("") : `<div class="small">none clearly detected</div>`}</div>
+          </div>
+          <div>
+            <div class="small"><strong>Nexus / relationship phrases</strong></div>
+            <div class="extractorCheckList">${reviewDraft.nexusPhrases.length ? reviewDraft.nexusPhrases.map((line, index) => reviewRow("nexus", line, index)).join("") : `<div class="small">none clearly detected</div>`}</div>
+          </div>
+        </div>
+      </article>
+    `;
+
+    const getTargetId = () => document.getElementById("docExtractorTarget")?.value || "";
+    const getTarget = () => CONDITIONS.find((item) => item.id === getTargetId());
+    const getSelectedExtractor = () => {
+      const groups = {
+        provider: "providers",
+        symptom: "symptoms",
+        date: "dates",
+        diagnosis: "diagnosisPhrases",
+        severity: "severityPhrases",
+        nexus: "nexusPhrases",
+      };
+      const selected = {};
+      Object.entries(groups).forEach(([group, key]) => {
+        const kept = [...extractorEl.querySelectorAll(`input[data-extractor-${group}]`)]
+          .filter((input) => input.checked)
+          .map((input) => {
+            const index = Number(input.dataset.extractorIndex || -1);
+            const field = extractorEl.querySelector(`textarea[data-extractor-edit="${group}"][data-extractor-index="${index}"]`);
+            return normalizeExtractorPhrase(field?.value || "");
+          })
+          .filter(Boolean);
+        selected[key] = dedupeExtractorValues(kept);
+      });
+      analysis.extractorDraft = pruneExtractorDraft({
+        providers: [...extractorEl.querySelectorAll(`textarea[data-extractor-edit="provider"]`)].map((field) => field.value),
+        symptoms: [...extractorEl.querySelectorAll(`textarea[data-extractor-edit="symptom"]`)].map((field) => field.value),
+        dates: [...extractorEl.querySelectorAll(`textarea[data-extractor-edit="date"]`)].map((field) => field.value),
+        diagnosisPhrases: [...extractorEl.querySelectorAll(`textarea[data-extractor-edit="diagnosis"]`)].map((field) => field.value),
+        severityPhrases: [...extractorEl.querySelectorAll(`textarea[data-extractor-edit="severity"]`)].map((field) => field.value),
+        nexusPhrases: [...extractorEl.querySelectorAll(`textarea[data-extractor-edit="nexus"]`)].map((field) => field.value),
+      });
+      return selected;
+    };
+    const buildPreviewState = () => {
+      const target = getTarget();
+      const selected = getSelectedExtractor();
+      const existing = target ? {
+        notes: loadNotes(target.id),
+        timeline: loadTimeline(target.id),
+        evidenceLinks: loadEvidenceLinks(target.id),
+      } : {
+        notes: "",
+        timeline: [],
+        evidenceLinks: [],
+      };
+      const noteSummary = buildExtractorNoteSummary(selected, target?.name || getTargetId() || "Condition");
+      const timelineEntries = buildExtractorTimelinePreview(selected, target?.name || getTargetId() || "Condition");
+      const evidenceRecord = buildExtractorEvidencePreview(selected, {
+        targetName: target?.name || "",
+        labelBase: (document.getElementById("docLibraryName")?.value || "").trim() || "Extracted record evidence",
+        type: document.getElementById("docLibraryType")?.value || "General",
+        tags: (document.getElementById("docLibraryTags")?.value || "").split(",").map((item) => item.trim()).filter(Boolean),
+        fallbackText: analysis.text || "",
+      });
+      return {
+        target,
+        selected,
+        noteSummary,
+        timelineEntries,
+        evidenceRecord,
+        compare: compareExtractorPreview({
+          noteSummary,
+          timelineEntries,
+          evidenceRecord,
+        }, existing),
+      };
+    };
+    const renderPreviewBox = () => {
+      const host = document.getElementById("docExtractorPreviewBox");
+      if (!host) return;
+      const preview = buildPreviewState();
+      const draftPacket = buildExtractorDraftPacketText(preview, {
+        sourceName: extractorSourceLabel(analysis),
+        targetName: preview.target?.name || getTargetId() || "Condition",
+      });
+      host.classList.remove("hidden");
+      host.innerHTML = `
+        <div class="small"><strong>Preview target:</strong> ${escapeHtml(preview.target?.name || "No target selected yet")}</div>
+        <div class="extractorDiffSummary">
+          <div class="extractorDiffCard">
+            <strong>Notes</strong>
+            <div class="small">${escapeHtml(preview.compare.noteStatus.detail)}</div>
+          </div>
+          <div class="extractorDiffCard">
+            <strong>Timeline</strong>
+            <div class="small">${escapeHtml(preview.compare.timelineStatus.detail)}</div>
+          </div>
+          <div class="extractorDiffCard">
+            <strong>Evidence</strong>
+            <div class="small">${escapeHtml(preview.compare.evidenceStatus.detail)}</div>
+          </div>
+        </div>
+        <div class="extractorPreviewGrid" style="margin-top:10px">
+          <div>
+            <div class="small"><strong>Notes summary preview</strong></div>
+            <textarea class="wsNarrativeOut" rows="8" readonly>${escapeHtml(preview.noteSummary)}</textarea>
+          </div>
+          <div>
+            <div class="small"><strong>Timeline preview</strong></div>
+            <textarea class="wsNarrativeOut" rows="8" readonly>${escapeHtml(
+              preview.timelineEntries.length
+                ? preview.timelineEntries.map((entry) => `${entry.date} • ${entry.type}\n${entry.note}`).join("\n\n")
+                : "No timeline entries will be added until at least one date is kept."
+            )}</textarea>
+          </div>
+          <div>
+            <div class="small"><strong>Evidence record preview</strong></div>
+            <textarea class="wsNarrativeOut" rows="8" readonly>${escapeHtml(
+              [
+                `Label: ${preview.evidenceRecord.label}`,
+                `Type: ${preview.evidenceRecord.type}`,
+                preview.evidenceRecord.date ? `Date: ${preview.evidenceRecord.date}` : "",
+                preview.evidenceRecord.tags.length ? `Tags: ${preview.evidenceRecord.tags.join(", ")}` : "",
+                `Excerpt: ${preview.evidenceRecord.excerpt || "(no excerpt available)"}`,
+              ].filter(Boolean).join("\n")
+            )}</textarea>
+          </div>
+        </div>
+        <div class="small" style="margin-top:12px"><strong>Draft packet bundle</strong></div>
+        <div class="healthBtns" style="margin-top:8px">
+          <select id="docExtractorPacketPurpose" class="miniBtn">
+            <option value="rep handoff candidate">Rep handoff candidate</option>
+            <option value="nexus draft">Nexus draft</option>
+            <option value="timeline-heavy">Timeline-heavy</option>
+            <option value="severity-focused">Severity-focused</option>
+            <option value="evidence gap review">Evidence gap review</option>
+          </select>
+          <button id="docExtractorPacketSave" class="miniBtn" type="button">Save Draft Packet</button>
+          <button id="docExtractorPacketCopy" class="miniBtn" type="button">Copy Draft Packet</button>
+          <button id="docExtractorPacketDownload" class="miniBtn" type="button">Download Draft Packet</button>
+        </div>
+        <textarea id="docExtractorPacketOut" class="wsNarrativeOut" rows="12" readonly style="margin-top:10px">${escapeHtml(draftPacket)}</textarea>
+      `;
+
+      document.getElementById("docExtractorPacketSave")?.addEventListener("click", () => {
+        const purpose = document.getElementById("docExtractorPacketPurpose")?.value || "rep handoff candidate";
+        const packet = createExtractorPacketRecord({
+          targetId: preview.target?.id || getTargetId() || "",
+          targetName: preview.target?.name || getTargetId() || "Condition",
+          sourceName: extractorSourceLabel(analysis),
+          title: `${preview.target?.name || "Condition"} Draft Packet`,
+          tags: [purpose],
+          text: draftPacket,
+          compare: preview.compare,
+        });
+        saveExtractorPacketLibrary([packet, ...loadExtractorPacketLibrary()].slice(0, 40));
+        pushWorkspaceActivity("Extractor draft packet saved", `${packet.title} was saved to the packet library.`);
+        renderExtractorPacketLibrary();
+        renderWorkspaceActivity();
+        alert("Draft packet saved to library.");
+      });
+
+      document.getElementById("docExtractorPacketCopy")?.addEventListener("click", async () => {
+        await navigator.clipboard.writeText(draftPacket);
+        alert("Draft packet copied.");
+      });
+
+      document.getElementById("docExtractorPacketDownload")?.addEventListener("click", () => {
+        const slug = (preview.target?.name || "condition").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+        downloadText(`extractor_draft_packet_${slug || "condition"}.txt`, draftPacket);
+      });
+    };
+
+    document.getElementById("docExtractorDedupe")?.addEventListener("click", () => {
+      analysis.extractorDraft = pruneExtractorDraft(getSelectedExtractor());
+      renderDocumentIntakeResults();
+      alert("Duplicate and empty extractor phrases were merged.");
+    });
+
+    document.getElementById("docExtractorPreview")?.addEventListener("click", () => {
+      renderPreviewBox();
+    });
+
+    document.getElementById("docExtractorDraftPacket")?.addEventListener("click", () => {
+      renderPreviewBox();
+      document.getElementById("docExtractorPacketOut")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+
+    document.getElementById("docExtractorApplyNew")?.addEventListener("click", () => {
+      const targetId = getTargetId();
+      if (!targetId) return alert("Choose a target condition first.");
+      const preview = buildPreviewState();
+      const plan = computeExtractorApplyNewPlan(preview, {
+        notes: loadNotes(targetId),
+        timeline: loadTimeline(targetId),
+        evidenceLinks: loadEvidenceLinks(targetId),
+      });
+
+      if (!plan.noteSummary && !plan.timelineEntries.length && !plan.evidenceRecord) {
+        renderPreviewBox();
+        return alert("No new extractor content was found for this condition.");
+      }
+
+      const target = preview.target || CONDITIONS.find((item) => item.id === targetId);
+
+      if (plan.noteSummary) {
+        const existingNotes = (loadNotes(targetId) || "").trim();
+        saveNotes(targetId, existingNotes ? `${existingNotes}\n\n${plan.noteSummary}` : plan.noteSummary);
+      }
+
+      if (plan.timelineEntries.length) {
+        const entries = loadTimeline(targetId);
+        plan.timelineEntries.forEach((previewEntry) => {
+          entries.push({
+            id: `extractor-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            date: previewEntry.date,
+            type: previewEntry.type,
+            note: previewEntry.note,
+          });
+        });
+        saveTimeline(targetId, entries);
+      }
+
+      if (plan.evidenceRecord) {
+        const record = createEvidenceLibraryRecord({
+          label: plan.evidenceRecord.label,
+          type: plan.evidenceRecord.type,
+          excerpt: plan.evidenceRecord.excerpt,
+          tags: plan.evidenceRecord.tags,
+        });
+        saveEvidenceLibrary([record, ...loadEvidenceLibrary()].slice(0, 60));
+        const links = loadEvidenceLinks(targetId);
+        links.unshift({
+          id: `extractor-ev-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          label: record.label,
+          url: "",
+          type: record.type || "Other",
+          date: plan.evidenceRecord.date || "",
+          note: record.excerpt || "",
+          created_at: Date.now(),
+        });
+        saveEvidenceLinks(targetId, links);
+      }
+
+      pushExtractorHistory(createExtractorHistoryEntry({
+        action: "apply_new",
+        targetId,
+        targetName: target?.name || targetId,
+        sourceName: extractorSourceLabel(analysis),
+        selected: preview.selected,
+      }));
+      pushWorkspaceActivity(
+        "Extractor applied only new items",
+        `${target?.name || targetId} received ${[
+          plan.noteSummary ? "new notes" : "",
+          plan.timelineEntries.length ? `${plan.timelineEntries.length} new timeline entr${plan.timelineEntries.length === 1 ? "y" : "ies"}` : "",
+          plan.evidenceRecord ? "a new evidence record" : "",
+        ].filter(Boolean).join(", ")}.`
+      );
+      renderDocumentIntakeResults();
+      renderEvidenceLibrary();
+      renderExtractorPacketLibrary();
+      renderWorkspace();
+      renderWorkspaceActivity();
+      alert("Only new extractor items were applied.");
+    });
+
+    document.getElementById("docExtractorSelectAll")?.addEventListener("click", () => {
+      extractorEl.querySelectorAll('input[data-extractor-provider], input[data-extractor-symptom], input[data-extractor-date], input[data-extractor-diagnosis], input[data-extractor-severity], input[data-extractor-nexus]').forEach((input) => {
+        input.checked = true;
+      });
+    });
+
+    document.getElementById("docExtractorClearAll")?.addEventListener("click", () => {
+      extractorEl.querySelectorAll('input[data-extractor-provider], input[data-extractor-symptom], input[data-extractor-date], input[data-extractor-diagnosis], input[data-extractor-severity], input[data-extractor-nexus]').forEach((input) => {
+        input.checked = false;
+      });
+    });
+
+    document.getElementById("docExtractorNotes")?.addEventListener("click", () => {
+      const targetId = getTargetId();
+      if (!targetId) return alert("Choose a target condition first.");
+      const { target, selected, noteSummary: summary } = buildPreviewState();
+      const existing = (loadNotes(targetId) || "").trim();
+      saveNotes(targetId, existing ? `${existing}\n\n${summary}` : summary);
+      pushExtractorHistory(createExtractorHistoryEntry({
+        action: "notes",
+        targetId,
+        targetName: target?.name || targetId,
+        sourceName: extractorSourceLabel(analysis),
+        selected,
+      }));
+      pushWorkspaceActivity("Extractor summary applied", `Extracted record details were appended to ${target?.name || targetId}.`);
+      renderWorkspace();
+      renderWorkspaceActivity();
+      renderExtractorHistory();
+      alert("Extracted summary appended to notes.");
+    });
+
+    document.getElementById("docExtractorTimeline")?.addEventListener("click", () => {
+      const targetId = getTargetId();
+      if (!targetId) return alert("Choose a target condition first.");
+      const { target, selected, timelineEntries } = buildPreviewState();
+      if (!selected.dates.length) return alert("Select at least one extracted date first.");
+      const entries = loadTimeline(targetId);
+      timelineEntries.forEach((previewEntry) => {
+        if (!entries.some((entry) => entry.date === previewEntry.date && (entry.note || "").includes("Document extractor"))) {
+          entries.push({
+            id: `extractor-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            date: previewEntry.date,
+            type: previewEntry.type,
+            note: previewEntry.note,
+          });
+        }
+      });
+      saveTimeline(targetId, entries);
+      pushExtractorHistory(createExtractorHistoryEntry({
+        action: "timeline",
+        targetId,
+        targetName: target?.name || targetId,
+        sourceName: extractorSourceLabel(analysis),
+        selected,
+      }));
+      pushWorkspaceActivity("Extractor dates applied", `Extracted record dates were added to the timeline for ${target?.name || targetId}.`);
+      renderWorkspace();
+      renderWorkspaceActivity();
+      renderExtractorHistory();
+      alert("Extracted dates added to timeline.");
+    });
+
+    document.getElementById("docExtractorEvidence")?.addEventListener("click", () => {
+      const targetId = getTargetId();
+      const { target, selected, evidenceRecord: previewRecord } = buildPreviewState();
+      const record = createEvidenceLibraryRecord({
+        label: previewRecord.label,
+        type: previewRecord.type,
+        excerpt: previewRecord.excerpt,
+        tags: previewRecord.tags,
+      });
+      saveEvidenceLibrary([record, ...loadEvidenceLibrary()].slice(0, 60));
+      if (targetId) {
+        const links = loadEvidenceLinks(targetId);
+        links.unshift({
+          id: `extractor-ev-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          label: record.label,
+          url: "",
+          type: record.type || "Other",
+          date: previewRecord.date || "",
+          note: record.excerpt || "",
+          created_at: Date.now(),
+        });
+        saveEvidenceLinks(targetId, links);
+      }
+      pushExtractorHistory(createExtractorHistoryEntry({
+        action: "evidence",
+        targetId,
+        targetName: target?.name || targetId || "Evidence library only",
+        sourceName: extractorSourceLabel(analysis),
+        selected,
+      }));
+      pushWorkspaceActivity("Extractor evidence saved", `${record.label} was added to the evidence library${target ? ` and attached to ${target.name}` : ""}.`);
+      renderEvidenceLibrary();
+      renderWorkspace();
+      renderWorkspaceActivity();
+      renderExtractorPacketLibrary();
+      renderExtractorHistory();
+      alert("Extracted evidence saved.");
+    });
+  }
+
+  renderExtractorHistory();
+  renderExtractorPacketLibrary();
+}
+
+function renderExtractorHistory() {
+  const host = document.getElementById("docExtractorHistory");
+  if (!host) return;
+
+  const history = loadExtractorHistory();
+  if (!history.length) {
+    host.innerHTML = `<div class="small">No extractor actions yet. When you apply notes, dates, or evidence from a document, the app will log the exact target and phrases used here.</div>`;
+    return;
+  }
+
+  const actionLabel = {
+    apply_new: "Only new items applied",
+    notes: "Notes appended",
+    timeline: "Timeline updated",
+    evidence: "Evidence saved",
+  };
+  const phraseList = (items) => (Array.isArray(items) ? items.filter(Boolean).slice(0, 3) : []);
+
+  host.innerHTML = `<div class="extractorHistoryList">${history.map((entry) => {
+    const chips = [
+      ...phraseList(entry.providers),
+      ...phraseList(entry.dates),
+      ...phraseList(entry.symptoms),
+      ...phraseList(entry.diagnosisPhrases),
+      ...phraseList(entry.severityPhrases),
+      ...phraseList(entry.nexusPhrases),
+    ].slice(0, 7);
+
+    return `
+      <article class="builderSuggestionCard">
+        <div class="builderSuggestionTop">
+          <div>
+            <strong>${escapeHtml(actionLabel[entry.action] || "Extractor update")}</strong>
+            <div class="extractorHistoryMeta small">
+              <span><strong>Target:</strong> ${escapeHtml(entry.targetName || "Condition")}</span>
+              <span><strong>Source:</strong> ${escapeHtml(entry.sourceName || "Document intake")}</span>
+              <span>${entry.createdAt ? escapeHtml(new Date(entry.createdAt).toLocaleString()) : ""}</span>
+            </div>
+            ${chips.length ? `<div class="extractorHistoryChips">${chips.map((chip) => `<span class="extractorHistoryChip">${escapeHtml(chip)}</span>`).join("")}</div>` : `<div class="small" style="margin-top:8px">No excerpt snippets were saved on this action.</div>`}
+          </div>
+          <div class="healthBtns" style="margin-top:0">
+            ${entry.targetId ? `<button class="miniBtn" data-extractor-open="${escapeHtml(entry.targetId)}" type="button">Open Condition</button>` : ""}
+          </div>
+        </div>
+      </article>
+    `;
+  }).join("")}</div>`;
+
+  host.querySelectorAll("[data-extractor-open]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const id = button.dataset.extractorOpen;
+      if (!id) return;
+      showDetail(id, true);
+      document.getElementById("detail")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+}
+
+function renderExtractorPacketLibrary() {
+  const host = document.getElementById("docExtractorPacketLibrary");
+  if (!host) return;
+
+  const allPackets = loadExtractorPacketLibrary();
+  if (!allPackets.length) {
+    host.innerHTML = `<div class="small">No saved draft packets yet. Build a draft packet from the extractor preview, then save it here for later review.</div>`;
+    return;
+  }
+
+  const allTags = [...new Set(allPackets.flatMap((packet) => Array.isArray(packet.tags) ? packet.tags : []))].sort();
+  const allTargets = [...new Set(allPackets.map((packet) => packet.targetId).filter(Boolean))];
+  if (EXTRACTOR_PACKET_FILTER_STATE.tag && !allTags.includes(EXTRACTOR_PACKET_FILTER_STATE.tag)) {
+    EXTRACTOR_PACKET_FILTER_STATE.tag = "";
+  }
+  if (EXTRACTOR_PACKET_FILTER_STATE.targetId && !allTargets.includes(EXTRACTOR_PACKET_FILTER_STATE.targetId)) {
+    EXTRACTOR_PACKET_FILTER_STATE.targetId = "";
+  }
+  const packets = allPackets.filter((packet) => {
+    const tagOk = !EXTRACTOR_PACKET_FILTER_STATE.tag || (packet.tags || []).includes(EXTRACTOR_PACKET_FILTER_STATE.tag);
+    const targetOk = !EXTRACTOR_PACKET_FILTER_STATE.targetId || packet.targetId === EXTRACTOR_PACKET_FILTER_STATE.targetId;
+    return tagOk && targetOk;
+  });
+  packets.sort((a, b) => {
+    if (!!a.pinned !== !!b.pinned) {
+      return a.pinned ? -1 : 1;
+    }
+    if (EXTRACTOR_PACKET_SORT_STATE === "target") {
+      return (a.targetName || "").localeCompare(b.targetName || "") || (b.createdAt || "").localeCompare(a.createdAt || "");
+    }
+    if (EXTRACTOR_PACKET_SORT_STATE === "tag") {
+      const aTag = (a.tags || [])[0] || "";
+      const bTag = (b.tags || [])[0] || "";
+      return aTag.localeCompare(bTag) || (a.targetName || "").localeCompare(b.targetName || "");
+    }
+    return (b.createdAt || "").localeCompare(a.createdAt || "");
+  });
+
+  if (!packets.length) {
+    host.innerHTML = `
+      <article class="builderSuggestionCard">
+        <div class="builderGrid">
+          <label class="builderField">
+            <span class="small">Filter by purpose tag</span>
+            <select id="docPacketFilterTag">
+              <option value="">All tags</option>
+              ${allTags.map((tag) => `<option value="${escapeHtml(tag)}"${tag === EXTRACTOR_PACKET_FILTER_STATE.tag ? " selected" : ""}>${escapeHtml(tag)}</option>`).join("")}
+            </select>
+          </label>
+          <label class="builderField">
+            <span class="small">Filter by target condition</span>
+            <select id="docPacketFilterTarget">
+              <option value="">All conditions</option>
+              ${allTargets.map((targetId) => `<option value="${escapeHtml(targetId)}"${targetId === EXTRACTOR_PACKET_FILTER_STATE.targetId ? " selected" : ""}>${escapeHtml(conditionNameById(targetId))}</option>`).join("")}
+            </select>
+          </label>
+          <label class="builderField">
+            <span class="small">Sort packets</span>
+            <select id="docPacketSort">
+              <option value="newest"${EXTRACTOR_PACKET_SORT_STATE === "newest" ? " selected" : ""}>Newest first</option>
+              <option value="target"${EXTRACTOR_PACKET_SORT_STATE === "target" ? " selected" : ""}>Target condition</option>
+              <option value="tag"${EXTRACTOR_PACKET_SORT_STATE === "tag" ? " selected" : ""}>Purpose tag</option>
+            </select>
+          </label>
+        </div>
+        <div class="small" style="margin-top:10px">No saved packets match the current filters.</div>
+      </article>
+    `;
+    host.querySelector("#docPacketFilterTag")?.addEventListener("change", (event) => {
+      EXTRACTOR_PACKET_FILTER_STATE.tag = event.target.value || "";
+      renderExtractorPacketLibrary();
+    });
+    host.querySelector("#docPacketFilterTarget")?.addEventListener("change", (event) => {
+      EXTRACTOR_PACKET_FILTER_STATE.targetId = event.target.value || "";
+      renderExtractorPacketLibrary();
+    });
+    host.querySelector("#docPacketSort")?.addEventListener("change", (event) => {
+      EXTRACTOR_PACKET_SORT_STATE = event.target.value || "newest";
+      renderExtractorPacketLibrary();
+    });
+    return;
+  }
+
+  const leftId = EXTRACTOR_PACKET_COMPARE_STATE.leftId && packets.some((packet) => packet.id === EXTRACTOR_PACKET_COMPARE_STATE.leftId)
+    ? EXTRACTOR_PACKET_COMPARE_STATE.leftId
+    : (packets[0]?.id || "");
+  const rightId = EXTRACTOR_PACKET_COMPARE_STATE.rightId && packets.some((packet) => packet.id === EXTRACTOR_PACKET_COMPARE_STATE.rightId)
+    ? EXTRACTOR_PACKET_COMPARE_STATE.rightId
+    : (packets[1]?.id || packets[0]?.id || "");
+  EXTRACTOR_PACKET_COMPARE_STATE = { leftId, rightId };
+  const leftPacket = packets.find((packet) => packet.id === leftId) || null;
+  const rightPacket = packets.find((packet) => packet.id === rightId) || null;
+  const compare = leftPacket && rightPacket ? compareExtractorPacketRecords(leftPacket, rightPacket) : null;
+
+  host.innerHTML = `
+    <article class="builderSuggestionCard">
+      <div class="builderGrid">
+        <label class="builderField">
+          <span class="small">Filter by purpose tag</span>
+          <select id="docPacketFilterTag">
+            <option value="">All tags</option>
+            ${allTags.map((tag) => `<option value="${escapeHtml(tag)}"${tag === EXTRACTOR_PACKET_FILTER_STATE.tag ? " selected" : ""}>${escapeHtml(tag)}</option>`).join("")}
+          </select>
+        </label>
+        <label class="builderField">
+          <span class="small">Filter by target condition</span>
+          <select id="docPacketFilterTarget">
+            <option value="">All conditions</option>
+            ${allTargets.map((targetId) => `<option value="${escapeHtml(targetId)}"${targetId === EXTRACTOR_PACKET_FILTER_STATE.targetId ? " selected" : ""}>${escapeHtml(conditionNameById(targetId))}</option>`).join("")}
+          </select>
+        </label>
+        <label class="builderField">
+          <span class="small">Sort packets</span>
+          <select id="docPacketSort">
+            <option value="newest"${EXTRACTOR_PACKET_SORT_STATE === "newest" ? " selected" : ""}>Newest first</option>
+            <option value="target"${EXTRACTOR_PACKET_SORT_STATE === "target" ? " selected" : ""}>Target condition</option>
+            <option value="tag"${EXTRACTOR_PACKET_SORT_STATE === "tag" ? " selected" : ""}>Purpose tag</option>
+          </select>
+        </label>
+      </div>
+    </article>
+  ` + packets.map((packet) => `
+    <article class="builderSuggestionCard">
+      <div class="builderSuggestionTop">
+        <div>
+          <strong>${escapeHtml(packet.title || "Extractor Draft Packet")}</strong>
+          <div class="small">Target: ${escapeHtml(packet.targetName || "Condition")} • Source: ${escapeHtml(packet.sourceName || "Document intake")}${packet.pinned ? " • pinned" : ""}</div>
+          ${packet.tags?.length ? `<div class="extractorHistoryChips" style="margin-top:6px">${packet.tags.map((tag) => `<span class="extractorHistoryChip">${escapeHtml(tag)}</span>`).join("")}</div>` : ""}
+          <div class="small" style="margin-top:6px">${packet.createdAt ? escapeHtml(new Date(packet.createdAt).toLocaleString()) : ""}</div>
+          <div class="small" style="margin-top:6px">${escapeHtml((packet.text || "").slice(0, 200))}${(packet.text || "").length > 200 ? "..." : ""}</div>
+        </div>
+        <div class="healthBtns" style="margin-top:0">
+          <button class="miniBtn" data-packet-pin="${escapeHtml(packet.id)}" type="button">${packet.pinned ? "Unpin" : "Pin"}</button>
+          <button class="miniBtn" data-packet-copy="${escapeHtml(packet.id)}" type="button">Copy</button>
+          <button class="miniBtn" data-packet-download="${escapeHtml(packet.id)}" type="button">Download</button>
+          ${packet.targetId ? `<button class="miniBtn" data-packet-apply="${escapeHtml(packet.id)}" type="button">Apply Packet</button>` : ""}
+          <button class="miniBtn" data-packet-compare-left="${escapeHtml(packet.id)}" type="button">Set Left</button>
+          <button class="miniBtn" data-packet-compare-right="${escapeHtml(packet.id)}" type="button">Set Right</button>
+          ${packet.targetId ? `<button class="miniBtn" data-packet-open="${escapeHtml(packet.id)}" type="button">Open Condition</button>` : ""}
+          <button class="miniBtn danger" data-packet-delete="${escapeHtml(packet.id)}" type="button">Delete</button>
+        </div>
+      </div>
+    </article>
+  `).join("") + `
+    <article class="builderSuggestionCard" style="margin-top:12px">
+      <div class="builderSuggestionTop">
+        <div>
+          <strong>Draft Packet Compare</strong>
+          <div class="small">Compare two saved extractor draft packets by section.</div>
+        </div>
+      </div>
+      <div class="builderGrid" style="margin-top:12px">
+        <label class="builderField">
+          <span class="small">Left packet</span>
+          <select id="docPacketCompareLeft">
+            ${packets.map((packet) => `<option value="${escapeHtml(packet.id)}"${packet.id === leftId ? " selected" : ""}>${escapeHtml(packet.title || packet.targetName || "Packet")}</option>`).join("")}
+          </select>
+        </label>
+        <label class="builderField">
+          <span class="small">Right packet</span>
+          <select id="docPacketCompareRight">
+            ${packets.map((packet) => `<option value="${escapeHtml(packet.id)}"${packet.id === rightId ? " selected" : ""}>${escapeHtml(packet.title || packet.targetName || "Packet")}</option>`).join("")}
+          </select>
+        </label>
+      </div>
+      <div class="extractorDiffSummary" style="margin-top:12px">
+        ${(compare?.findings || []).map((finding) => `
+          <div class="extractorDiffCard">
+            <strong>${escapeHtml(finding.section)}</strong>
+            <div class="small">${escapeHtml(finding.detail)}</div>
+          </div>
+        `).join("") || `<div class="small">Choose two saved packets to compare.</div>`}
+      </div>
+      <textarea id="docPacketCompareOut" class="wsNarrativeOut" rows="10" readonly style="margin-top:12px">${escapeHtml(compare?.text || "")}</textarea>
+    </article>
+  `;
+
+  host.querySelector("#docPacketFilterTag")?.addEventListener("change", (event) => {
+    EXTRACTOR_PACKET_FILTER_STATE.tag = event.target.value || "";
+    renderExtractorPacketLibrary();
+  });
+
+  host.querySelector("#docPacketFilterTarget")?.addEventListener("change", (event) => {
+    EXTRACTOR_PACKET_FILTER_STATE.targetId = event.target.value || "";
+    renderExtractorPacketLibrary();
+  });
+
+  host.querySelector("#docPacketSort")?.addEventListener("change", (event) => {
+    EXTRACTOR_PACKET_SORT_STATE = event.target.value || "newest";
+    renderExtractorPacketLibrary();
+  });
+
+  host.querySelectorAll("[data-packet-pin]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const packetsNow = loadExtractorPacketLibrary();
+      const packet = packetsNow.find((item) => item.id === button.dataset.packetPin);
+      if (!packet) return;
+      packet.pinned = !packet.pinned;
+      saveExtractorPacketLibrary(packetsNow);
+      pushWorkspaceActivity(
+        packet.pinned ? "Extractor draft packet pinned" : "Extractor draft packet unpinned",
+        `${packet.title || "A draft packet"} was ${packet.pinned ? "pinned to the top of" : "removed from"} the packet library priority list.`
+      );
+      renderExtractorPacketLibrary();
+      renderWorkspaceActivity();
+    });
+  });
+
+  host.querySelectorAll("[data-packet-copy]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const packet = loadExtractorPacketLibrary().find((item) => item.id === button.dataset.packetCopy);
+      if (!packet) return;
+      await navigator.clipboard.writeText(packet.text || "");
+      alert("Draft packet copied.");
+    });
+  });
+
+  host.querySelectorAll("[data-packet-download]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const packet = loadExtractorPacketLibrary().find((item) => item.id === button.dataset.packetDownload);
+      if (!packet) return;
+      const slug = (packet.targetName || "condition").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+      downloadText(`extractor_draft_packet_${slug || "condition"}.txt`, packet.text || "");
+    });
+  });
+
+  host.querySelectorAll("[data-packet-open]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const packet = loadExtractorPacketLibrary().find((item) => item.id === button.dataset.packetOpen);
+      if (!packet?.targetId) return;
+      showDetail(packet.targetId, true);
+      document.getElementById("detail")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+
+  host.querySelectorAll("[data-packet-apply]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const packet = loadExtractorPacketLibrary().find((item) => item.id === button.dataset.packetApply);
+      if (!packet?.targetId) return;
+      const preview = buildExtractorPacketPreview(packet);
+      const plan = computeExtractorApplyNewPlan(preview, {
+        notes: loadNotes(packet.targetId),
+        timeline: loadTimeline(packet.targetId),
+        evidenceLinks: loadEvidenceLinks(packet.targetId),
+      });
+
+      if (!plan.noteSummary && !plan.timelineEntries.length && !plan.evidenceRecord) {
+        return alert("No new packet content was found for this condition.");
+      }
+
+      if (plan.noteSummary) {
+        const existingNotes = (loadNotes(packet.targetId) || "").trim();
+        saveNotes(packet.targetId, existingNotes ? `${existingNotes}\n\n${plan.noteSummary}` : plan.noteSummary);
+      }
+
+      if (plan.timelineEntries.length) {
+        const entries = loadTimeline(packet.targetId);
+        plan.timelineEntries.forEach((previewEntry) => {
+          entries.push({
+            id: `extractor-packet-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            date: previewEntry.date,
+            type: previewEntry.type,
+            note: previewEntry.note,
+          });
+        });
+        saveTimeline(packet.targetId, entries);
+      }
+
+      if (plan.evidenceRecord) {
+        const record = createEvidenceLibraryRecord({
+          label: plan.evidenceRecord.label,
+          type: plan.evidenceRecord.type,
+          excerpt: plan.evidenceRecord.excerpt,
+          tags: plan.evidenceRecord.tags,
+        });
+        saveEvidenceLibrary([record, ...loadEvidenceLibrary()].slice(0, 60));
+        const links = loadEvidenceLinks(packet.targetId);
+        links.unshift({
+          id: `extractor-packet-ev-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          label: record.label,
+          url: "",
+          type: record.type || "Other",
+          date: plan.evidenceRecord.date || "",
+          note: record.excerpt || "",
+          created_at: Date.now(),
+        });
+        saveEvidenceLinks(packet.targetId, links);
+      }
+
+      pushWorkspaceActivity(
+        "Extractor packet applied",
+        `${packet.title || "Draft packet"} applied ${[
+          plan.noteSummary ? "new notes" : "",
+          plan.timelineEntries.length ? `${plan.timelineEntries.length} new timeline entr${plan.timelineEntries.length === 1 ? "y" : "ies"}` : "",
+          plan.evidenceRecord ? "a new evidence record" : "",
+        ].filter(Boolean).join(", ")} to ${packet.targetName || packet.targetId}.`
+      );
+      renderEvidenceLibrary();
+      renderExtractorPacketLibrary();
+      renderWorkspace();
+      renderWorkspaceActivity();
+      alert("Draft packet applied to the target condition.");
+    });
+  });
+
+  host.querySelectorAll("[data-packet-compare-left]").forEach((button) => {
+    button.addEventListener("click", () => {
+      EXTRACTOR_PACKET_COMPARE_STATE.leftId = button.dataset.packetCompareLeft || "";
+      renderExtractorPacketLibrary();
+    });
+  });
+
+  host.querySelectorAll("[data-packet-compare-right]").forEach((button) => {
+    button.addEventListener("click", () => {
+      EXTRACTOR_PACKET_COMPARE_STATE.rightId = button.dataset.packetCompareRight || "";
+      renderExtractorPacketLibrary();
+    });
+  });
+
+  host.querySelectorAll("[data-packet-delete]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const packetsNow = loadExtractorPacketLibrary();
+      const packet = packetsNow.find((item) => item.id === button.dataset.packetDelete);
+      if (!packet) return;
+      saveExtractorPacketLibrary(packetsNow.filter((item) => item.id !== packet.id));
+      pushWorkspaceActivity("Extractor draft packet removed", `${packet.title || "A draft packet"} was removed from the packet library.`);
+      renderExtractorPacketLibrary();
+      renderWorkspaceActivity();
+      alert("Draft packet removed.");
+    });
+  });
+
+  host.querySelector("#docPacketCompareLeft")?.addEventListener("change", (event) => {
+    EXTRACTOR_PACKET_COMPARE_STATE.leftId = event.target.value || "";
+    renderExtractorPacketLibrary();
+  });
+
+  host.querySelector("#docPacketCompareRight")?.addEventListener("change", (event) => {
+    EXTRACTOR_PACKET_COMPARE_STATE.rightId = event.target.value || "";
+    renderExtractorPacketLibrary();
+  });
 }
 
 function renderDocumentLibrary() {
@@ -4000,7 +5386,7 @@ function renderDocumentLibrary() {
           <div class="builderSuggestionTop">
             <div>
               <strong>${escapeHtml(doc.name)}</strong>
-              <div class="small">${escapeHtml(doc.type || "General")} <span class="provenanceTag ${escapeHtml(provenance.className)}">${escapeHtml(provenance.label)}</span>${doc.tags?.length ? ` • tags: ${escapeHtml(doc.tags.join(", "))}` : ""}</div>
+              <div class="small">${escapeHtml(doc.type || "General")} <span class="provenanceTag ${escapeHtml(provenance.className)}">${escapeHtml(provenance.label)}</span>${doc.fileName ? ` • file: ${escapeHtml(doc.fileName)}` : ""}${doc.tags?.length ? ` • tags: ${escapeHtml(doc.tags.join(", "))}` : ""}</div>
               <div class="small" style="margin-top:6px">${escapeHtml((doc.text || "").slice(0, 180))}${(doc.text || "").length > 180 ? "..." : ""}</div>
             </div>
             <div class="healthBtns" style="margin-top:0">
@@ -4019,7 +5405,12 @@ function renderDocumentLibrary() {
       const doc = loadDocumentLibrary().find((item) => item.id === button.dataset.docLoad);
       if (!doc) return;
       const input = document.getElementById("docIntakeInput");
-      if (input) input.value = doc.text || "";
+      if (input) {
+        input.value = doc.text || "";
+        input.dataset.sourceType = doc.sourceType || "user-entered";
+        input.dataset.sourceName = doc.name || doc.fileName || "Saved document";
+        input.dataset.fileName = doc.fileName || "";
+      }
       alert(`Loaded ${doc.name} into Document Intake.`);
     });
   });
@@ -4029,9 +5420,16 @@ function renderDocumentLibrary() {
       const doc = loadDocumentLibrary().find((item) => item.id === button.dataset.docAnalyze);
       if (!doc) return;
       const input = document.getElementById("docIntakeInput");
-      if (input) input.value = doc.text || "";
+      if (input) {
+        input.value = doc.text || "";
+        input.dataset.sourceType = doc.sourceType || "user-entered";
+        input.dataset.sourceName = doc.name || doc.fileName || "Saved document";
+        input.dataset.fileName = doc.fileName || "";
+      }
       LAST_INTAKE_ANALYSIS = analyzeDocumentIntake(doc.text || "");
+      LAST_INTAKE_ANALYSIS.sourceName = doc.name || doc.fileName || "Saved document";
       LAST_INTAKE_ANALYSIS.mapper = analyzeRecordToClaimMapper(doc.text || "", CONDITIONS);
+      LAST_INTAKE_ANALYSIS.extractor = extractEvidenceSignals(doc.text || "", CONDITIONS);
       renderDocumentIntakeResults();
       alert(`Analyzed ${doc.name}.`);
     });
@@ -4217,6 +5615,8 @@ function renderWorkspaceProfiles() {
       renderWorkspaceProfiles();
       renderSnapshotComparison(null);
       renderDocumentLibrary();
+      renderExtractorHistory();
+      renderExtractorPacketLibrary();
       renderEvidenceLibrary();
       renderSnapshotHistoryList();
       renderWorkspace();
@@ -4712,6 +6112,7 @@ function renderWorkspace() {
   renderEvidenceConflictEngine();
   renderRatingEstimator();
   renderNexusBuilder();
+  renderRepresentativeReviewSummary();
   renderWorkspaceDashboard();
   renderStickyWorkspaceSummary();
   renderStartHereSteps();
@@ -8553,6 +9954,8 @@ async function init() {
   const docIntakeInput = document.getElementById("docIntakeInput");
   const docIntakeAnalyze = document.getElementById("docIntakeAnalyze");
   const docIntakeAdd = document.getElementById("docIntakeAdd");
+  const docIntakeLoadFile = document.getElementById("docIntakeLoadFile");
+  const docIntakeFile = document.getElementById("docIntakeFile");
   const docLibraryName = document.getElementById("docLibraryName");
   const docLibraryType = document.getElementById("docLibraryType");
   const docLibraryTags = document.getElementById("docLibraryTags");
@@ -8661,6 +10064,7 @@ async function init() {
   renderGuidedBuilder();
   renderDocumentIntakeResults();
   renderDocumentLibrary();
+  renderExtractorPacketLibrary();
   renderEvidenceLibrary();
   renderEvidenceHub();
   renderConditionBrowse();
@@ -8728,9 +10132,50 @@ async function init() {
   if (docIntakeAnalyze && docIntakeInput) {
     docIntakeAnalyze.addEventListener("click", () => {
       LAST_INTAKE_ANALYSIS = analyzeDocumentIntake(docIntakeInput.value || "");
+      LAST_INTAKE_ANALYSIS.sourceName = (docIntakeInput.dataset.sourceName || docLibraryName?.value || "").trim() || "Pasted intake text";
       LAST_INTAKE_ANALYSIS.mapper = analyzeRecordToClaimMapper(docIntakeInput.value || "", CONDITIONS);
+      LAST_INTAKE_ANALYSIS.extractor = extractEvidenceSignals(docIntakeInput.value || "", CONDITIONS);
       renderDocumentIntakeResults();
       alert("Document intake analysis complete.");
+    });
+  }
+
+  if (docIntakeInput && !docIntakeInput.dataset.boundSourceInput) {
+    docIntakeInput.dataset.boundSourceInput = "1";
+    docIntakeInput.addEventListener("input", () => {
+      docIntakeInput.dataset.sourceType = "user-entered";
+      docIntakeInput.dataset.sourceName = (docLibraryName?.value || "").trim() || "Pasted intake text";
+      docIntakeInput.dataset.fileName = "";
+    });
+  }
+
+  if (docIntakeLoadFile && docIntakeFile && docIntakeInput) {
+    docIntakeLoadFile.addEventListener("click", () => {
+      docIntakeFile.value = "";
+      docIntakeFile.click();
+    });
+
+    docIntakeFile.addEventListener("change", async () => {
+      const file = docIntakeFile.files?.[0];
+      if (!file) return;
+      try {
+        const extension = `.${(file.name || "").split(".").pop() || ""}`.toLowerCase();
+        const needsStructuredExtract = extension === ".pdf" || extension === ".docx";
+        const text = needsStructuredExtract
+          ? (await extractStructuredDocument(file)).text || ""
+          : await file.text();
+        docIntakeInput.value = text;
+        docIntakeInput.dataset.sourceType = inferDocumentSourceType(file);
+        docIntakeInput.dataset.sourceName = file.name;
+        docIntakeInput.dataset.fileName = file.name;
+        if (docLibraryName && !docLibraryName.value.trim()) {
+          docLibraryName.value = file.name.replace(/\.[^.]+$/, "");
+        }
+        alert(`Loaded ${file.name} into Document Intake.`);
+      } catch (error) {
+        console.error(error);
+        alert(error.message || "Could not load that file.");
+      }
     });
   }
 
@@ -8746,12 +10191,18 @@ async function init() {
         name: docLibraryName?.value || "",
         type: docLibraryType?.value || "General",
         tags: docLibraryTags?.value || "",
-        text
+        text,
+        sourceType: docIntakeInput.dataset.sourceType || "user-entered",
+        sourceName: docIntakeInput.dataset.sourceName || (docLibraryName?.value || "").trim() || "Document intake",
+        fileName: docIntakeInput.dataset.fileName || "",
       });
       saveDocumentLibrary([doc, ...loadDocumentLibrary()].slice(0, 30));
       pushWorkspaceActivity("Document saved", `${doc.name} was added to the reusable document library.`);
       if (docLibraryName) docLibraryName.value = "";
       if (docLibraryTags) docLibraryTags.value = "";
+      docIntakeInput.dataset.sourceType = "user-entered";
+      docIntakeInput.dataset.sourceName = doc.name;
+      docIntakeInput.dataset.fileName = "";
       renderDocumentLibrary();
       renderWorkspaceActivity();
       alert("Document saved to library.");
@@ -9168,6 +10619,8 @@ async function init() {
         pushWorkspaceActivity("Backup imported", `${file.name} restored a full workspace backup.`);
         renderSnapshotComparison(null);
         renderDocumentLibrary();
+        renderExtractorHistory();
+        renderExtractorPacketLibrary();
         renderEvidenceLibrary();
         renderSnapshotHistoryList();
         renderWorkspace();
@@ -9213,6 +10666,8 @@ async function init() {
       renderWorkspaceProfiles();
       renderSnapshotComparison(null);
       renderDocumentLibrary();
+      renderExtractorHistory();
+      renderExtractorPacketLibrary();
       renderEvidenceLibrary();
       renderSnapshotHistoryList();
       renderWorkspace();
@@ -9760,8 +11215,18 @@ if (typeof module !== "undefined") {
     analyzeEvidenceConflicts,
     analyzeTimelineConflicts,
     analyzeRecordToClaimMapper,
+    extractEvidenceSignals,
     buildAssembledPacketText,
     buildEvidenceLibraryCsv,
+    buildExtractorDraftPacketText,
+    buildExtractorPacketPreview,
+    computeExtractorApplyNewPlan,
+    compareExtractorPacketRecords,
+    compareExtractorPreview,
+    buildExtractorEvidencePreview,
+    buildExtractorNoteSummary,
+    buildExtractorDraft,
+    buildExtractorTimelinePreview,
     buildNexusDraft,
     buildPacketReviewSnapshot,
     buildPrintablePacketHtml,
@@ -9771,6 +11236,8 @@ if (typeof module !== "undefined") {
     buildCoverageStarter,
     computeEvidenceCoverageMatrix,
     computeActionEngine,
+    createExtractorHistoryEntry,
+    createExtractorPacketRecord,
     createEvidenceLibraryRecord,
     createDocumentRecord,
     conditionSpecificCoaching,
@@ -9779,6 +11246,7 @@ if (typeof module !== "undefined") {
     filterWorkspaceItems,
     getConditionGuidedFormSchema,
     parseEvidenceCsv,
+    pruneExtractorDraft,
     scoreTheoryRecord,
     suggestEvidenceTargets,
     workspaceProfileSummary,

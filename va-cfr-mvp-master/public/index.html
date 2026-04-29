@@ -382,11 +382,19 @@
         <div class="healthBtns">
           <button id="docIntakeAnalyze" class="miniBtn" type="button">Analyze Intake</button>
           <button id="docIntakeAdd" class="miniBtn" type="button">Add Selected to Workspace</button>
+          <button id="docIntakeLoadFile" class="miniBtn" type="button">Load File</button>
           <button id="docLibrarySave" class="miniBtn" type="button">Save to Library</button>
         </div>
+        <div class="small" style="margin-top:8px">Supports paste-in text plus `.txt`, `.md`, `.csv`, `.pdf`, and `.docx` files.</div>
+        <input id="docIntakeFile" type="file" accept=".txt,.md,.text,.csv,.pdf,.docx" class="hidden" />
         <div id="docIntakeSummary" class="small" style="margin-top:8px"></div>
         <div id="docIntakeResults" class="builderSuggestions"></div>
         <div id="docMapperResults" class="builderSuggestions" style="margin-top:12px"></div>
+        <div id="docExtractorResults" class="builderSuggestions" style="margin-top:12px"></div>
+        <div class="small" style="margin-top:12px"><strong>Extractor application history</strong></div>
+        <div id="docExtractorHistory" class="builderSuggestions"></div>
+        <div class="small" style="margin-top:12px"><strong>Saved extractor draft packets</strong></div>
+        <div id="docExtractorPacketLibrary" class="builderSuggestions"></div>
         <div class="small" style="margin-top:12px"><strong>Saved document library</strong></div>
         <div id="docLibraryList" class="builderSuggestions"></div>
       </div>
@@ -428,6 +436,7 @@
           <button id="wsHandoffGenerate" class="miniBtn" type="button">Generate Handoff</button>
           <button id="wsHandoffCopy" class="miniBtn" type="button">Copy Handoff</button>
         </div>
+        <div id="wsRepReviewSummary" class="builderSuggestions" style="margin-top:12px"></div>
         <textarea id="wsHandoffOut" class="wsNarrativeOut" rows="12" placeholder='Click "Generate Handoff" to build a representative-facing review summary...'></textarea>
       </div>
 

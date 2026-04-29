@@ -4,9 +4,19 @@ const {
   analyzeEvidenceConflicts,
   analyzeTimelineConflicts,
   analyzeRecordToClaimMapper,
+  extractEvidenceSignals,
   buildAssembledPacketText,
   buildEvidenceLibraryCsv,
   buildCoverageStarter,
+  buildExtractorDraftPacketText,
+  buildExtractorPacketPreview,
+  computeExtractorApplyNewPlan,
+  compareExtractorPacketRecords,
+  compareExtractorPreview,
+  buildExtractorEvidencePreview,
+  buildExtractorDraft,
+  buildExtractorNoteSummary,
+  buildExtractorTimelinePreview,
   buildMilestonesCsv,
   buildNexusDraft,
   buildPacketReviewSnapshot,
@@ -17,10 +27,13 @@ const {
   getConditionGuidedFormSchema,
   conditionSpecificCoaching,
   computeConditionReadinessSnapshot,
+  createExtractorHistoryEntry,
+  createExtractorPacketRecord,
   createEvidenceLibraryRecord,
   createDocumentRecord,
   estimateScenarioSnapshot,
   parseEvidenceCsv,
+  pruneExtractorDraft,
   scoreTheoryRecord,
   suggestEvidenceTargets,
   workspaceProfileSummary,
@@ -63,10 +76,16 @@ describe("guided upgrade helpers", () => {
       type: "Medical record",
       tags: "sleep, apnea, dbq ",
       text: " Study results and physician summary. ",
+      sourceType: "inferred",
+      sourceName: "sleep-study.pdf",
+      fileName: "sleep-study.pdf",
     });
 
     expect(record.name).toBe("Sleep Study");
     expect(record.type).toBe("Medical record");
+    expect(record.sourceType).toBe("inferred");
+    expect(record.sourceName).toBe("sleep-study.pdf");
+    expect(record.fileName).toBe("sleep-study.pdf");
     expect(record.tags).toEqual(["sleep", "apnea", "dbq"]);
     expect(record.text).toBe("Study results and physician summary.");
   });
@@ -283,6 +302,276 @@ describe("guided upgrade helpers", () => {
     const migraineEntry = result.conditions.find((entry) => entry.name === "Migraines");
     expect(migraineEntry).toBeTruthy();
     expect(migraineEntry.excerpts.length).toBeGreaterThan(0);
+  });
+
+  test("extracts richer evidence signals from document text", () => {
+    const result = extractEvidenceSignals(
+      "Dr. Smith at Neurology Clinic diagnosed migraine headaches in 2024-02-01. The Veteran reports prostrating headaches twice a month that cause missed work. Symptoms worsened due to PTSD-related sleep disruption.",
+      [
+        { id: "migraines", name: "Migraines", aliases: ["headaches"], body_system: "Neurological Conditions" },
+        { id: "ptsd", name: "PTSD", aliases: [], body_system: "Mental Health" },
+      ],
+    );
+
+    expect(result.dates).toContain("2024-02-01");
+    expect(result.providers.some((item) => /smith|neurology/i.test(item))).toBe(true);
+    expect(result.symptoms).toEqual(expect.arrayContaining(["headache", "migraine", "missed work"]));
+    expect(result.diagnosisPhrases.length).toBeGreaterThan(0);
+    expect(result.severityPhrases.length).toBeGreaterThan(0);
+    expect(result.nexusPhrases.length).toBeGreaterThan(0);
+    expect(result.likelyTargets.some((item) => item.name === "Migraines")).toBe(true);
+  });
+
+  test("builds an extractor note summary for a target condition", () => {
+    const note = buildExtractorNoteSummary({
+      providers: ["Dr. Smith"],
+      dates: ["2024-02-01"],
+      symptoms: ["migraine", "missed work"],
+      diagnosisPhrases: ["Dr. Smith diagnosed migraine headaches."],
+      severityPhrases: ["Headaches cause missed work twice monthly."],
+      nexusPhrases: ["Symptoms worsened due to PTSD-related sleep disruption."],
+    }, "Migraines");
+
+    expect(note).toContain("Extracted evidence summary for Migraines");
+    expect(note).toContain("Dr. Smith");
+    expect(note).toContain("2024-02-01");
+    expect(note).toContain("migraine");
+  });
+
+  test("builds extractor timeline and evidence previews", () => {
+    const extractor = {
+      providers: ["Dr. Smith"],
+      dates: ["2024-02-01", "2024-03-15"],
+      symptoms: ["migraine", "missed work"],
+      diagnosisPhrases: ["Neurology note diagnosed migraines."],
+      severityPhrases: ["Missed work twice monthly."],
+      nexusPhrases: ["Worsened due to PTSD-related sleep disruption."],
+    };
+
+    const timeline = buildExtractorTimelinePreview(extractor, "Migraines");
+    const evidence = buildExtractorEvidencePreview(extractor, {
+      targetName: "Migraines",
+      labelBase: "Extracted record evidence",
+      type: "Medical record",
+      tags: ["sleep", "nexus"],
+      fallbackText: "Fallback text",
+    });
+
+    expect(timeline).toHaveLength(2);
+    expect(timeline[0].date).toBe("2024-02-01");
+    expect(timeline[0].note).toMatch(/Migraines/);
+    expect(evidence.label).toBe("Extracted record evidence — Migraines");
+    expect(evidence.type).toBe("Medical record");
+    expect(evidence.tags).toEqual(expect.arrayContaining(["sleep", "nexus", "migraine", "missed work"]));
+    expect(evidence.excerpt).toContain("Neurology note diagnosed migraines.");
+  });
+
+  test("compares extractor previews against existing condition content", () => {
+    const compare = compareExtractorPreview(
+      {
+        noteSummary: "[Extracted evidence summary for Migraines]\nDiagnosis phrases: Neurology note diagnosed migraines.",
+        timelineEntries: [
+          { date: "2024-02-01", type: "Other", note: "Document extractor imported date for Migraines (Dr. Smith)." },
+          { date: "2024-03-01", type: "Other", note: "Document extractor imported date for Migraines (Dr. Smith)." },
+        ],
+        evidenceRecord: {
+          label: "Extracted record evidence — Migraines",
+          excerpt: "Neurology note diagnosed migraines.",
+          date: "2024-02-01",
+        },
+      },
+      {
+        notes: "Other notes\n\n[Extracted evidence summary for Migraines]\nDiagnosis phrases: Neurology note diagnosed migraines.",
+        timeline: [
+          { date: "2024-02-01", note: "Document extractor imported date for Migraines (Dr. Smith)." },
+        ],
+        evidenceLinks: [
+          { label: "Extracted record evidence — Migraines", note: "Neurology note diagnosed migraines.", date: "2024-02-01" },
+        ],
+      },
+    );
+
+    expect(compare.noteStatus.status).toBe("duplicate");
+    expect(compare.timelineStatus.status).toBe("mixed");
+    expect(compare.duplicateTimelineCount).toBe(1);
+    expect(compare.evidenceStatus.status).toBe("duplicate");
+  });
+
+  test("builds an apply-only-new plan from extractor preview state", () => {
+    const plan = computeExtractorApplyNewPlan(
+      {
+        noteSummary: "[Extracted evidence summary for Migraines]\nNew details here.",
+        timelineEntries: [
+          { date: "2024-02-01", type: "Other", note: "Document extractor imported date for Migraines (Dr. Smith)." },
+          { date: "2024-03-01", type: "Other", note: "Document extractor imported date for Migraines (Dr. Smith)." },
+        ],
+        evidenceRecord: {
+          label: "Extracted record evidence — Migraines",
+          excerpt: "New excerpt",
+          date: "2024-03-01",
+        },
+      },
+      {
+        notes: "Existing notes only.",
+        timeline: [
+          { date: "2024-02-01", note: "Document extractor imported date for Migraines (Dr. Smith)." },
+        ],
+        evidenceLinks: [],
+      },
+    );
+
+    expect(plan.noteSummary).toContain("New details here.");
+    expect(plan.timelineEntries).toHaveLength(1);
+    expect(plan.timelineEntries[0].date).toBe("2024-03-01");
+    expect(plan.evidenceRecord.label).toContain("Migraines");
+  });
+
+  test("builds an extractor draft packet bundle", () => {
+    const packet = buildExtractorDraftPacketText(
+      {
+        target: { name: "Migraines" },
+        noteSummary: "[Extracted evidence summary for Migraines]\nNew details here.",
+        timelineEntries: [
+          { date: "2024-03-01", type: "Other", note: "Document extractor imported date for Migraines (Dr. Smith)." },
+        ],
+        evidenceRecord: {
+          label: "Extracted record evidence — Migraines",
+          type: "Medical record",
+          date: "2024-03-01",
+          tags: ["migraine", "missed work"],
+          excerpt: "New excerpt",
+        },
+        compare: {
+          noteStatus: { detail: "This summary will append new note content." },
+          timelineStatus: { detail: "All 1 timeline entry is new." },
+          evidenceStatus: { detail: "This evidence record looks new for the target condition." },
+        },
+      },
+      { sourceName: "neurology-note.pdf" },
+    );
+
+    expect(packet).toContain("[Extractor Draft Packet: Migraines]");
+    expect(packet).toContain("Source: neurology-note.pdf");
+    expect(packet).toContain("[Timeline Draft]");
+    expect(packet).toContain("Extracted record evidence — Migraines");
+    expect(packet).toContain("[Duplicate Check]");
+  });
+
+  test("compares two saved extractor draft packets by section", () => {
+    const compare = compareExtractorPacketRecords(
+      {
+        title: "Packet A",
+        text: "[Extractor Draft Packet: Migraines]\nSource: one\n\n[Notes Summary]\nNote A\n\n[Timeline Draft]\n2024-01-01 • Other\nA\n",
+      },
+      {
+        title: "Packet B",
+        text: "[Extractor Draft Packet: Migraines]\nSource: two\n\n[Notes Summary]\nNote B updated\n\n[Timeline Draft]\n2024-01-01 • Other\nA\n\n[Evidence Draft]\nLabel: New\n",
+      },
+    );
+
+    expect(compare.text).toContain("Left: Packet A");
+    expect(compare.text).toContain("Right: Packet B");
+    expect(compare.findings.some((finding) => finding.section === "Notes Summary" && finding.status === "changed")).toBe(true);
+    expect(compare.findings.some((finding) => finding.section === "Evidence Draft" && finding.status === "added")).toBe(true);
+  });
+
+  test("rebuilds extractor preview state from a saved packet", () => {
+    const preview = buildExtractorPacketPreview({
+      targetId: "migraines",
+      targetName: "Migraines",
+      text: [
+        "[Extractor Draft Packet: Migraines]",
+        "Source: neurology-note.pdf",
+        "",
+        "[Notes Summary]",
+        "Summary text",
+        "",
+        "[Timeline Draft]",
+        "2024-03-01 • Other",
+        "Timeline note",
+        "",
+        "[Evidence Draft]",
+        "Label: Extracted record evidence — Migraines",
+        "Type: Medical record",
+        "Date: 2024-03-01",
+        "Tags: migraine, missed work",
+        "Excerpt: Evidence excerpt",
+      ].join("\n"),
+    });
+
+    expect(preview.target.name).toBe("Migraines");
+    expect(preview.noteSummary).toBe("Summary text");
+    expect(preview.timelineEntries[0].date).toBe("2024-03-01");
+    expect(preview.evidenceRecord.label).toContain("Migraines");
+    expect(preview.evidenceRecord.tags).toEqual(["migraine", "missed work"]);
+  });
+
+  test("builds and prunes extractor drafts for review mode", () => {
+    const draft = buildExtractorDraft({
+      providers: ["Dr. Smith", "dr. smith", "  "],
+      symptoms: ["migraine", "migraine", "missed work"],
+      dates: ["2024-02-01", "2024-02-01"],
+      diagnosisPhrases: [" Diagnosed migraines. ", "Diagnosed migraines."],
+      severityPhrases: ["Missed work twice monthly."],
+      nexusPhrases: ["Worsened due to PTSD.", "worsened due to PTSD."],
+    });
+
+    expect(draft.providers).toEqual(["Dr. Smith"]);
+    expect(draft.symptoms).toEqual(["migraine", "missed work"]);
+
+    const pruned = pruneExtractorDraft({
+      ...draft,
+      diagnosisPhrases: [...draft.diagnosisPhrases, "  "],
+      nexusPhrases: [...draft.nexusPhrases, "Worsened due to PTSD."],
+    });
+
+    expect(pruned.diagnosisPhrases).toEqual(["Diagnosed migraines."]);
+    expect(pruned.nexusPhrases).toEqual(["Worsened due to PTSD."]);
+  });
+
+  test("creates extractor history entries with normalized selected phrases", () => {
+    const entry = createExtractorHistoryEntry({
+      action: "timeline",
+      targetId: "migraines",
+      targetName: "Migraines",
+      sourceName: "neurology-note.pdf",
+      selected: {
+        providers: ["Dr. Smith"],
+        dates: ["2024-02-01"],
+        symptoms: ["migraine"],
+        diagnosisPhrases: ["Neurology note diagnosed migraines."],
+        severityPhrases: [],
+        nexusPhrases: ["Symptoms worsened due to PTSD-related sleep disruption."],
+      },
+    });
+
+    expect(entry.action).toBe("timeline");
+    expect(entry.targetId).toBe("migraines");
+    expect(entry.sourceName).toBe("neurology-note.pdf");
+    expect(entry.providers).toEqual(["Dr. Smith"]);
+    expect(entry.dates).toEqual(["2024-02-01"]);
+    expect(entry.nexusPhrases.length).toBe(1);
+  });
+
+  test("creates extractor packet records with target metadata", () => {
+    const packet = createExtractorPacketRecord({
+      targetId: "migraines",
+      targetName: "Migraines",
+      sourceName: "neurology-note.pdf",
+      title: "Migraines Draft Packet",
+      tags: ["nexus draft", "rep handoff candidate"],
+      pinned: true,
+      text: "packet body",
+      compare: { noteStatus: { status: "new" } },
+    });
+
+    expect(packet.targetId).toBe("migraines");
+    expect(packet.targetName).toBe("Migraines");
+    expect(packet.sourceName).toBe("neurology-note.pdf");
+    expect(packet.title).toBe("Migraines Draft Packet");
+    expect(packet.tags).toEqual(["nexus draft", "rep handoff candidate"]);
+    expect(packet.pinned).toBe(true);
+    expect(packet.text).toBe("packet body");
   });
 
   test("scores structured theories with reviewer-style feedback", () => {

@@ -82,6 +82,21 @@ The active app lives at the repository root:
 - Featured homepage condition cards now show common connection hints, and a first-time guided setup wizard now helps new users choose between a primary-condition path, a secondary bundle, or a quick-start plan
 - The onboarding wizard now remembers its last-used path and selections locally, and featured condition cards now explain why each condition is a common starting point
 - The homepage now includes a live recommended-next-action card plus a local usage snapshot that surfaces the most-used conditions, bundles, and quick-start plans
+- Document Intake now includes a richer evidence extractor that pulls out likely providers, symptoms, diagnosis/severity/nexus phrases, and dates, with one-click actions into notes, timelines, and the evidence library
+- Document Intake now supports `.pdf` and `.docx` extraction in addition to plain-text files, so uploaded records can flow into the same intake and evidence workflow
+- The Evidence Extractor now includes an excerpt review workspace where users can edit, reject, and de-duplicate extracted phrases before applying them
+- The extractor now also supports before-apply previews for note summaries, timeline entries, and evidence-record output so users can verify generated results before committing them
+- Extractor previews now compare against existing notes, timeline entries, and evidence links on the target condition so likely duplicates are visible before apply
+- A one-click `Apply Only New Items` action now skips duplicate note, timeline, and evidence output automatically when the extractor already overlaps the target condition
+- The extractor can now build a small condition-specific draft packet bundle with notes, timeline, evidence, and duplicate-check context for copy/download before anything is applied
+- Saved draft packets can now be compared side by side so users can review changes across notes, timeline, evidence, and duplicate-check sections
+- Saved draft packets can now be applied back to their target condition from the library, with duplicate-safe note, timeline, and evidence promotion
+- Saved draft packets can now be tagged by purpose, such as `nexus draft`, `timeline-heavy`, or `rep handoff candidate`, so the library is easier to scan later
+- The saved packet library can now be filtered by purpose tag and target condition, which makes larger packet sets much easier to narrow quickly
+- The saved packet library can now also be sorted by newest, target condition, or purpose tag so filtered packet sets are easier to organize
+- Important saved packets can now be pinned to the top of the library so key draft packets stay visible regardless of sort order
+- Extractor application history now shows which extracted phrases were applied to which condition, when, and from which source document
+- Guided condition forms now include stronger digestive-condition prompts, and Representative Handoff now includes a compact review snapshot above the full handoff text
 - Removal of the unused `public/js/intelligence.js` experimental script
 - Jest coverage for parsing, validation, storage migrations, workspace export/share logic, evidence binder logic, evidence graph helpers, workspace UI helpers, detail view/interactions, timeline logic, and API behavior
 - Cleanup of inline debug code and repository metadata
