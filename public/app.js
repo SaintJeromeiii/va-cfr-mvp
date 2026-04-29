@@ -693,49 +693,6 @@ function clearAllLocalClaimData() {
   showNotification("Local claim data cleared.");
 }
 
-function openLaunchSafetyModal() {
-  document.getElementById("launchSafetyModal")?.classList.remove("hidden");
-  document.getElementById("launchSafetyClose")?.focus();
-}
-
-function closeLaunchSafetyModal() {
-  document.getElementById("launchSafetyModal")?.classList.add("hidden");
-}
-
-function collectFeedbackPayload() {
-  const type = document.getElementById("feedbackType")?.value || "general";
-  const message = (document.getElementById("feedbackText")?.value || "").trim();
-  const includeContext = !!document.getElementById("feedbackIncludeContext")?.checked;
-  return {
-    type,
-    message,
-    url: includeContext ? window.location.href : "",
-    activeProject: includeContext ? (getActiveProject(loadProjectStore())?.name || "") : "",
-    createdAt: new Date().toISOString()
-  };
-}
-
-async function submitFeedback() {
-  const payload = collectFeedbackPayload();
-  if (!payload.message) return showNotification("Please enter feedback before sending.");
-  try {
-    const res = await fetch("/api/feedback", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const input = document.getElementById("feedbackText");
-    if (input) input.value = "";
-    showNotification("Feedback received. Thank you!");
-  } catch (err) {
-    console.warn("feedback failed", err && err.message);
-    const subject = encodeURIComponent(`VA CFR Finder feedback: ${payload.type}`);
-    const body = encodeURIComponent(`${payload.message}\n\nContext: ${payload.url || "(not included)"}`);
-    window.location.href = `mailto:?subject=${subject}&body=${body}`;
-  }
-}
-
 function refreshWorkspaceViews() {
   renderWorkspace();
   renderClaimTree();
@@ -768,6 +725,66 @@ function initializeGuidedTabs() {
   });
 
   activate(document.querySelector(".appPanel.active")?.id || tabs[0].dataset.panelTarget);
+}
+
+function initializeLaunchModals() {
+  const privacyModal = document.getElementById("privacyModal");
+  const feedbackModal = document.getElementById("feedbackModal");
+  const openModal = modal => modal?.classList.remove("hidden");
+  const closeModal = modal => modal?.classList.add("hidden");
+
+  ["privacyNoticeOpen", "privacyNoticeFooter"].forEach(id => {
+    document.getElementById(id)?.addEventListener("click", () => openModal(privacyModal));
+  });
+  ["privacyModalClose", "privacyAcknowledge"].forEach(id => {
+    document.getElementById(id)?.addEventListener("click", () => closeModal(privacyModal));
+  });
+  document.getElementById("privacyDownloadData")?.addEventListener("click", exportLocalData);
+
+  ["feedbackOpen", "feedbackFooter"].forEach(id => {
+    document.getElementById(id)?.addEventListener("click", () => {
+      const status = document.getElementById("feedbackStatus");
+      if (status) status.textContent = "";
+      openModal(feedbackModal);
+    });
+  });
+  document.getElementById("feedbackModalClose")?.addEventListener("click", () => closeModal(feedbackModal));
+
+  async function feedbackPayload() {
+    const type = document.getElementById("feedbackType")?.value || "General feedback";
+    const message = (document.getElementById("feedbackMessage")?.value || "").trim();
+    return { type, message, page: window.location.pathname + window.location.search };
+  }
+
+  document.getElementById("feedbackCopy")?.addEventListener("click", async () => {
+    const payload = await feedbackPayload();
+    await navigator.clipboard.writeText(`[${payload.type}]\n${payload.message}\nPage: ${payload.page}`);
+    const status = document.getElementById("feedbackStatus");
+    if (status) status.textContent = "Feedback copied.";
+  });
+
+  document.getElementById("feedbackSubmit")?.addEventListener("click", async () => {
+    const status = document.getElementById("feedbackStatus");
+    const payload = await feedbackPayload();
+    if (!payload.message) {
+      if (status) status.textContent = "Please add a short message first.";
+      return;
+    }
+    try {
+      const res = await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (status) status.textContent = "Thank you. Feedback saved.";
+      const msg = document.getElementById("feedbackMessage");
+      if (msg) msg.value = "";
+    } catch (err) {
+      console.warn("feedback submit failed", err && err.message);
+      if (status) status.textContent = "Could not submit. Please copy or email your feedback.";
+    }
+  });
 }
 
 function renderSourceFreshness() {
@@ -4287,6 +4304,7 @@ async function init() {
   refreshWorkspaceViews();
   renderSourceFreshness();
   initializeGuidedTabs();
+  initializeLaunchModals();
 
   // Auto-import workspace from share link
   const params = new URLSearchParams(window.location.search);
