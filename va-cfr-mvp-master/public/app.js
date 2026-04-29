@@ -7221,15 +7221,18 @@ function renderResults(list) {
     const cfrHTML = cfrLine ? highlight(cfrLine, q) : "";
 
     div.innerHTML = `
-      <div class="metaRow">
-        ${sys ? `<span class="systemBadge ${systemClassName(sys)}">${escapeHtml(sys)}</span>` : ""}
-        ${dc ? `<span class="dcBadge">${highlight(`DC ${dc}`, q)}</span>` : ""}
+      <div class="resultHeader">
+        <div class="metaRow">
+          ${sys ? `<span class="systemBadge ${systemClassName(sys)}">${escapeHtml(sys)}</span>` : ""}
+          ${dc ? `<span class="dcBadge">${highlight(`DC ${dc}`, q)}</span>` : ""}
+        </div>
+        <div class="resultActions"></div>
       </div>
 
-      <div><strong>${nameHTML}</strong></div>
+      <div class="resultTitle"><strong>${nameHTML}</strong></div>
 
       ${cfrHTML
-        ? `<div class="cfrLine">
+        ? `<div class="cfrLine resultSummary">
          <span class="cfrJump"
            data-dc="${escapeHtml(dc)}"
            data-sec="${escapeHtml((item.cfr?.[0]?.section || "").replace(/38\\s*cfr\\s*§/i, "").trim())}">
@@ -7241,11 +7244,11 @@ function renderResults(list) {
 
 
       ${(q || "").trim()
-        ? `<div class="matchNote">Matched: <strong>${escapeHtml(reason)}</strong></div>`
+        ? `<div class="matchNote">Matched on <strong>${escapeHtml(reason)}</strong></div>`
         : ""
       }
 
-      <div class="small">Aliases: ${aliasesHTML}${(item.aliases || []).length > 3 ? "…" : ""}</div>
+      <div class="small resultMetaLine">Aliases: ${aliasesHTML}${(item.aliases || []).length > 3 ? "…" : ""}</div>
     `;
     const cfrJumpEl = div.querySelector(".cfrJump");
     if (cfrJumpEl) {
@@ -7278,21 +7281,21 @@ function renderResults(list) {
       alert('Added to workspace!');
     });
 
-    const metaRow = div.querySelector('.metaRow');
-    if (metaRow) metaRow.appendChild(addBtn);
+    const resultActions = div.querySelector('.resultActions');
+    if (resultActions) resultActions.appendChild(addBtn);
 
     const favBtn = document.createElement("button");
     favBtn.className = "miniBtn";
     favBtn.type = "button";
     favBtn.dataset.favoriteCondition = item.id;
-    favBtn.textContent = favorites.has(item.id) ? "★ Favorite" : "☆ Favorite";
+    favBtn.textContent = favorites.has(item.id) ? "Saved" : "Save";
     favBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       const active = toggleFavoriteCondition(item.id);
-      favBtn.textContent = active ? "★ Favorite" : "☆ Favorite";
+      favBtn.textContent = active ? "Saved" : "Save";
       renderConditionBrowse();
     });
-    if (metaRow) metaRow.appendChild(favBtn);
+    if (resultActions) resultActions.appendChild(favBtn);
 
     div.addEventListener("click", () => {
       const raw = document.getElementById("q")?.value || "";
@@ -7960,7 +7963,7 @@ let strategyHTML = "";
 if (item.strategy && item.strategy.length) {
   strategyHTML = `
     <hr/>
-    <h3>🧭 Claim Strategy (Educational)</h3>
+    <h3>Claim Strategy</h3>
     <ul>
       ${item.strategy.map(s => `<li>${escapeHtml(s)}</li>`).join("")}
     </ul>
@@ -8042,7 +8045,7 @@ if (item.strategy && item.strategy.length) {
     }
 </div>
 
-<h2 style="margin-top:6px">${item.name}</h2>
+<h2 class="detailTitle">${item.name}</h2>
 
 ${buildDetailSummaryHTML(item)}
 
@@ -8052,11 +8055,13 @@ ${buildDetailSummaryHTML(item)}
 </div>
 
 
-    <div class="small">${item.disclaimer || ""}</div>
+    <div class="small detailLead">${item.disclaimer || ""}</div>
 
-    <button id="copyLink" class="copyBtn">Copy link</button>
-    <button id="wsAdd" class="miniBtn" type="button">+ Add to Workspace</button>
-    <button id="wsAddSecondary" class="miniBtn" type="button">+ Add as Secondary</button>
+    <div class="detailActionBar">
+      <button id="copyLink" class="miniBtn" type="button">Copy Link</button>
+      <button id="wsAdd" class="miniBtn" type="button">Add to Workspace</button>
+      <button id="wsAddSecondary" class="miniBtn" type="button">Add as Secondary</button>
+    </div>
 
     <hr/>
 
@@ -8071,7 +8076,7 @@ ${excerptsHTML}
 ${strategyHTML}
 
 <hr/>
-<h3>🧩 Related / Secondary Conditions</h3>
+<h3>Related / Secondary Conditions</h3>
 <div id="secondaryList"></div>
 <button id="addSecondaryBtn" class="secondaryBtn">+ Add secondary condition</button>
 
@@ -8083,7 +8088,7 @@ ${strategyHTML}
 
     <hr/>
 
-    <h3>📈 Evidence Readiness</h3>
+    <h3>Evidence Readiness</h3>
     <div class="evScoreRow">
       <div class="evBar"><div id="evBarFill" class="evBarFill"></div></div>
       <div class="small"><span id="evScoreText">0/0</span> complete</div>
@@ -8113,9 +8118,9 @@ ${strategyHTML}
 
     <hr/>
 
-<h3>📝 Guided Condition Form</h3>
+<h3>Guided Condition Form</h3>
 <div class="small">Capture structured symptom and impact details so the notes, severity picture, and packet output are easier to review.</div>
-<div id="guidedFormHost" class="builderSuggestions" style="margin-top:12px"></div>
+<div id="guidedFormHost" class="builderSuggestions sectionTop12"></div>
 
 <hr/>
 
@@ -8143,7 +8148,7 @@ ${strategyHTML}
 
 <textarea id="tlNote" rows="3" placeholder="Event details (e.g., first symptoms, diagnosis visit, CPAP issued, ER visit, missed work, etc.)"></textarea>
 
-<div class="healthBtns" style="margin-top:8px">
+<div class="healthBtns smallTop8">
   <button id="tlAdd" class="miniBtn" type="button">Add timeline entry</button>
   <button id="tlExport" class="miniBtn" type="button">Download timeline (.txt)</button>
 </div>
@@ -8171,7 +8176,7 @@ ${strategyHTML}
 
 <textarea id="evLinksNote" rows="2" placeholder="Notes (optional: what this proves, key page numbers, etc.)"></textarea>
 
-<div class="healthBtns" style="margin-top:8px">
+<div class="healthBtns smallTop8">
   <button id="evLinksAdd" class="miniBtn" type="button">Add evidence link</button>
   <button id="evLinksExport" class="miniBtn" type="button">Download evidence list (.txt)</button>
 </div>
@@ -8184,7 +8189,7 @@ ${strategyHTML}
     Relating FROM: <strong id="evRelFromLabel">(none)</strong>
   </div>
 
-  <div class="evForm" style="margin-top:8px">
+  <div class="evForm smallTop8">
     <select id="evRelPick"></select>
     <button id="evRelAdd" class="miniBtn" type="button">Link as Related</button>
     <button id="evRelCancel" class="miniBtn" type="button">Cancel</button>
@@ -10503,6 +10508,14 @@ async function init() {
   }
 
   // Theme persistence and toggle
+  function syncThemeToggleLabel(choice) {
+    if (!darkToggle) return;
+    const isLight = choice === 'light';
+    darkToggle.textContent = isLight ? 'Switch to Dark' : 'Switch to Light';
+    darkToggle.setAttribute('aria-label', isLight ? 'Switch to dark theme' : 'Switch to light theme');
+    darkToggle.setAttribute('title', isLight ? 'Switch to dark theme' : 'Switch to light theme');
+  }
+
   function applyThemeChoice(choice) {
     if (choice === 'light') {
       document.body.classList.add('light');
@@ -10513,6 +10526,7 @@ async function init() {
       document.body.classList.add('dark-mode');
       if (darkToggle) darkToggle.setAttribute('aria-pressed', 'false');
     }
+    syncThemeToggleLabel(choice);
   }
 
   const savedTheme = (localStorage.getItem('vaCfrTheme')) || (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
