@@ -166,6 +166,48 @@ function productionReadinessChecks() {
   return checks;
 }
 
+function appendJsonLine(filePath, entry) {
+  ensureDataDirs();
+  fs.appendFileSync(filePath, JSON.stringify(entry) + '\n', 'utf8');
+}
+
+function readJsonLines(filePath, limit = 100) {
+  try {
+    if (!fs.existsSync(filePath)) return [];
+    const lines = fs.readFileSync(filePath, 'utf8').split('\n').filter(Boolean);
+    return lines.slice(-limit).map(line => {
+      try { return JSON.parse(line); } catch { return null; }
+    }).filter(Boolean).reverse();
+  } catch {
+    return [];
+  }
+}
+
+const ALLOWED_ANALYTICS_EVENTS = new Set([
+  'app_loaded',
+  'onboarding_completed',
+  'search',
+  'condition_opened',
+  'workspace_add',
+  'project_created',
+  'packet_export',
+  'feedback_opened',
+  'feedback_submitted'
+]);
+
+function sanitizeAnalyticsPayload(body) {
+  const event = String((body && body.event) || '').slice(0, 80);
+  if (!ALLOWED_ANALYTICS_EVENTS.has(event)) return null;
+  const rawMeta = body && body.meta && typeof body.meta === 'object' ? body.meta : {};
+  const meta = {};
+  ['system', 'conditionId', 'source', 'mode', 'resultCount'].forEach(key => {
+    if (typeof rawMeta[key] === 'string' || typeof rawMeta[key] === 'number') {
+      meta[key] = String(rawMeta[key]).slice(0, 120);
+    }
+  });
+  return { event, meta };
+}
+
 function loadConditions() {
   const raw = fs.readFileSync(CONDITIONS_PATH, 'utf8');
   let data;
@@ -455,6 +497,42 @@ function validateTask(t) {
 }
 
 // API routes
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    app: 'va-cfr-mvp',
+    startedAt: STARTED_AT,
+    uptimeSeconds: Math.round(process.uptime())
+  });
+});
+
+app.get('/api/ready', (req, res) => {
+  const checks = productionReadinessChecks();
+  const critical = checks.filter(c => ['users_file_writable', 'sessions_file_writable', 'tasks_file_writable', 'feedback_file_writable', 'analytics_file_writable'].includes(c.name));
+  const ready = critical.every(c => c.ok);
+  res.status(ready ? 200 : 503).json({
+    status: ready ? 'ready' : 'not_ready',
+    warnings: productionWarnings(),
+    checks
+  });
+});
+
+app.post('/api/analytics', (req, res) => {
+  const payload = sanitizeAnalyticsPayload(req.body || {});
+  if (!payload) return res.status(400).json({ error: 'invalid analytics event' });
+  try {
+    appendJsonLine(ANALYTICS_FILE, {
+      ts: new Date().toISOString(),
+      event: payload.event,
+      meta: payload.meta
+    });
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error('Could not save analytics', e);
+    return res.status(500).json({ error: 'Could not save analytics' });
+  }
+});
+
 app.get('/api/conditions', (req, res) => {
   const conditions = loadConditions();
   res.json(conditions);
