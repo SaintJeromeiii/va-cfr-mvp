@@ -811,10 +811,12 @@ function initializeBetaOnboarding() {
   const close = () => modal.classList.add("hidden");
   const doneKey = "vaCfrOnboardingComplete:v1";
   const typeSelect = document.getElementById("onboardingClaimType");
-  const primaryInput = document.getElementById("onboardingPrimary");
+  const primaryInput = document.getElementById("onboardingCondition");
+  const packetNameInput = document.getElementById("onboardingPacketName");
 
   if (!localStorage.getItem(doneKey)) {
     setTimeout(open, 500);
+    trackEvent("onboarding_shown");
   }
 
   document.getElementById("onboardingSkip")?.addEventListener("click", () => {
@@ -828,7 +830,9 @@ function initializeBetaOnboarding() {
     close();
     const type = typeSelect?.value || "new";
     const primary = (primaryInput?.value || "").trim();
-    trackEvent("onboarding_completed", { type, hasPrimary: primary ? "true" : "false" });
+    const packetName = (packetNameInput?.value || "").trim();
+    if (packetName) addProject(packetName);
+    trackEvent("onboarding_completed", { mode: type, conditionId: primary ? "provided" : "none" });
     const q = document.getElementById("q");
     if (q && primary) {
       q.value = primary;
@@ -836,51 +840,6 @@ function initializeBetaOnboarding() {
       q.focus();
     }
     document.querySelector(".navTab[data-panel-target='searchPanel']")?.click();
-  });
-}
-
-function trackEvent(name, meta = {}) {
-  const safeName = String(name || "").slice(0, 80);
-  if (!safeName) return;
-  const safeMeta = {};
-  Object.entries(meta || {}).forEach(([key, value]) => {
-    if (value == null) return;
-    safeMeta[String(key).slice(0, 40)] = String(value).slice(0, 120);
-  });
-  if (navigator.sendBeacon) {
-    const blob = new Blob([JSON.stringify({ event: safeName, meta: safeMeta })], { type: "application/json" });
-    if (navigator.sendBeacon("/api/analytics", blob)) return;
-  }
-  fetch("/api/analytics", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ event: safeName, meta: safeMeta }),
-    keepalive: true
-  }).catch(() => {});
-}
-
-function initializeBetaOnboarding() {
-  const modal = document.getElementById("onboardingModal");
-  if (!modal) return;
-  const key = "vaCfrBetaOnboardingSeen:v1";
-  const close = () => {
-    localStorage.setItem(key, "1");
-    modal.classList.add("hidden");
-  };
-  if (!localStorage.getItem(key)) {
-    modal.classList.remove("hidden");
-    trackEvent("onboarding_shown");
-  }
-  document.getElementById("onboardingStart")?.addEventListener("click", () => {
-    const goal = document.getElementById("onboardingGoal")?.value || "undisclosed";
-    const storage = document.getElementById("onboardingStorage")?.value || "undisclosed";
-    localStorage.setItem("vaCfrBetaOnboarding:v1", JSON.stringify({ goal, storage, at: new Date().toISOString() }));
-    trackEvent("onboarding_completed", { goal, storage });
-    close();
-  });
-  document.getElementById("onboardingSkip")?.addEventListener("click", () => {
-    trackEvent("onboarding_skipped");
-    close();
   });
 }
 
@@ -4402,6 +4361,8 @@ async function init() {
   renderSourceFreshness();
   initializeGuidedTabs();
   initializeLaunchModals();
+  initializeBetaOnboarding();
+  trackEvent("app_loaded");
 
   // Auto-import workspace from share link
   const params = new URLSearchParams(window.location.search);
@@ -4431,8 +4392,6 @@ async function init() {
   const filter = document.getElementById("systemFilter");
   const clearBtn = document.getElementById("clearBtn");
 
-  initializeGuidedTabs();
-  renderSourceFreshness();
   hydrateWorkspaceStoreFromServer().then(() => {
     renderProjectSelector();
     refreshWorkspaceViews();
