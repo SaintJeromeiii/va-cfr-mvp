@@ -13,6 +13,9 @@ function taskSave(state) {
   } else {
     localStorage.setItem("vaCfrFinderState", JSON.stringify(state));
   }
+  // Compatibility for older smoke tests and any previous local builds that
+  // looked for the task list under this standalone key.
+  localStorage.setItem("vaCfrTasks", JSON.stringify(taskEnsure(state)));
   showNotification("Workspace auto-saved!");
 }
 
