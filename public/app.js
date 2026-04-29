@@ -804,6 +804,27 @@ function initializeLaunchModals() {
   });
 }
 
+function trackEvent(name, meta = {}) {
+  const safeName = String(name || "").slice(0, 80);
+  if (!safeName) return;
+  const safeMeta = {};
+  Object.entries(meta || {}).forEach(([key, value]) => {
+    if (value == null) return;
+    safeMeta[String(key).slice(0, 40)] = String(value).slice(0, 120);
+  });
+  const payload = JSON.stringify({ event: safeName, meta: safeMeta });
+  if (navigator.sendBeacon) {
+    const blob = new Blob([payload], { type: "application/json" });
+    if (navigator.sendBeacon("/api/analytics", blob)) return;
+  }
+  fetch("/api/analytics", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: payload,
+    keepalive: true
+  }).catch(() => {});
+}
+
 function initializeBetaOnboarding() {
   const modal = document.getElementById("onboardingModal");
   if (!modal) return;
