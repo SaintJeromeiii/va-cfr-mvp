@@ -56,7 +56,7 @@ jobs:
 
       - name: Upload Playwright report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report-${{ env.SHARD_SAFE }}-${{ github.run_id }}
           path: |
@@ -68,7 +68,7 @@ jobs:
 
       - name: Upload traces and screenshots
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-traces-screenshots-${{ env.SHARD_SAFE }}-${{ github.run_id }}
           path: |
@@ -79,7 +79,7 @@ jobs:
 
       - name: Upload test-results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-results-${{ env.SHARD_SAFE }}-${{ github.run_id }}
           path: test-results
@@ -148,7 +148,7 @@ jobs:
 
       - name: Upload regression report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-regression-report
           path: |
@@ -158,7 +158,7 @@ jobs:
 
       - name: Upload regression junit
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-regression-junit
           path: playwright-regression-junit.xml
