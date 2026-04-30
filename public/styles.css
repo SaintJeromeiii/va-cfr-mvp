@@ -944,3 +944,31 @@ input[type="radio"]:focus {
   opacity: 0;
   pointer-events: none;
 }
+.evList {
+  display: block;
+}
+
+.evItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.evCheck {
+  appearance: auto;
+  -webkit-appearance: checkbox;
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  opacity: 1;
+  visibility: visible;
+  accent-color: #2563eb;
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.evItem span {
+  display: inline-block;
+  color: inherit;
+}

@@ -1,5 +1,10 @@
 let CONDITIONS = [];
 
+
+console.log("APP JS LOADED FROM MY EDITED FILE");
+
+
+
 function normalize(s) {
   return (s || "").toLowerCase().trim();
 }
@@ -1577,7 +1582,13 @@ if (item.strategy && item.strategy.length) {
     .join("");
 
   const evidenceState = loadEvidenceState(item.id);
-  const evidenceItems = item.evidence_checklist || [];
+
+  console.log("Selected item:", item);
+console.log("PTSD evidence_checklist:", item.evidence_checklist);
+
+const evidenceItems = item.evidence_checklist || [];
+
+console.log("evidenceItems:", evidenceItems);
 
   const evidenceChecksHTML = evidenceItems
     .map((text, idx) => {
@@ -1591,6 +1602,11 @@ if (item.strategy && item.strategy.length) {
     })
     .join("");
 
+console.log("evidenceChecksHTML:", evidenceChecksHTML);
+
+    console.log("evidenceChecksHTML:", evidenceChecksHTML);
+console.log("evidenceItems length:", evidenceItems.length);
+
   const completedCount = evidenceItems.reduce((acc, _, idx) => acc + (evidenceState[idx] ? 1 : 0), 0);
 
 
@@ -1602,6 +1618,9 @@ if (item.strategy && item.strategy.length) {
 `
       : ""
     }
+console.log("Rendered evList HTML:", document.getElementById("evList")?.innerHTML);
+console.log("Rendered evList element:", document.getElementById("evList"));
+
 
   ${item.cfr && item.cfr.length
       ? `<span class="dcBadge">DC ${item.cfr[0].diagnostic_code}</span>`
@@ -1672,8 +1691,13 @@ ${strategyHTML}
 </div>
 
 <div id="evList" class="evList">
-  ${evidenceChecksHTML || `<div class="small">No checklist provided for this condition yet.</div>`}
+  <label class="evItem">
+    <input type="checkbox" class="evCheck" />
+    <span>TEST CHECKBOX</span>
+  </label>
 </div>
+
+
 
 
     <hr/>
