@@ -1991,6 +1991,26 @@ body::before {
   margin-bottom: 22px;
 }
 
+.betaNotice {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 108, 31, 0.28);
+  background: rgba(148, 108, 31, 0.08);
+}
+
+.betaNotice strong {
+  display: block;
+  color: var(--heading);
+  margin-bottom: 4px;
+}
+
+.betaNotice p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
 .sectionEyebrow {
   margin-bottom: 12px;
   color: var(--accent-strong);
