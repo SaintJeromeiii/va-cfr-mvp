@@ -4,31 +4,39 @@
   "description": "VA CFR Finder MVP",
   "main": "server.js",
   "scripts": {
-    "backup:data": "node scripts/backup-data-to-s3.js",
-    "import:conditions": "node scripts/import_conditions.js",
-    "test:e2e:install": "npx playwright install --with-deps",
-    "test:e2e": "npx playwright test"
+    "dev": "cross-env NODE_ENV=development nodemon server.js",
+    "test": "jest --runInBand",
+    "save": "git pull --ff-only && git add . && git diff --cached --quiet || git commit -m \"auto save\" && git push",
+    "start": "node server.js",
+    "format": "prettier --write .",
+    "cap:copy": "npx cap copy",
+    "cap:sync": "npx cap sync",
+    "cap:add:android": "npx cap add android",
+    "cap:open:android": "npx cap open android"
+  },
+  "jest": {
+    "roots": [
+      "<rootDir>/tests"
+    ],
+    "testEnvironment": "node",
+    "modulePathIgnorePatterns": [
+      "<rootDir>/va-cfr-mvp"
+    ]
   },
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.483.0",
-    "ajv": "^8.12.0",
-    "ajv-formats": "^2.1.1",
-    "bcryptjs": "^2.4.3",
-    "cookie-parser": "^1.4.6",
-    "cors": "^2.8.5",
+    "@capacitor/core": "^8.0.0",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
-    "express-rate-limit": "^6.7.0",
-    "helmet": "^7.0.0",
-    "jsdom": "^28.1.0",
     "jspdf": "^4.2.0",
     "morgan": "^1.10.1"
   },
   "devDependencies": {
-    "@playwright/test": "^1.41.0",
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/cli": "^8.0.0",
     "connect-livereload": "^0.6.1",
+    "cross-env": "^10.1.0",
     "eslint": "^10.0.1",
     "husky": "^9.1.7",
     "jest": "^30.2.0",
