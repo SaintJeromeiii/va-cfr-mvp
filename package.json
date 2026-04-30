@@ -37,7 +37,8 @@
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "jspdf": "^4.2.0",
-    "morgan": "^1.10.1"
+    "morgan": "^1.10.1",
+    "express-rate-limit": "^8.4.1"
   },
   "devDependencies": {
     "@capacitor/android": "^8.0.0",
