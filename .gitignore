@@ -4,5 +4,12 @@ test-results/
 /.idea/
 .vscode/
 playwright-report/
+playwright-report-default/
 playwright-results/
 *.log
+data/users/
+!data/users/.gitkeep
+data/tasks.json
+data/feedback.jsonl
+data/analytics.jsonl
+data/feedback.log
