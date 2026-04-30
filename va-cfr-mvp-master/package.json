@@ -13,6 +13,8 @@
     "cap:sync": "npx cap sync",
     "cap:add:android": "npx cap add android",
     "cap:open:android": "npx cap open android"
+    ,
+    "check-mcp": "node scripts/check-mcp.js"
   },
   "jest": {
     "roots": [

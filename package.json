@@ -36,6 +36,7 @@
     "@capacitor/core": "^8.0.0",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.4.1",
     "jspdf": "^4.2.0",
     "morgan": "^1.10.1",
     "express-rate-limit": "^8.4.1"
@@ -43,13 +44,13 @@
   "devDependencies": {
     "@capacitor/android": "^8.0.0",
     "@capacitor/cli": "^8.0.0",
+    "@playwright/test": "^1.55.0",
     "connect-livereload": "^0.6.1",
     "cross-env": "^10.1.0",
     "eslint": "^10.0.1",
     "husky": "^9.1.7",
     "jest": "^30.2.0",
     "livereload": "^0.10.3",
-    "nodemon": "^3.1.11",
-    "@playwright/test": "^1.55.0"
+    "nodemon": "^3.1.11"
   }
 }
