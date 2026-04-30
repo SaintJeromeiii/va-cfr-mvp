@@ -1,0 +1,8 @@
+{
+  "appId": "com.saintjerome.vaclaimstrategy",
+  "appName": "VA Claim Strategy Workspace",
+  "webDir": "public",
+  "server": {
+    "androidScheme": "https"
+  }
+}

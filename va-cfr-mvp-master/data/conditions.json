@@ -1,0 +1,944 @@
+[
+  {
+    "id": "tinnitus",
+    "name": "Tinnitus",
+    "body_system": "Ear",
+    "aliases": [
+      "ringing in ears",
+      "ear ringing",
+      "buzzing in ears"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.87",
+        "diagnostic_code": "6260",
+        "title": "Tinnitus, recurrent",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFR378242b2776122d/section-4.87"
+      }
+    ],
+    "rating_logic": {
+      "type": "max_schedular",
+      "summary": "Schedular maximum is generally 10% for recurrent tinnitus (single evaluation rule)."
+    },
+    "evidence_checklist": [
+      "Current symptoms described (frequency, impact on sleep/focus)",
+      "Medical/audiology notes mentioning tinnitus (if available)",
+      "Service event/exposure history (e.g., hazardous noise) documented in records if it exists",
+      "Treatment history (hearing protection, audiology visits, etc.)"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "knee_flexion",
+    "name": "Limitation of Flexion of the Knee",
+    "body_system": "Musculoskeletal",
+    "aliases": [
+      "knee flexion",
+      "knee range of motion",
+      "limited bending knee"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.71a",
+        "diagnostic_code": "5260",
+        "title": "Leg, limitation of flexion",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFRd3005f7d828ea7b/section-4.71a"
+      }
+    ],
+    "rating_logic": {
+      "type": "thresholds",
+      "summary": "Rating depends on measured flexion (degrees).",
+      "thresholds": [
+        {
+          "flexion_deg": 60,
+          "rating_percent": 0
+        },
+        {
+          "flexion_deg": 45,
+          "rating_percent": 10
+        },
+        {
+          "flexion_deg": 30,
+          "rating_percent": 20
+        },
+        {
+          "flexion_deg": 15,
+          "rating_percent": 30
+        }
+      ]
+    },
+    "evidence_checklist": [
+      "Range-of-motion measurements (flexion) from exam or treatment notes",
+      "Pain with motion / flare-up notes (how often, how severe)",
+      "Functional impact (stairs, standing, walking, kneeling)",
+      "Imaging and treatment history (PT, injections, braces) if documented"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "sciatic_nerve",
+    "name": "Paralysis of the Sciatic Nerve (Sciatica)",
+    "body_system": "Neurological",
+    "aliases": [
+      "sciatica",
+      "sciatic nerve",
+      "radiculopathy",
+      "shooting pain leg"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.124a",
+        "diagnostic_code": "8520",
+        "title": "Sciatic nerve paralysis",
+        "url": "https://www.law.cornell.edu/cfr/text/38/4.124a"
+      }
+    ],
+    "rating_logic": {
+      "type": "severity_ladder",
+      "summary": "Rating is based on severity (mild → complete)."
+    },
+    "excerpts": [
+      {
+        "label": "Rating criteria excerpt",
+        "text": "Mild incomplete paralysis of the sciatic nerve warrants a 10 percent evaluation. Moderate incomplete paralysis warrants 20 percent...",
+        "source_url": "https://www.law.cornell.edu/cfr/text/38/4.124a"
+      }
+    ],
+    "evidence_checklist": [
+      "Symptoms + pattern (radiating pain, numbness, weakness)",
+      "Neuro findings (reflexes, strength, sensation) if documented"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "hearing_loss",
+    "name": "Hearing Loss",
+    "body_system": "Ear",
+    "aliases": [
+      "hearing impairment",
+      "hard of hearing",
+      "cannot hear speech"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.85",
+        "diagnostic_code": "6100",
+        "title": "Evaluation of hearing impairment",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFR378242b2776122d/section-4.85"
+      },
+      {
+        "section": "38 CFR § 4.86",
+        "diagnostic_code": "6100",
+        "title": "Exceptional patterns of hearing impairment",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFR378242b2776122d/section-4.86"
+      }
+    ],
+    "rating_logic": {
+      "type": "table_method",
+      "summary": "Rating uses puretone thresholds + speech discrimination to find Roman numerals (Tables VI/VIa) and combine them (Table VII)."
+    },
+    "evidence_checklist": [
+      "Audiogram results (puretone thresholds at 1000/2000/3000/4000 Hz)",
+      "Maryland CNC speech discrimination scores",
+      "Hearing-related functional impact (work/communication)",
+      "Noise exposure history if documented"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "ptsd",
+    "name": "Post-Traumatic Stress Disorder (PTSD)",
+    "body_system": "Mental Health",
+    "aliases": [
+      "ptsd",
+      "post traumatic stress",
+      "trauma",
+      "nightmares",
+      "hypervigilance"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.130",
+        "diagnostic_code": "9411",
+        "title": "General Rating Formula for Mental Disorders (PTSD)",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFRfa64377db09ae97/section-4.130"
+      }
+    ],
+    "rating_logic": {
+      "type": "general_formula",
+      "summary": "PTSD is evaluated under the General Rating Formula (0–100%) based on occupational and social impairment and symptoms."
+    },
+    "evidence_checklist": [
+      "Mental health diagnosis and treatment notes (therapy/medication) if present",
+      "Symptom frequency/severity and functional impact (work, relationships, sleep)",
+      "Stressors/events documented where possible (records or statements)",
+      "Any relevant exam results (e.g., C&P mental health exam) if performed"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "migraines",
+    "name": "Migraine Headaches",
+    "body_system": "Neurological",
+    "aliases": [
+      "migraines",
+      "migraine headaches",
+      "prostrating headaches",
+      "severe headaches"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.124a",
+        "diagnostic_code": "8100",
+        "title": "Migraine headaches",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFR378242b2776122d/section-4.124a"
+      }
+    ],
+    "rating_logic": {
+      "type": "severity_ladder",
+      "summary": "Ratings depend on frequency and severity of prostrating attacks.",
+      "levels": [
+        {
+          "level": "Less frequent attacks",
+          "rating_percent": 0
+        },
+        {
+          "level": "Characteristic prostrating attacks averaging one in 2 months",
+          "rating_percent": 10
+        },
+        {
+          "level": "Characteristic prostrating attacks occurring on average once a month",
+          "rating_percent": 30
+        },
+        {
+          "level": "Very frequent completely prostrating and prolonged attacks with severe economic inadaptability",
+          "rating_percent": 50
+        }
+      ]
+    },
+   "strategy": [
+  "Document frequency and severity of headaches.",
+  "Describe prostrating attacks (needing to lie down).",
+  "Show functional impact (missed work, reduced productivity).",
+  "Match symptoms to DC 8100 language (severity ladder)."
+],
+
+    "evidence_checklist": [
+      "Frequency and severity of headaches documented in medical records or statements",
+      "Notes describing prostrating attacks (needing to lie down, inability to function)",
+      "Impact on work, concentration, or daily functioning",
+      "Treatment history (medication, neurology visits, ER visits if applicable)"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "sleep_apnea",
+    "name": "Sleep Apnea (including obstructive sleep apnea)",
+    "body_system": "Respiratory",
+    "aliases": [
+      "sleep apnea",
+      "osa",
+      "obstructive sleep apnea",
+      "cpap"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.97",
+        "diagnostic_code": "6847",
+        "title": "Sleep Apnea Syndromes",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B"
+      }
+    ],
+    "rating_logic": {
+      "type": "severity_ladder",
+      "summary": "Sleep apnea ratings depend largely on CPAP use and respiratory complications."
+    },
+    "evidence_checklist": [
+      "Sleep study confirming diagnosis",
+      "CPAP prescription or treatment documentation",
+      "Functional impact such as daytime fatigue"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "asthma",
+    "name": "Asthma (Bronchial)",
+    "body_system": "Respiratory",
+    "aliases": [
+      "asthma",
+      "bronchial asthma",
+      "inhaler",
+      "wheezing"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.97",
+        "diagnostic_code": "6602",
+        "title": "Asthma, bronchial",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B"
+      }
+    ],
+    "rating_logic": {
+      "type": "general_formula",
+      "summary": "Asthma ratings consider pulmonary testing results and medication use."
+    },
+    "evidence_checklist": [
+      "Pulmonary function testing results",
+      "Medication usage history",
+      "Frequency of exacerbations"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "depression",
+    "name": "Major Depressive Disorder",
+    "body_system": "Mental Health",
+    "aliases": [
+      "depression",
+      "major depressive disorder",
+      "mdd",
+      "low mood"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.130",
+        "diagnostic_code": "9434",
+        "title": "General Rating Formula for Mental Disorders (Depression)",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFRfa64377db09ae97/section-4.130"
+      }
+    ],
+    "rating_logic": {
+      "type": "general_formula",
+      "summary": "Depression is evaluated under the General Rating Formula (0–100%) based on occupational and social impairment and symptoms."
+    },
+    "evidence_checklist": [
+      "Mental health diagnosis and treatment notes (therapy/medication) if present",
+      "Symptom frequency/severity and functional impact (work, relationships, sleep)",
+      "Stressors/events documented where possible (records or statements)",
+      "Any relevant exam results (e.g., C&P mental health exam) if performed"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "anxiety",
+    "name": "Generalized Anxiety Disorder",
+    "body_system": "Mental Health",
+    "aliases": [
+      "anxiety",
+      "generalized anxiety disorder",
+      "gad",
+      "panic"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.130",
+        "diagnostic_code": "9413",
+        "title": "General Rating Formula for Mental Disorders (Anxiety Disorders)",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFRfa64377db09ae97/section-4.130"
+      }
+    ],
+    "rating_logic": {
+      "type": "general_formula",
+      "summary": "Anxiety disorders are evaluated under the General Rating Formula (0–100%) based on occupational and social impairment and symptoms."
+    },
+    "evidence_checklist": [
+      "Mental health diagnosis and treatment notes if present",
+      "Symptom severity/frequency (panic, avoidance, hypervigilance, concentration issues)",
+      "Functional impact on work, relationships, and sleep",
+      "Any relevant exam findings or medication history"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "insomnia",
+    "name": "Insomnia Disorder",
+    "body_system": "Mental Health",
+    "aliases": [
+      "insomnia",
+      "sleep problems",
+      "cannot sleep",
+      "trouble sleeping"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.130",
+        "diagnostic_code": "9422",
+        "title": "General Rating Formula for Mental Disorders (Insomnia Disorder)",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFRfa64377db09ae97/section-4.130"
+      }
+    ],
+    "rating_logic": {
+      "type": "general_formula",
+      "summary": "Insomnia disorder is generally evaluated under the General Rating Formula based on severity and resulting occupational/social impairment."
+    },
+    "evidence_checklist": [
+      "Sleep complaints documented over time",
+      "Functional impact such as fatigue, missed work, concentration problems, or irritability",
+      "Treatment history (medications, sleep hygiene, therapy, sleep clinic if applicable)",
+      "Relationship to another condition if claimed secondary"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "adjustment_disorder",
+    "name": "Adjustment Disorder",
+    "body_system": "Mental Health",
+    "aliases": [
+      "adjustment disorder",
+      "stress reaction",
+      "adjustment reaction"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.130",
+        "diagnostic_code": "9440",
+        "title": "General Rating Formula for Mental Disorders (Adjustment Disorder)",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFRfa64377db09ae97/section-4.130"
+      }
+    ],
+    "rating_logic": {
+      "type": "general_formula",
+      "summary": "Adjustment disorder is evaluated under the General Rating Formula for Mental Disorders."
+    },
+    "evidence_checklist": [
+      "Diagnosis or counseling notes identifying adjustment disorder",
+      "Triggering stressor/event described in records or statements where available",
+      "Symptom severity and duration",
+      "Functional impact on work, school, relationships, or daily activities"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "vertigo",
+    "name": "Peripheral Vestibular Disorder / Vertigo",
+    "body_system": "Ear",
+    "aliases": [
+      "vertigo",
+      "dizziness",
+      "loss of balance",
+      "room spinning"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.87",
+        "diagnostic_code": "6204",
+        "title": "Peripheral vestibular disorders",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFR378242b2776122d/section-4.87"
+      }
+    ],
+    "rating_logic": {
+      "type": "severity_ladder",
+      "summary": "Vertigo/peripheral vestibular disorders are generally rated based on dizziness and staggering severity."
+    },
+    "evidence_checklist": [
+      "Diagnosis/workup by ENT, audiology, neurology, or treating clinician if available",
+      "Frequency of dizziness/vertigo episodes",
+      "Balance problems, falls, staggering, or safety impact",
+      "Treatment history and any vestibular testing"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "peripheral_neuropathy",
+    "name": "Peripheral Neuropathy (Lower Extremity)",
+    "body_system": "Neurological",
+    "aliases": [
+      "peripheral neuropathy",
+      "neuropathy",
+      "numbness feet",
+      "tingling legs"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.124a",
+        "diagnostic_code": "8520",
+        "title": "Sciatic nerve paralysis / incomplete paralysis",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFRbff7ae1891ca5a5/section-4.124a"
+      }
+    ],
+    "rating_logic": {
+      "type": "severity_ladder",
+      "summary": "Peripheral neuropathy is often evaluated by the affected nerve and severity of incomplete paralysis."
+    },
+    "evidence_checklist": [
+      "Symptoms documented (numbness, tingling, burning, weakness)",
+      "Neuro findings such as sensation, strength, or reflex changes if present",
+      "Affected area and side clearly described",
+      "Functional impact on walking, balance, standing, or driving"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "lumbar_strain",
+    "name": "Lumbosacral Strain / Low Back Condition",
+    "body_system": "Musculoskeletal",
+    "aliases": [
+      "back pain",
+      "low back pain",
+      "lumbar strain",
+      "lumbosacral strain"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.71a",
+        "diagnostic_code": "5237",
+        "title": "Lumbosacral or cervical strain",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFRd3005f7d828ea7b/section-4.71a"
+      }
+    ],
+    "rating_logic": {
+      "type": "general_formula",
+      "summary": "Low back conditions are commonly rated under the General Rating Formula for the Spine using range of motion, guarding/spasm, and functional loss."
+    },
+    "evidence_checklist": [
+      "Range of motion findings or exam measurements if available",
+      "Flare-ups, painful motion, and limits on lifting, standing, bending, or walking",
+      "Imaging, PT, injections, medications, or specialist notes if documented",
+      "Any associated radicular symptoms or neurologic findings"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "cervical_strain",
+    "name": "Cervical Strain / Neck Condition",
+    "body_system": "Musculoskeletal",
+    "aliases": [
+      "neck pain",
+      "cervical strain",
+      "cervical spine",
+      "limited neck motion"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.71a",
+        "diagnostic_code": "5237",
+        "title": "Lumbosacral or cervical strain",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFRd3005f7d828ea7b/section-4.71a"
+      }
+    ],
+    "rating_logic": {
+      "type": "general_formula",
+      "summary": "Neck conditions are commonly rated under the General Rating Formula for the Spine using range of motion and functional loss."
+    },
+    "evidence_checklist": [
+      "Neck range-of-motion findings if available",
+      "Pain, stiffness, guarding, flare-ups, and functional impact",
+      "Imaging, treatment notes, PT, injections, or medications if documented",
+      "Any radiating symptoms into shoulders/arms if present"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "knee_extension",
+    "name": "Limitation of Extension of the Knee",
+    "body_system": "Musculoskeletal",
+    "aliases": [
+      "knee extension",
+      "cannot straighten knee",
+      "limited knee extension"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.71a",
+        "diagnostic_code": "5261",
+        "title": "Leg, limitation of extension",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFRd3005f7d828ea7b/section-4.71a"
+      }
+    ],
+    "rating_logic": {
+      "type": "thresholds",
+      "summary": "Rating depends on measured limitation of extension and related functional loss."
+    },
+    "evidence_checklist": [
+      "Range-of-motion measurements for extension",
+      "Painful motion, flare-ups, and instability/functional impact",
+      "Treatment history such as braces, PT, injections, or surgery if documented",
+      "Effect on stairs, standing, walking, kneeling, or squatting"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "shoulder_motion",
+    "name": "Shoulder Limitation of Motion",
+    "body_system": "Musculoskeletal",
+    "aliases": [
+      "shoulder pain",
+      "limited shoulder motion",
+      "cannot raise arm",
+      "shoulder strain"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.71a",
+        "diagnostic_code": "5201",
+        "title": "Arm, limitation of motion of",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFRd3005f7d828ea7b/section-4.71a"
+      }
+    ],
+    "rating_logic": {
+      "type": "severity_ladder",
+      "summary": "Shoulder ratings commonly consider range of motion of the arm and resulting functional impairment."
+    },
+    "evidence_checklist": [
+      "Range-of-motion findings for lifting/raising the arm",
+      "Painful motion, weakness, flare-ups, and repetitive-use problems",
+      "Functional impact with reaching, carrying, dressing, or overhead activity",
+      "Imaging, PT, injections, surgery, or specialist notes if documented"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "ankle_motion",
+    "name": "Limited Motion of the Ankle",
+    "body_system": "Musculoskeletal",
+    "aliases": [
+      "ankle pain",
+      "limited ankle motion",
+      "ankle strain",
+      "cannot flex ankle"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.71a",
+        "diagnostic_code": "5271",
+        "title": "Ankle, limited motion of",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFRd3005f7d828ea7b/section-4.71a"
+      }
+    ],
+    "rating_logic": {
+      "type": "severity_ladder",
+      "summary": "Ankle ratings commonly consider marked versus moderate limitation of motion and functional loss."
+    },
+    "evidence_checklist": [
+      "Range-of-motion findings and painful motion",
+      "Instability, swelling, flare-ups, brace use, or falls",
+      "Functional impact with walking, standing, stairs, or running",
+      "Imaging and treatment history if documented"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "plantar_fasciitis",
+    "name": "Plantar Fasciitis",
+    "body_system": "Musculoskeletal",
+    "aliases": [
+      "plantar fasciitis",
+      "foot pain",
+      "heel pain"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.71a",
+        "diagnostic_code": "5269",
+        "title": "Plantar fasciitis",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFRd3005f7d828ea7b/section-4.71a"
+      }
+    ],
+    "rating_logic": {
+      "type": "severity_ladder",
+      "summary": "Plantar fasciitis ratings generally consider response to treatment, laterality, and severity."
+    },
+    "evidence_checklist": [
+      "Diagnosis and location/laterality of foot pain",
+      "Standing/walking tolerance and daily functional impact",
+      "Orthotics, injections, PT, surgery, or other treatment history",
+      "Whether symptoms persist despite treatment"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "sinusitis",
+    "name": "Chronic Sinusitis",
+    "body_system": "Respiratory",
+    "aliases": [
+      "sinusitis",
+      "chronic sinus infections",
+      "sinus condition"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.97",
+        "diagnostic_code": "6513",
+        "title": "Sinusitis, maxillary, chronic",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFRf24f706a1d1e7f7/section-4.97"
+      }
+    ],
+    "rating_logic": {
+      "type": "severity_ladder",
+      "summary": "Sinusitis ratings often consider incapacitating/non-incapacitating episodes, headaches, pain, discharge, and surgeries."
+    },
+    "evidence_checklist": [
+      "Diagnosis or recurrent sinus complaints documented in treatment notes",
+      "Frequency of episodes, infections, antibiotics, or physician visits",
+      "Headaches, facial pain, drainage, crusting, or related symptoms",
+      "Any imaging, ENT notes, or sinus surgery history"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "allergic_rhinitis",
+    "name": "Allergic Rhinitis",
+    "body_system": "Respiratory",
+    "aliases": [
+      "allergic rhinitis",
+      "rhinitis",
+      "nasal allergies",
+      "chronic congestion"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.97",
+        "diagnostic_code": "6522",
+        "title": "Allergic or vasomotor rhinitis",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFRf24f706a1d1e7f7/section-4.97"
+      }
+    ],
+    "rating_logic": {
+      "type": "severity_ladder",
+      "summary": "Rhinitis ratings commonly consider obstruction, polyps, and chronic symptoms."
+    },
+    "evidence_checklist": [
+      "Diagnosis and chronic nasal symptoms documented",
+      "Degree of obstruction or mention of polyps if evaluated",
+      "Medication history such as sprays, antihistamines, or allergy treatment",
+      "Functional impact such as sleep disruption or chronic congestion"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "gerd",
+    "name": "GERD / Reflux Condition",
+    "body_system": "Digestive",
+    "aliases": [
+      "gerd",
+      "acid reflux",
+      "heartburn",
+      "reflux"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.114",
+        "diagnostic_code": "7346",
+        "title": "Hiatal hernia (often used analogously for reflux symptoms)",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFR95ddf87cf3f6df5/section-4.114"
+      }
+    ],
+    "rating_logic": {
+      "type": "severity_ladder",
+      "summary": "Reflux symptoms are often evaluated analogously by symptom severity, persistence, and resulting health impact."
+    },
+    "evidence_checklist": [
+      "Diagnosis or recurrent reflux/heartburn symptoms documented",
+      "Frequency/severity of reflux, regurgitation, chest pain, dysphagia, or sleep disruption",
+      "Medication and treatment history",
+      "Functional impact such as interrupted sleep, diet restrictions, or work impact"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "ibs",
+    "name": "Irritable Bowel Syndrome (IBS)",
+    "body_system": "Digestive",
+    "aliases": [
+      "ibs",
+      "irritable bowel syndrome",
+      "bowel problems",
+      "abdominal cramping"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.114",
+        "diagnostic_code": "7319",
+        "title": "Irritable colon syndrome",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFR95ddf87cf3f6df5/section-4.114"
+      }
+    ],
+    "rating_logic": {
+      "type": "severity_ladder",
+      "summary": "IBS ratings generally consider frequency and severity of bowel disturbance, abdominal distress, diarrhea, and constipation."
+    },
+    "evidence_checklist": [
+      "Diagnosis or consistent GI complaints documented",
+      "Frequency of diarrhea, constipation, urgency, or cramping",
+      "Functional impact such as missed work, bathroom access issues, or diet restriction",
+      "GI treatment, workup, medications, or specialist notes if available"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "hypertension",
+    "name": "Hypertension",
+    "body_system": "Cardiovascular",
+    "aliases": [
+      "hypertension",
+      "high blood pressure",
+      "elevated blood pressure"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.104",
+        "diagnostic_code": "7101",
+        "title": "Hypertensive vascular disease",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFR1ef2204f8c5f4f6/section-4.104"
+      }
+    ],
+    "rating_logic": {
+      "type": "thresholds",
+      "summary": "Hypertension ratings commonly depend on blood pressure readings and medication history."
+    },
+    "evidence_checklist": [
+      "Series of blood pressure readings over time",
+      "Medication history and whether continuous medication is required",
+      "Diagnosis documented by treating clinician",
+      "Any complications or related cardiovascular follow-up if present"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "erectile_dysfunction",
+    "name": "Erectile Dysfunction",
+    "body_system": "Genitourinary",
+    "aliases": [
+      "erectile dysfunction",
+      "ed",
+      "sexual dysfunction"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.115b",
+        "diagnostic_code": "7522",
+        "title": "Penis, erectile dysfunction / deformity considerations",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFR7219af6e413567e/section-4.115b"
+      }
+    ],
+    "rating_logic": {
+      "type": "max_schedular",
+      "summary": "ED often raises both schedular-rating and special monthly compensation issues, depending on the facts and how it is rated."
+    },
+    "evidence_checklist": [
+      "Diagnosis or consistent complaint documented",
+      "Medication/treatment history and whether symptoms persist",
+      "Relationship to another service-connected condition or treatment if claimed secondary",
+      "Provider notes describing onset and functional impact"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "painful_scars",
+    "name": "Painful or Unstable Scars",
+    "body_system": "Skin",
+    "aliases": [
+      "scar",
+      "painful scar",
+      "unstable scar",
+      "surgical scar"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.118",
+        "diagnostic_code": "7804",
+        "title": "Scar(s), unstable or painful",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFR8b5e91b3f41f64d/section-4.118"
+      }
+    ],
+    "rating_logic": {
+      "type": "severity_ladder",
+      "summary": "Scar ratings often depend on whether scars are painful, unstable, numerous, large, or functionally limiting."
+    },
+    "evidence_checklist": [
+      "Location and number of scars clearly documented",
+      "Whether scars are painful, unstable, or repeatedly break down",
+      "Measurements/photos or clinical descriptions if available",
+      "Functional impact or tenderness described in notes or statements"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "radiculopathy_upper",
+    "name": "Radiculopathy (Upper Extremity)",
+    "body_system": "Neurological",
+    "aliases": [
+      "arm radiculopathy",
+      "pinched nerve arm",
+      "cervical radiculopathy",
+      "radiating arm pain"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.124a",
+        "diagnostic_code": "8510",
+        "title": "Upper radicular group paralysis",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFRbff7ae1891ca5a5/section-4.124a"
+      }
+    ],
+    "rating_logic": {
+      "type": "severity_ladder",
+      "summary": "Upper-extremity radiculopathy is often evaluated by the affected nerve/radicular group and severity."
+    },
+    "evidence_checklist": [
+      "Symptoms documented (radiating pain, numbness, tingling, weakness)",
+      "Affected side and extremity clearly identified",
+      "Neuro findings such as reflexes, strength, or sensation if present",
+      "Impact on lifting, grip, typing, driving, sleep, or daily tasks"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "shoulder_instability",
+    "name": "Shoulder Instability / Recurrent Dislocation",
+    "body_system": "Musculoskeletal",
+    "aliases": [
+      "shoulder instability",
+      "dislocated shoulder",
+      "recurrent dislocation shoulder"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.71a",
+        "diagnostic_code": "5202",
+        "title": "Other impairment of the humerus",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFRd3005f7d828ea7b/section-4.71a"
+      }
+    ],
+    "rating_logic": {
+      "type": "severity_ladder",
+      "summary": "Shoulder instability/dislocation ratings commonly consider recurrent episodes, guarding, and arm impairment."
+    },
+    "evidence_checklist": [
+      "Episodes of dislocation or instability documented",
+      "Guarding, brace/sling use, or activity avoidance",
+      "Functional impact on reaching, lifting, carrying, or overhead tasks",
+      "Imaging, surgery, PT, or orthopedic follow-up if present"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  },
+  {
+    "id": "rhinitis_sinus_combo",
+    "name": "Chronic Nasal / Sinus Symptoms",
+    "body_system": "Respiratory",
+    "aliases": [
+      "nasal congestion",
+      "sinus pressure",
+      "chronic nasal symptoms"
+    ],
+    "cfr": [
+      {
+        "section": "38 CFR § 4.97",
+        "diagnostic_code": "6522",
+        "title": "Allergic or vasomotor rhinitis",
+        "url": "https://www.ecfr.gov/current/title-38/chapter-I/part-4/subpart-B/subject-group-ECFRf24f706a1d1e7f7/section-4.97"
+      }
+    ],
+    "rating_logic": {
+      "type": "general_formula",
+      "summary": "Chronic nasal/sinus symptom cases often turn on the specific diagnosis, obstruction, episode history, and treatment record."
+    },
+    "evidence_checklist": [
+      "Consistent nasal/sinus complaints documented over time",
+      "Whether symptoms fit rhinitis, sinusitis, or both",
+      "Medication history such as sprays, antihistamines, or antibiotics",
+      "Sleep impact, headaches, drainage, obstruction, or ENT follow-up"
+    ],
+    "disclaimer": "Educational CFR mapping only. Not legal advice or representation."
+  }
+]
